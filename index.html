@@ -1,0 +1,141 @@
+<!doctype html>
+<html lang="el">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1">
+  <meta name="theme-color" content="#174d34">
+  <meta name="description" content="GeoFylo – Ψηφιακή διαχείριση αγροτικής παραγωγής. Οργάνωσε παραγωγή, έξοδα, πωλήσεις, αποθήκη, εργασίες και αναφορές.">
+  <title>GeoFylo – IoMilo | Ψηφιακή διαχείριση αγροτικής παραγωγής</title>
+  <style>
+    :root{--green:#174d34;--green2:#237443;--light:#f4f7f2;--card:#fff;--text:#183126;--muted:#68766f;--line:#dfe7df;--gold:#cda45e}
+    *{box-sizing:border-box}html{scroll-behavior:smooth}body{margin:0;font-family:system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif;color:var(--text);background:var(--light);line-height:1.6}
+    a{text-decoration:none;color:inherit}.wrap{width:min(1120px,92%);margin:auto}
+    header{background:#fff;border-bottom:1px solid var(--line);position:sticky;top:0;z-index:10}
+    nav{min-height:72px;display:flex;align-items:center;justify-content:space-between;gap:20px}
+    .brand{font-size:1.55rem;font-weight:900;letter-spacing:-.5px}.brand span{color:var(--green2)}
+    .links{display:flex;align-items:center;gap:20px;font-weight:650}.btn{display:inline-block;background:var(--green2);color:#fff;padding:12px 20px;border-radius:12px;font-weight:800}.btn.alt{background:#fff;color:var(--green);border:1px solid var(--line)}
+    .hero{padding:86px 0 68px;background:linear-gradient(135deg,#edf5eb,#fff)}
+    .hero-grid{display:grid;grid-template-columns:1.15fr .85fr;gap:48px;align-items:center}
+    .eyebrow{font-weight:800;color:var(--green2)}h1{font-size:clamp(2.5rem,6vw,4.8rem);line-height:1.03;margin:10px 0 20px;letter-spacing:-2px}.lead{font-size:1.2rem;color:var(--muted);max-width:720px}
+    .actions{display:flex;gap:12px;flex-wrap:wrap;margin-top:28px}.trial{margin-top:15px;color:var(--muted);font-weight:650}
+    .mock{background:var(--green);border-radius:28px;padding:28px;color:#fff;box-shadow:0 24px 55px #174d3430}.mock h3{font-size:1.5rem;margin-top:0}.mock-grid{display:grid;grid-template-columns:1fr 1fr;gap:12px}.metric{background:#ffffff12;border:1px solid #ffffff25;border-radius:16px;padding:18px}.metric b{font-size:1.45rem;display:block}
+    section{padding:72px 0}.section-title{text-align:center;max-width:750px;margin:0 auto 40px}.section-title h2{font-size:2.25rem;margin:0 0 8px}.section-title p{color:var(--muted)}
+    .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:25px}.card .ico{font-size:2rem}.card h3{margin:10px 0 5px}.card p{margin:0;color:var(--muted)}
+    .pricing{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.price{text-align:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px 15px}.price strong{display:block;font-size:2rem;color:var(--green);margin:8px 0}.price small{color:var(--muted)}.popular{border:2px solid var(--green2);position:relative}.badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green2);color:#fff;border-radius:999px;padding:4px 12px;font-size:.8rem;font-weight:800}
+    .cta{background:var(--green);color:#fff;border-radius:28px;padding:50px;text-align:center}.cta h2{font-size:2.3rem;margin:0 0 10px}.cta p{color:#dce9df}.cta .btn{background:#fff;color:var(--green)}
+    footer{padding:35px 0;background:#102d21;color:#dce7e0}.footer{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.footer-links{display:flex;gap:18px;flex-wrap:wrap}
+    dialog{max-width:780px;width:92%;border:0;border-radius:20px;padding:0;box-shadow:0 25px 70px #0004}dialog::backdrop{background:#0008}.legal{padding:28px;max-height:75vh;overflow:auto}.legal h2{margin-top:0}.close{float:right;border:0;background:#eee;border-radius:9px;padding:8px 12px;cursor:pointer;font-weight:800}
+    @media(max-width:850px){.hero-grid{grid-template-columns:1fr}.features{grid-template-columns:1fr 1fr}.pricing{grid-template-columns:1fr 1fr}.links a:not(.btn){display:none}}
+    @media(max-width:560px){.hero{padding-top:55px}.features,.pricing{grid-template-columns:1fr}.cta{padding:34px 20px}.mock-grid{grid-template-columns:1fr}.brand{font-size:1.35rem}}
+  </style>
+</head>
+<body>
+<header>
+  <div class="wrap">
+    <nav>
+      <a class="brand" href="#"><span>Geo</span>Fylo <small style="font-size:.65rem;font-weight:600">by IoMilo</small></a>
+      <div class="links">
+        <a href="#features">Δυνατότητες</a><a href="#pricing">Τιμές</a>
+        <a class="btn" href="https://iomilo-aepp.github.io/agrotrack/">Είσοδος / Δωρεάν δοκιμή</a>
+      </div>
+    </nav>
+  </div>
+</header>
+
+<main>
+<section class="hero">
+  <div class="wrap hero-grid">
+    <div>
+      <div class="eyebrow">🌱 Ψηφιακή διαχείριση αγροτικής παραγωγής</div>
+      <h1>Η παραγωγή σου,<br>οργανωμένη.</h1>
+      <p class="lead">Το GeoFylo συγκεντρώνει παραγωγή, έξοδα, πωλήσεις, αποθήκη, εργασίες και οικονομική εικόνα σε μία απλή εφαρμογή, σχεδιασμένη για τον παραγωγό.</p>
+      <div class="actions">
+        <a class="btn" href="https://iomilo-aepp.github.io/agrotrack/">Ξεκίνα 30 ημέρες δωρεάν</a>
+        <a class="btn alt" href="#features">Δες τις δυνατότητες</a>
+      </div>
+      <div class="trial">✓ Χωρίς χρέωση για τις πρώτες 30 ημέρες · Τα δεδομένα σου παραμένουν διαθέσιμα αν λήξει η πρόσβαση.</div>
+    </div>
+    <div class="mock">
+      <h3>📊 Όλα σε μία εικόνα</h3>
+      <div class="mock-grid">
+        <div class="metric"><span>Παραγωγή</span><b>🥒</b>Καταγραφή συγκομιδών</div>
+        <div class="metric"><span>Οικονομικά</span><b>€</b>Έσοδα & έξοδα</div>
+        <div class="metric"><span>Αποθήκη</span><b>📦</b>Υλικά & εφόδια</div>
+        <div class="metric"><span>Εργασίες</span><b>📅</b>Οργάνωση καλλιέργειας</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section id="features">
+  <div class="wrap">
+    <div class="section-title"><h2>Ένα εργαλείο για την καθημερινή διαχείριση</h2><p>Λιγότερες διάσπαρτες σημειώσεις και καλύτερη εικόνα της εκμετάλλευσής σου.</p></div>
+    <div class="features">
+      <div class="card"><div class="ico">💶</div><h3>Έσοδα & έξοδα</h3><p>Παρακολούθηση οικονομικών κινήσεων και αποτελέσματος.</p></div>
+      <div class="card"><div class="ico">🌾</div><h3>Παραγωγή</h3><p>Καταγραφή συγκομιδών ανά περίοδο και αγροτεμάχιο ή θερμοκήπιο.</p></div>
+      <div class="card"><div class="ico">📦</div><h3>Αποθήκη</h3><p>Παρακολούθηση αποθεμάτων, αγορών και κατανάλωσης εφοδίων.</p></div>
+      <div class="card"><div class="ico">📅</div><h3>Εργασίες</h3><p>Προγραμματισμός και ολοκλήρωση καλλιεργητικών εργασιών.</p></div>
+      <div class="card"><div class="ico">👥</div><h3>Πελάτες & προμηθευτές</h3><p>Υπόλοιπα, πληρωμές και οργανωμένες καρτέλες συνεργατών.</p></div>
+      <div class="card"><div class="ico">📈</div><h3>Αναφορές</h3><p>Στοιχεία κόστους, παραγωγής και αποδοτικότητας για καλύτερη εικόνα.</p></div>
+    </div>
+  </div>
+</section>
+
+<section id="pricing">
+  <div class="wrap">
+    <div class="section-title"><h2>Απλές και ξεκάθαρες τιμές</h2><p>Δοκίμασε το GeoFylo δωρεάν για 30 ημέρες και μετά επίλεξε το πακέτο που σε εξυπηρετεί.</p></div>
+    <div class="pricing">
+      <div class="price"><h3>1 μήνας</h3><strong>9,90 €</strong><small>GeoFylo Pro</small></div>
+      <div class="price"><h3>3 μήνες</h3><strong>27 €</strong><small>GeoFylo Pro</small></div>
+      <div class="price"><h3>6 μήνες</h3><strong>49 €</strong><small>GeoFylo Pro</small></div>
+      <div class="price popular"><span class="badge">Καλύτερη αξία</span><h3>12 μήνες</h3><strong>89 €</strong><small>GeoFylo Pro</small></div>
+    </div>
+    <p style="text-align:center;color:var(--muted);margin-top:20px">🔒 Η ολοκλήρωση των ηλεκτρονικών πληρωμών πραγματοποιείται μέσω Stripe.</p>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="cta">
+      <h2>Ξεκίνα με το GeoFylo</h2>
+      <p>30 ημέρες δωρεάν για να οργανώσεις την παραγωγή σου και να γνωρίσεις την εφαρμογή.</p>
+      <a class="btn" href="https://iomilo-aepp.github.io/agrotrack/">Δημιουργία λογαριασμού</a>
+    </div>
+  </div>
+</section>
+</main>
+
+<footer>
+  <div class="wrap footer">
+    <div><b>GeoFylo – IoMilo</b><br><small>© 2026. Με επιφύλαξη παντός δικαιώματος.</small></div>
+    <div class="footer-links">
+      <a href="#" onclick="document.getElementById('terms').showModal();return false">Όροι Χρήσης</a>
+      <a href="#" onclick="document.getElementById('privacy').showModal();return false">Πολιτική Απορρήτου</a>
+      <a href="mailto:milolidakis7@yahoo.gr">Επικοινωνία</a>
+    </div>
+  </div>
+</footer>
+
+<dialog id="terms"><div class="legal"><button class="close" onclick="this.closest('dialog').close()">✕</button>
+<h2>Όροι Χρήσης</h2>
+<p><b>Τελευταία ενημέρωση:</b> Οκτώβριος 2026</p>
+<p>Το GeoFylo – IoMilo παρέχει ψηφιακά εργαλεία οργάνωσης και διαχείρισης αγροτικής παραγωγής. Με τη δημιουργία λογαριασμού και τη χρήση της υπηρεσίας, ο χρήστης αποδέχεται τους παρόντες όρους.</p>
+<h3>Λογαριασμός και πρόσβαση</h3><p>Ο χρήστης είναι υπεύθυνος για την ορθότητα των στοιχείων του και για την ασφαλή χρήση των στοιχείων πρόσβασης. Η υπηρεσία μπορεί να προσφέρει δοκιμαστική περίοδο και στη συνέχεια πρόσβαση βάσει του επιλεγμένου πακέτου.</p>
+<h3>Πληρωμές</h3><p>Οι διαθέσιμες τιμές και διάρκειες εμφανίζονται πριν από την αγορά. Οι ηλεκτρονικές πληρωμές διεκπεραιώνονται μέσω εξωτερικού παρόχου πληρωμών. Τυχόν επιστροφές ή ακυρώσεις εξετάζονται σύμφωνα με την ισχύουσα νομοθεσία και τους όρους που εφαρμόζονται στη συγκεκριμένη συναλλαγή.</p>
+<h3>Χρήση της υπηρεσίας</h3><p>Το GeoFylo αποτελεί εργαλείο καταγραφής και οργάνωσης. Ο χρήστης παραμένει υπεύθυνος για τις επιχειρηματικές, γεωργικές, οικονομικές ή άλλες αποφάσεις που λαμβάνει με βάση τα δεδομένα του.</p>
+<h3>Διαθεσιμότητα και αλλαγές</h3><p>Η υπηρεσία μπορεί να ενημερώνεται, να βελτιώνεται ή να τροποποιείται. Καταβάλλεται εύλογη προσπάθεια για τη διαθεσιμότητα και την ασφάλειά της, χωρίς εγγύηση αδιάλειπτης λειτουργίας.</p>
+<h3>Επικοινωνία</h3><p>Για ερωτήσεις σχετικά με τους όρους: milolidakis7@yahoo.gr.</p>
+</div></dialog>
+
+<dialog id="privacy"><div class="legal"><button class="close" onclick="this.closest('dialog').close()">✕</button>
+<h2>Πολιτική Απορρήτου</h2>
+<p><b>Τελευταία ενημέρωση:</b> Οκτώβριος 2026</p>
+<p>Το GeoFylo – IoMilo επεξεργάζεται τα δεδομένα που είναι αναγκαία για τη δημιουργία λογαριασμού, τη λειτουργία της εφαρμογής, την υποστήριξη του χρήστη και τη διαχείριση της πρόσβασης στην υπηρεσία.</p>
+<h3>Δεδομένα που καταχωρεί ο χρήστης</h3><p>Ανάλογα με τη χρήση, μπορεί να περιλαμβάνονται στοιχεία λογαριασμού και δεδομένα αγροτικής/επιχειρησιακής διαχείρισης που εισάγει ο ίδιος ο χρήστης.</p>
+<h3>Πάροχοι υπηρεσιών</h3><p>Για τη λειτουργία της υπηρεσίας χρησιμοποιούνται τεχνικοί πάροχοι υποδομής και, για ηλεκτρονικές πληρωμές, πάροχος πληρωμών. Τα στοιχεία κάρτας δεν καταχωρούνται από το GeoFylo.</p>
+<h3>Διατήρηση και ασφάλεια</h3><p>Λαμβάνονται κατάλληλα τεχνικά και οργανωτικά μέτρα για την προστασία των δεδομένων. Τα δεδομένα διατηρούνται για όσο είναι αναγκαίο για τους σκοπούς της υπηρεσίας και τις σχετικές νόμιμες υποχρεώσεις.</p>
+<h3>Δικαιώματα</h3><p>Οι χρήστες μπορούν να επικοινωνούν για αιτήματα σχετικά με πρόσβαση, διόρθωση ή διαγραφή προσωπικών δεδομένων, όπου προβλέπεται από την εφαρμοστέα νομοθεσία.</p>
+<h3>Επικοινωνία</h3><p>Για θέματα απορρήτου: milolidakis7@yahoo.gr.</p>
+</div></dialog>
+</body>
+</html>
