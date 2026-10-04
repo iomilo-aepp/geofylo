@@ -24,7 +24,9 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div id="pinAuthBox" class="hidden" style="text-align:center"><h2>🔐 Γρήγορη είσοδος</h2><small id="pinUserLabel"></small><input id="pinInput" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" style="text-align:center;font-size:30px;letter-spacing:12px" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onkeydown="if(event.key==='Enter')unlockWithPin()"><button onclick="unlockWithPin()">Ξεκλείδωμα</button><button class="soft" onclick="useEmailLogin()">Σύνδεση με email / άλλο λογαριασμό</button><small>Ο PIN ισχύει μόνο σε αυτή τη συσκευή.</small></div>
 <p id="msg"></p></div></div>
 
-<div id="main" class="hidden"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small id="who"></small><nav class="bottomNav"><button id="nav-home" class="active" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-calendar" onclick="showPage('calendar')"><span class="ico">📅</span>Εργασίες</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-customers" onclick="showPage('customers')"><span class="ico">👥</span>Πελάτες</button><button id="nav-payments" onclick="showPage('payments')"><span class="ico">💳</span>Πληρωμές</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-suppliers" onclick="showPage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button id="nav-cashflow" onclick="showPage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button id="nav-budget" onclick="showPage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button id="nav-profile" onclick="showPage('profile')"><span class="ico">👤</span>Προφίλ</button><button id="nav-admin" class="hidden" onclick="showPage('admin')"><span class="ico">👑</span>Διαχείριση</button></nav>
+<div id="main" class="hidden"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small id="who"></small>
+<div id="connectionStatus" style="margin:6px 0 10px;font-size:13px;font-weight:700"></div>
+<nav class="bottomNav"><button id="nav-home" class="active" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-calendar" onclick="showPage('calendar')"><span class="ico">📅</span>Εργασίες</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-customers" onclick="showPage('customers')"><span class="ico">👥</span>Πελάτες</button><button id="nav-payments" onclick="showPage('payments')"><span class="ico">💳</span>Πληρωμές</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-suppliers" onclick="showPage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button id="nav-cashflow" onclick="showPage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button id="nav-budget" onclick="showPage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button id="nav-profile" onclick="showPage('profile')"><span class="ico">👤</span>Προφίλ</button><button id="nav-admin" class="hidden" onclick="showPage('admin')"><span class="ico">👑</span>Διαχείριση</button></nav>
 <div id="page-home" class="page active"><div class="card" id="smartHomeCard">
 <div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div>
 <div class="dashGrid" style="margin-top:12px">
@@ -476,6 +478,24 @@ function addToOfflineQueue(table,payload){
 function offlineQueueCount(){
   return getOfflineQueue().length;
 }
+ function updateConnectionStatus(){
+  const el=document.getElementById('connectionStatus');
+  if(!el)return;
+
+  const pending=offlineQueueCount();
+
+  if(navigator.onLine){
+    el.textContent=pending>0
+      ? `☁️ Online • ${pending} σε αναμονή`
+      : '☁️ Online';
+    el.style.color='#1f7a3f';
+  }else{
+    el.textContent=pending>0
+      ? `📴 Offline • ${pending} σε αναμονή`
+      : '📴 Offline';
+    el.style.color='#b45309';
+  }
+}
  async function syncOfflineQueue(){
   if(!navigator.onLine || !user) return;
 
@@ -507,8 +527,18 @@ function offlineQueueCount(){
 }
 
 window.addEventListener('online',()=>{
-  setTimeout(()=>syncOfflineQueue(),1000);
+  updateConnectionStatus();
+  setTimeout(async()=>{
+    await syncOfflineQueue();
+    updateConnectionStatus();
+  },1000);
 });
+
+window.addEventListener('offline',()=>{
+  updateConnectionStatus();
+});
+
+setTimeout(updateConnectionStatus,500);
 let signup=false,user=null;
 const euro=n=>new Intl.NumberFormat('el-GR',{style:'currency',currency:'EUR'}).format(n||0);
 function toggleAuth(){signup=!signup;authTitle.textContent=signup?'Εγγραφή':'Σύνδεση';nameBox.classList.toggle('hidden',!signup);authBtn.textContent=signup?'Δημιουργία λογαριασμού':'Σύνδεση';toggleBtn.textContent=signup?'Έχω λογαριασμό — Σύνδεση':'Δεν έχω λογαριασμό — Εγγραφή'}
