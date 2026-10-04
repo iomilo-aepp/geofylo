@@ -1536,7 +1536,7 @@ async function addEntry(){
     const nr=await sb.from('inventory').update({quantity:Number(activityInvItem.quantity)-activityInvQty}).eq('id',activityInvItem.id);
     if(nr.error){await sb.from('inventory_usage').delete().eq('activity_id',r.data.id);await sb.from('activities').delete().eq('id',r.data.id);return alert('Δεν ενημερώθηκε το απόθεμα: '+nr.error.message)}
   }else{
-   if((t==='expense' || t==='harvest') && !editing && !navigator.onLine){
+  if((t==='expense' || t==='harvest' || t==='sale') && !editing && !navigator.onLine){
   addToOfflineQueue(table,payload);
 alert('📴 Χωρίς σύνδεση. Η καταχώρηση αποθηκεύτηκε στη συσκευή και θα συγχρονιστεί όταν επανέλθει το Internet.');
   editing=null;
