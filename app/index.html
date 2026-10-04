@@ -35,6 +35,13 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="dashBox" onclick="showPage('customers')" style="cursor:pointer"><small>💳 Ληξιπρόθεσμα πελατών</small><b id="smartCustomerOverdue">0,00 €</b></div>
 <div class="dashBox" onclick="showPage('suppliers')" style="cursor:pointer"><small>🏪 Ληξιπρόθεσμα προμηθευτών</small><b id="smartSupplierOverdue">0,00 €</b></div>
 </div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div></div>
+<div class="card" id="weatherCard">
+  <h2>🌦️ Καιρός</h2>
+
+  <div id="weatherContent">
+    <small>Φόρτωση καιρού...</small>
+  </div>
+</div> 
 <div class="card" id="producerHome">
 <h2 style="margin:0" id="tQuick">🌱 Γρήγορη καταχώρηση</h2>
 <small id="tChoose">Επίλεξε τι θέλεις να καταχωρήσεις</small>
@@ -478,6 +485,52 @@ function addToOfflineQueue(table,payload){
 function offlineQueueCount(){
   return getOfflineQueue().length;
 }
+ async function loadWeather(){
+  const box=document.getElementById('weatherContent');
+  if(!box)return;
+
+  if(!navigator.onLine){
+    box.innerHTML='<small>📴 Ο καιρός χρειάζεται σύνδεση στο Internet.</small>';
+    return;
+  }
+
+  try{
+    const lat=35.072;
+    const lon=24.768;
+
+    const url=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1`;
+
+    const res=await fetch(url);
+    if(!res.ok) throw new Error('Weather error');
+
+    const data=await res.json();
+
+    const temp=Math.round(data.current.temperature_2m);
+    const humidity=Math.round(data.current.relative_humidity_2m);
+    const wind=Math.round(data.current.wind_speed_10m);
+    const min=Math.round(data.daily.temperature_2m_min[0]);
+    const max=Math.round(data.daily.temperature_2m_max[0]);
+
+    box.innerHTML=`
+      <div style="font-size:16px;margin-bottom:6px">
+        📍 <b>Τυμπάκι</b>
+      </div>
+
+      <div style="font-size:30px;font-weight:700">
+        ${temp}°C
+      </div>
+
+      <div style="margin-top:8px">
+        💧 Υγρασία: <b>${humidity}%</b><br>
+        💨 Άνεμος: <b>${wind} km/h</b><br>
+        🌡️ Σήμερα: <b>${min}° – ${max}°</b>
+      </div>
+    `;
+
+  }catch(e){
+    box.innerHTML='<small>⚠️ Δεν ήταν δυνατή η φόρτωση του καιρού.</small>';
+  }
+}
  function updateConnectionStatus(){
   const el=document.getElementById('connectionStatus');
   if(!el)return;
@@ -539,6 +592,7 @@ window.addEventListener('offline',()=>{
 });
 
 setTimeout(updateConnectionStatus,500);
+setTimeout(loadWeather,700); 
 let signup=false,user=null;
 const euro=n=>new Intl.NumberFormat('el-GR',{style:'currency',currency:'EUR'}).format(n||0);
 function toggleAuth(){signup=!signup;authTitle.textContent=signup?'Εγγραφή':'Σύνδεση';nameBox.classList.toggle('hidden',!signup);authBtn.textContent=signup?'Δημιουργία λογαριασμού':'Σύνδεση';toggleBtn.textContent=signup?'Έχω λογαριασμό — Σύνδεση':'Δεν έχω λογαριασμό — Εγγραφή'}
