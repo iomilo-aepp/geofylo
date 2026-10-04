@@ -534,7 +534,8 @@ async function loadWeather(){
     const lon=place.longitude;
 
     // Φόρτωση καιρού
-    const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=3`;
+    const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=temperature_2m_max,temperature_2m_min&timezone=auto&forecast_days=1`;
+
     const res=await fetch(weatherUrl);
     if(!res.ok) throw new Error('Weather error');
 
@@ -545,32 +546,6 @@ async function loadWeather(){
     const wind=Math.round(data.current.wind_speed_10m);
     const min=Math.round(data.daily.temperature_2m_min[0]);
     const max=Math.round(data.daily.temperature_2m_max[0]);
-    const days=['Σήμερα','Αύριο','Μεθαύριο'];
-
-const forecast=data.daily.time.map((date,i)=>{
-  const minT=Math.round(data.daily.temperature_2m_min[i]);
-  const maxT=Math.round(data.daily.temperature_2m_max[i]);
-  const rain=Math.round(data.daily.precipitation_probability_max[i]||0);
-  const maxWind=Math.round(data.daily.wind_speed_10m_max[i]||0);
-  const code=data.daily.weather_code[i];
-
-  let icon='☀️';
-  if(code>=1 && code<=3) icon='⛅';
-  if(code>=45 && code<=48) icon='🌫️';
-  if(code>=51 && code<=67) icon='🌧️';
-  if(code>=71 && code<=77) icon='❄️';
-  if(code>=80 && code<=82) icon='🌦️';
-  if(code>=95) icon='⛈️';
-
-  return {
-    day:days[i],
-    icon,
-    min:minT,
-    max:maxT,
-    rain,
-    wind:maxWind
-  };
-});
 
     box.innerHTML=`
       <div style="font-size:16px;margin-bottom:6px">
@@ -586,25 +561,6 @@ const forecast=data.daily.time.map((date,i)=>{
         💨 Άνεμος: <b>${wind} km/h</b><br>
         🌡️ Σήμερα: <b>${min}° – ${max}°</b>
       </div>
-      <hr style="margin:14px 0;border:0;border-top:1px solid #e5e7eb">
-
-<div style="font-weight:700;margin-bottom:8px">
-  📅 Πρόγνωση 3 ημερών
-</div>
-
-<div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">
-  ${forecast.map(f=>'
-    <div style="text-align:center;padding:10px 5px;border:1px solid #e5e7eb;border-radius:12px">
-      <b>${f.day}</b>
-      <div style="font-size:26px;margin:5px 0">${f.icon}</div>
-      <b>${f.min}° – ${f.max}°</b>
-      <div style="font-size:12px;margin-top:5px">
-        🌧️ ${f.rain}%<br>
-        💨 ${f.wind} km/h
-      </div>
-    </div>
-  ').join('')}
-</div>
     `;
 
   }catch(e){
