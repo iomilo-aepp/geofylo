@@ -205,10 +205,10 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div id="page-admin" class="page"><div class="card"><h2 style="margin-top:0">👑 Διαχείριση Συνδρομών</h2><small>Μόνο για διαχειριστές GeoFylo. Καταχώρησε πληρωμή και επέκτεινε τη συνδρομή του πελάτη.</small><div style="margin-top:12px"><button onclick="loadAdminSubscriptions()">🔄 Ανανέωση</button></div><div id="adminSubMsg" style="margin-top:10px"></div><div id="adminStats" style="margin-top:12px"></div><div id="adminSubList" style="margin-top:12px"></div></div><div class="card"><h3>💶 Τιμοκατάλογος</h3><small>Οι τιμές χρησιμοποιούνται αυτόματα όταν ενεργοποιείς ή ανανεώνεις συνδρομή.</small><div id="adminPlanList" style="margin-top:12px"><small>Φόρτωση...</small></div></div><div class="card"><h3>💶 Ιστορικό πληρωμών συνδρομών</h3><div id="adminPaymentHistory"><small>Φόρτωση...</small></div></div></div>
 <div id="page-profile" class="page"><div class="card">
 <h3>👤 Προφίλ Παραγωγού</h3>
-<small>Τα στοιχεία αποθηκεύονται στον προσωπικό σου λογαριασμό.</small>
+<small style="display:block;margin-bottom:12px">Τα στοιχεία αποθηκεύονται στον προσωπικό σου λογαριασμό.</small>
 <label>Ονοματεπώνυμο<input id="profileName" placeholder="Ονοματεπώνυμο"></label>
 <label>Τηλέφωνο<input id="profilePhone" type="tel" placeholder="Τηλέφωνο"></label>
-<label>🏢 Επωνυμία εκμετάλλευσης<input id="profileFarm" placeholder="π.χ. Αγροτική Εκμετάλλευση Μηλολιδάκη"></label>
+<label>🏢 Επωνυμία εκμετάλλευσης<input id="profileFarm" placeholder="π.χ. Αγροτική Εκμετάλλευση"></label>
 <label>📍 Περιοχή<input id="profileArea" placeholder="π.χ. Τυμπάκι, Ηράκλειο"></label>
 <button id="saveProfileBtn" onclick="saveProfile()">💾 Αποθήκευση</button>
 <small id="profileMsg"></small>
