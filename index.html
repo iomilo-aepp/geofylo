@@ -34,8 +34,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="dashBox" onclick="showPage('inventory')" style="cursor:pointer"><small>📦 Χαμηλό απόθεμα</small><b id="smartLowStock">0</b></div>
 <div class="dashBox" onclick="showPage('customers')" style="cursor:pointer"><small>💳 Ληξιπρόθεσμα πελατών</small><b id="smartCustomerOverdue">0,00 €</b></div>
 <div class="dashBox" onclick="showPage('suppliers')" style="cursor:pointer"><small>🏪 Ληξιπρόθεσμα προμηθευτών</small><b id="smartSupplierOverdue">0,00 €</b></div>
-</div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div>
-<div id="smartDayPriority" style="margin-top:12px;padding:12px;border-radius:12px;background:#f5f8f5;border:1px solid #dfe7df"><b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:6px"><small>Υπολογισμός προτεραιότητας...</small></div></div></div>
+</div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div></div>
 <div class="card" id="weatherCard">
   <h2>🌦️ Καιρός</h2>
 
@@ -559,7 +558,6 @@ async function loadWeather(){
       else if(code>=80&&code<=82)icon='🌦️';
       else if(code>=95)icon='⛈️';
       return {
-        date,
         day:dayNames[i]||new Date(date+'T12:00:00').toLocaleDateString('el-GR',{weekday:'short'}),
         icon,
         min:Math.round(data.daily.temperature_2m_min[i]),
@@ -602,63 +600,6 @@ async function loadWeather(){
       '<div style="margin-top:6px">'+a+'</div>'
     ).join('');
 
-    // Σύνδεση πρόγνωσης με προγραμματισμένες εργασίες των επόμενων 3 ημερών.
-    let taskWeatherHtml='';
-    if(user && forecast.length){
-      try{
-        const startDate=forecast[0].date;
-        const endDate=forecast[forecast.length-1].date;
-        const {data:planned,error:plannedError}=await sb
-          .from('activities')
-          .select('id,activity_date,activity_type,note,status')
-          .eq('user_id',user.id)
-          .eq('status','pending')
-          .gte('activity_date',startDate)
-          .lte('activity_date',endDate)
-          .order('activity_date',{ascending:true});
-
-        if(!plannedError && planned?.length){
-          const taskWarnings=[];
-          planned.forEach(task=>{
-            const f=forecast.find(x=>x.date===task.activity_date);
-            if(!f)return;
-
-            const type=String(task.activity_type||'');
-            const isSpray=type.toLocaleLowerCase('el-GR').includes('ψεκασ') ||
-                          type.toLocaleLowerCase('el-GR').includes('φυτοπροστα');
-            const isWater=type.toLocaleLowerCase('el-GR').includes('πότισ');
-
-            const reasons=[];
-            if(isSpray && f.wind>=25) reasons.push('💨 άνεμος '+f.wind+' km/h');
-            if(isSpray && f.rain>=40) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
-            if(isWater && f.rain>=50) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
-            if(!isSpray && !isWater && f.wind>=35) reasons.push('💨 ισχυρός άνεμος '+f.wind+' km/h');
-            if(!isSpray && !isWater && f.rain>=60) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
-
-            if(reasons.length){
-              taskWarnings.push(
-                '<div style="margin-top:8px;padding:9px;border-radius:10px;background:#fff8e8">'+
-                '⚠️ <b>'+esc(type)+'</b> • '+esc(f.day)+'<br>'+
-                '<small>'+reasons.join(' • ')+' — έλεγξε αν χρειάζεται αλλαγή προγραμματισμού.</small>'+
-                '</div>'
-              );
-            }
-          });
-
-          if(taskWarnings.length){
-            taskWeatherHtml=
-              '<div style="margin-top:14px;padding:12px;border-radius:12px;background:#fff;border:1px solid #ead9aa">'+
-              '<div style="font-weight:700">📅 Καιρός & προγραμματισμένες εργασίες</div>'+
-              taskWarnings.join('')+
-              '<small style="display:block;margin-top:8px">Οι επισημάνσεις είναι ενδεικτικές. Για εφαρμογές φυτοπροστασίας ακολούθησε τις οδηγίες της ετικέτας και του γεωπόνου σου.</small>'+
-              '</div>';
-          }
-        }
-      }catch(taskWeatherError){
-        console.warn('Weather tasks:',taskWeatherError);
-      }
-    }
-
     box.innerHTML=`
       <div style="font-size:16px;margin-bottom:6px">
         📍 <b>${place.name}</b>
@@ -677,9 +618,7 @@ async function loadWeather(){
         ${adviceHtml}
         <small style="display:block;margin-top:8px">Ενδεικτική ενημέρωση βάσει πρόγνωσης καιρού.</small>
       </div>
-      ${taskWeatherHtml}
     `;
-    setTimeout(loadSmartDayPriority,100);
 
   }catch(e){
     console.error('Weather:',e);
@@ -747,8 +686,7 @@ window.addEventListener('offline',()=>{
 });
 
 setTimeout(updateConnectionStatus,500);
-setTimeout(loadWeather,700);
-setTimeout(loadSmartDayPriority,1200); 
+setTimeout(loadWeather,700); 
 let signup=false,user=null;
 const euro=n=>new Intl.NumberFormat('el-GR',{style:'currency',currency:'EUR'}).format(n||0);
 function toggleAuth(){signup=!signup;authTitle.textContent=signup?'Εγγραφή':'Σύνδεση';nameBox.classList.toggle('hidden',!signup);authBtn.textContent=signup?'Δημιουργία λογαριασμού':'Σύνδεση';toggleBtn.textContent=signup?'Έχω λογαριασμό — Σύνδεση':'Δεν έχω λογαριασμό — Εγγραφή'}
@@ -1665,7 +1603,7 @@ async function confirmActivityCompletion(){
 function taskLocalYmd(d=new Date()){return `${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,'0')}-${String(d.getDate()).padStart(2,'0')}`}
 function taskCard(x){
  const date=new Date(x.activity_date+'T12:00:00').toLocaleDateString('el-GR');
- return `<div class="entry"><div class="entryText"><b>🌱 ${esc(x.activity_type)}</b><br><small>📆 ${date}${x.note?' • '+esc(x.note):''}${getActivityLaborCost(x.id)>0?' • 💶 Εργασία: '+euro(getActivityLaborCost(x.id)):''}</small>${x.photo_path?`<div data-photo="${x.photo_path}"><small>📸 Φόρτωση φωτογραφίας...</small></div>`:''}<button class="soft" style="margin-top:8px;width:auto" onclick="completeActivity(${x.id})">✅ Ολοκληρώθηκε</button></div><div class="entryActions"><button class="soft" onclick="editEntry('activity',${x.id})">✏️</button><button class="danger" onclick="deleteEntry('activity',${x.id})">🗑️</button></div></div>`;
+ return `<div class="entry"><div class="entryText"><b>🌱 ${esc(x.activity_type)}</b><br><small>📆 ${date}${x.note?' • '+esc(x.note):''}</small>${x.photo_path?`<div data-photo="${x.photo_path}"><small>📸 Φόρτωση φωτογραφίας...</small></div>`:''}<button class="soft" style="margin-top:8px;width:auto" onclick="completeActivity(${x.id})">✅ Ολοκληρώθηκε</button></div><div class="entryActions"><button class="soft" onclick="editEntry('activity',${x.id})">✏️</button><button class="danger" onclick="deleteEntry('activity',${x.id})">🗑️</button></div></div>`;
 }
 async function loadTaskCenter(){
  const ids=['taskOverdueList','taskTodayList','taskUpcomingList'];
@@ -1708,35 +1646,6 @@ async function loadCalendarHistory(){
 }
 async function loadCalendar(){await Promise.all([loadTaskCenter(),loadCalendarHistory()]);}
 
-async function loadSmartDayPriority(){
- const box=document.getElementById('smartDayPriority'); if(!box||!user)return;
- try{
-  const today=taskLocalYmd();
-  const [tr,sr]=await Promise.all([
-   sb.from('activities').select('activity_type,activity_date,status').eq('user_id',user.id).eq('status','pending').eq('activity_date',today),
-   sb.from('inventory').select('name,quantity,unit').eq('user_id',user.id)
-  ]);
-  if(tr.error||sr.error)throw(tr.error||sr.error);
-  const tasks=tr.data||[], low=(sr.data||[]).filter(x=>Number(x.quantity||0)<=5);
-  const c=(document.getElementById('smartCustomerOverdue')?.textContent||'0').trim();
-  const s=(document.getElementById('smartSupplierOverdue')?.textContent||'0').trim();
-  const overdue=v=>!/^0([,.]00)?\s*€?$/.test(v);
-  const spray=tasks.find(x=>{const t=String(x.activity_type||'').toLocaleLowerCase('el-GR');return t.includes('ψεκασ')||t.includes('φυτοπροστα')});
-  const weather=(document.getElementById('weatherContent')?.textContent||'').toLocaleLowerCase('el-GR');
-  let p='';
-  if(spray&&weather.includes('αλλαγή προγραμματισμού'))p='⚠️ Έλεγξε πρώτα τον προγραμματισμένο ψεκασμό λόγω καιρικών συνθηκών.';
-  else if(tasks.length)p='📅 Έχεις '+tasks.length+' '+(tasks.length===1?'εργασία':'εργασίες')+' για σήμερα. Ξεκίνα από τις σημερινές εκκρεμότητες.';
-  else if(low.length)p='📦 Έλεγξε '+(low.length===1?'το χαμηλό απόθεμα στο '+esc(low[0].name):'τα '+low.length+' είδη με χαμηλό απόθεμα')+'.';
-  else if(overdue(c)||overdue(s))p='💳 Υπάρχουν ληξιπρόθεσμες οικονομικές εκκρεμότητες που χρειάζονται έλεγχο.';
-  else p='✅ Δεν υπάρχει επείγουσα εκκρεμότητα για σήμερα.';
-  box.innerHTML='<b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:7px">'+p+'</div>';
- }catch(e){
-  console.warn('Smart day priority:',e);
-  box.innerHTML='<b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:7px"><small>Δεν ήταν δυνατός ο υπολογισμός προτεραιότητας.</small></div>';
- }
-}
-
-
 function quickEntry(type){
  if(!season.value){alert('Επίλεξε πρώτα καλλιεργητική περίοδο.');season.scrollIntoView({behavior:'smooth',block:'center'});return}
  if(!gh.value){alert('Επίλεξε πρώτα αγροτεμάχιο / θερμοκήπιο.');gh.scrollIntoView({behavior:'smooth',block:'center'});return}
@@ -1746,18 +1655,7 @@ function quickEntry(type){
 }
 
 function entryFields(){const today=new Date().toISOString().slice(0,10);if(etype.value==='expense')fields.innerHTML='<label>Ημερομηνία<input id="entryDate" type="date" value="'+today+'"></label><input id="cat" placeholder="Κατηγορία π.χ. Λίπασμα"><input id="amount" type="number" step=".01" placeholder="Ποσό €">';if(etype.value==='harvest')fields.innerHTML='<label>Ημερομηνία<input id="entryDate" type="date" value="'+today+'"></label><input id="kgs" type="number" step=".01" placeholder="Κιλά">';if(etype.value==='sale'){fields.innerHTML='<label>Ημερομηνία<input id="entryDate" type="date" value="'+today+'"></label><label>Πελάτης / Έμπορος<select id="saleBuyer"><option value="">— Χωρίς επιλογή —</option></select></label><label>Κατηγορία / Διαλογή<select id="saleGrade"><option value="A">🅰️ Α</option><option value="B">🅱️ Β</option><option value="SKARTA">📦 Σκάρτα</option></select></label><div class="grid"><input id="kgs" type="number" step=".01" placeholder="Κιλά"><input id="price" type="number" step=".01" placeholder="Τιμή/kg €"></div>';loadBuyerOptions();}
-if(etype.value==='activity'){fields.innerHTML='<label>Ημερομηνία<input id="activityDate" type="date" value="'+today+'"></label><label>Κατάσταση<select id="activityStatus"><option value="completed">✅ Ολοκληρώθηκε</option><option value="pending">⏳ Προγραμματισμένη / Εκκρεμεί</option></select></label><select id="activityType"><option>Λίπανση</option><option>Ψεκασμός / Φυτοπροστασία</option><option>Πότισμα</option><option>Φύτευση</option><option>Κλάδεμα</option><option>Εργασία προσωπικού</option><option>Καθαρισμός</option><option>Συντήρηση</option><option>Άλλη εργασία</option></select><div id="activityInventoryBox"><label>📦 Εφόδιο από αποθήκη (προαιρετικά)<select id="activityInventory"><option value="">— Χωρίς εφόδιο —</option></select></label><div id="activityInventoryAvailable"><small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small></div><label>Ποσότητα χρήσης<input id="activityInventoryQty" type="number" step="0.01" min="0" placeholder="0"></label></div><label>💶 Κόστος εργασίας € (προαιρετικά)<input id="activityLaborCost" type="number" step="0.01" min="0" placeholder="0,00"></label><label>📸 Φωτογραφία (προαιρετικά)<input id="activityPhoto" type="file" accept="image/*" capture="environment"></label>';loadActivityInventoryOptions();}}
-
-const ACTIVITY_LABOR_COST_KEY='geofylo_activity_labor_cost_v1';
-function activityLaborCosts(){
- try{return JSON.parse(localStorage.getItem(ACTIVITY_LABOR_COST_KEY)||'{}')}catch(e){return {}}
-}
-function saveActivityLaborCost(activityId,cost){
- const all=activityLaborCosts(),v=Number(cost||0);
- if(v>0)all[String(activityId)]=v;else delete all[String(activityId)];
- localStorage.setItem(ACTIVITY_LABOR_COST_KEY,JSON.stringify(all));
-}
-function getActivityLaborCost(activityId){return Number(activityLaborCosts()[String(activityId)]||0)}
+if(etype.value==='activity'){fields.innerHTML='<label>Ημερομηνία<input id="activityDate" type="date" value="'+today+'"></label><label>Κατάσταση<select id="activityStatus"><option value="completed">✅ Ολοκληρώθηκε</option><option value="pending">⏳ Προγραμματισμένη / Εκκρεμεί</option></select></label><select id="activityType"><option>Λίπανση</option><option>Ψεκασμός / Φυτοπροστασία</option><option>Πότισμα</option><option>Φύτευση</option><option>Κλάδεμα</option><option>Εργασία προσωπικού</option><option>Καθαρισμός</option><option>Συντήρηση</option><option>Άλλη εργασία</option></select><div id="activityInventoryBox"><label>📦 Εφόδιο από αποθήκη (προαιρετικά)<select id="activityInventory"><option value="">— Χωρίς εφόδιο —</option></select></label><div id="activityInventoryAvailable"><small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small></div><label>Ποσότητα χρήσης<input id="activityInventoryQty" type="number" step="0.01" min="0" placeholder="0"></label></div><label>💶 Κόστος εργασίας (€) (προαιρετικά)<input id="activityLaborCost" type="number" step="0.01" min="0" placeholder="0,00"></label><label>📸 Φωτογραφία (προαιρετικά)<input id="activityPhoto" type="file" accept="image/*" capture="environment"></label>';loadActivityInventoryOptions();}}
 
 let activityInventoryItems=[];
 async function loadActivityInventoryOptions(){
@@ -1811,7 +1709,6 @@ async function addEntry(){
   if(t==='activity' && !editing && activityInvItem){
     r=await sb.from('activities').insert(payload).select('id').single();
     if(r.error)return alert(r.error.message);
-    saveActivityLaborCost(r.data.id,document.getElementById('activityLaborCost')?.value||0);
     const ur=await sb.from('inventory_usage').insert({user_id:user.id,inventory_id:activityInvItem.id,greenhouse_id:+gh.value,activity_id:r.data.id,usage_date:payload.activity_date,quantity:activityInvQty,note:payload.note||null});
     if(ur.error){await sb.from('activities').delete().eq('id',r.data.id);return alert('Δεν αποθηκεύτηκε η κατανάλωση: '+ur.error.message)}
     const nr=await sb.from('inventory').update({quantity:Number(activityInvItem.quantity)-activityInvQty}).eq('id',activityInvItem.id);
