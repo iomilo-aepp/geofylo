@@ -558,6 +558,7 @@ async function loadWeather(){
       else if(code>=80&&code<=82)icon='🌦️';
       else if(code>=95)icon='⛈️';
       return {
+        date,
         day:dayNames[i]||new Date(date+'T12:00:00').toLocaleDateString('el-GR',{weekday:'short'}),
         icon,
         min:Math.round(data.daily.temperature_2m_min[i]),
@@ -600,6 +601,63 @@ async function loadWeather(){
       '<div style="margin-top:6px">'+a+'</div>'
     ).join('');
 
+    // Σύνδεση πρόγνωσης με προγραμματισμένες εργασίες των επόμενων 3 ημερών.
+    let taskWeatherHtml='';
+    if(user && forecast.length){
+      try{
+        const startDate=forecast[0].date;
+        const endDate=forecast[forecast.length-1].date;
+        const {data:planned,error:plannedError}=await sb
+          .from('activities')
+          .select('id,activity_date,activity_type,note,status')
+          .eq('user_id',user.id)
+          .eq('status','pending')
+          .gte('activity_date',startDate)
+          .lte('activity_date',endDate)
+          .order('activity_date',{ascending:true});
+
+        if(!plannedError && planned?.length){
+          const taskWarnings=[];
+          planned.forEach(task=>{
+            const f=forecast.find(x=>x.date===task.activity_date);
+            if(!f)return;
+
+            const type=String(task.activity_type||'');
+            const isSpray=type.toLocaleLowerCase('el-GR').includes('ψεκασ') ||
+                          type.toLocaleLowerCase('el-GR').includes('φυτοπροστα');
+            const isWater=type.toLocaleLowerCase('el-GR').includes('πότισ');
+
+            const reasons=[];
+            if(isSpray && f.wind>=25) reasons.push('💨 άνεμος '+f.wind+' km/h');
+            if(isSpray && f.rain>=40) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
+            if(isWater && f.rain>=50) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
+            if(!isSpray && !isWater && f.wind>=35) reasons.push('💨 ισχυρός άνεμος '+f.wind+' km/h');
+            if(!isSpray && !isWater && f.rain>=60) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
+
+            if(reasons.length){
+              taskWarnings.push(
+                '<div style="margin-top:8px;padding:9px;border-radius:10px;background:#fff8e8">'+
+                '⚠️ <b>'+esc(type)+'</b> • '+esc(f.day)+'<br>'+
+                '<small>'+reasons.join(' • ')+' — έλεγξε αν χρειάζεται αλλαγή προγραμματισμού.</small>'+
+                '</div>'
+              );
+            }
+          });
+
+          if(taskWarnings.length){
+            taskWeatherHtml=
+              '<div style="margin-top:14px;padding:12px;border-radius:12px;background:#fff;border:1px solid #ead9aa">'+
+              '<div style="font-weight:700">📅 Καιρός & προγραμματισμένες εργασίες</div>'+
+              taskWarnings.join('')+
+              '<small style="display:block;margin-top:8px">Οι επισημάνσεις είναι ενδεικτικές. Για εφαρμογές φυτοπροστασίας ακολούθησε τις οδηγίες της ετικέτας και του γεωπόνου σου.</small>'+
+              '</div>';
+          }
+        }
+      }catch(taskWeatherError){
+        console.warn('Weather tasks:',taskWeatherError);
+      }
+    }
+
     box.innerHTML=`
       <div style="font-size:16px;margin-bottom:6px">
         📍 <b>${place.name}</b>
@@ -618,6 +676,7 @@ async function loadWeather(){
         ${adviceHtml}
         <small style="display:block;margin-top:8px">Ενδεικτική ενημέρωση βάσει πρόγνωσης καιρού.</small>
       </div>
+      ${taskWeatherHtml}
     `;
 
   }catch(e){
