@@ -448,6 +448,67 @@ let appLang='el';localStorage.setItem('agrotrack_lang','el');
 function setLang(lang){appLang='el';document.documentElement.lang='el';}
 
 const sb=supabase.createClient('https://yaoumcvuzvzrdcnmpmhv.supabase.co','sb_publishable_N9tUlIyCPO9wgPg42MsppQ__PRnSuax');function esc(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
+ const OFFLINE_QUEUE_KEY='geofylo_offline_queue_v1';
+
+function getOfflineQueue(){
+  try{
+    return JSON.parse(localStorage.getItem(OFFLINE_QUEUE_KEY)||'[]');
+  }catch(e){
+    return [];
+  }
+}
+
+function saveOfflineQueue(queue){
+  localStorage.setItem(OFFLINE_QUEUE_KEY,JSON.stringify(queue));
+}
+
+function addToOfflineQueue(table,payload){
+  const queue=getOfflineQueue();
+  queue.push({
+    id:crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+    table:table,
+    payload:payload,
+    created_at:new Date().toISOString()
+  });
+  saveOfflineQueue(queue);
+}
+
+function offlineQueueCount(){
+  return getOfflineQueue().length;
+}
+ async function syncOfflineQueue(){
+  if(!navigator.onLine || !user) return;
+
+  const queue=getOfflineQueue();
+  if(!queue.length) return;
+
+  const remaining=[];
+  let synced=0;
+
+  for(const item of queue){
+    try{
+      const {error}=await sb.from(item.table).insert(item.payload);
+      if(error){
+        remaining.push(item);
+      }else{
+        synced++;
+      }
+    }catch(e){
+      remaining.push(item);
+    }
+  }
+
+  saveOfflineQueue(remaining);
+
+  if(synced>0){
+    alert('☁️ Συγχρονίστηκαν '+synced+' offline καταχωρήσεις.');
+    try{ await dash(); }catch(e){}
+  }
+}
+
+window.addEventListener('online',()=>{
+  setTimeout(()=>syncOfflineQueue(),1000);
+});
 let signup=false,user=null;
 const euro=n=>new Intl.NumberFormat('el-GR',{style:'currency',currency:'EUR'}).format(n||0);
 function toggleAuth(){signup=!signup;authTitle.textContent=signup?'Εγγραφή':'Σύνδεση';nameBox.classList.toggle('hidden',!signup);authBtn.textContent=signup?'Δημιουργία λογαριασμού':'Σύνδεση';toggleBtn.textContent=signup?'Έχω λογαριασμό — Σύνδεση':'Δεν έχω λογαριασμό — Εγγραφή'}
@@ -1475,7 +1536,15 @@ async function addEntry(){
     const nr=await sb.from('inventory').update({quantity:Number(activityInvItem.quantity)-activityInvQty}).eq('id',activityInvItem.id);
     if(nr.error){await sb.from('inventory_usage').delete().eq('activity_id',r.data.id);await sb.from('activities').delete().eq('id',r.data.id);return alert('Δεν ενημερώθηκε το απόθεμα: '+nr.error.message)}
   }else{
-    r=editing?await sb.from(table).update(payload).eq('id',editing.id):await sb.from(table).insert(payload);
+   if(t==='expense' && !editing && !navigator.onLine){
+  addToOfflineQueue(table,payload);
+  alert('📴 Χωρίς σύνδεση. Το έξοδο αποθηκεύτηκε στη συσκευή και θα συγχρονιστεί όταν επανέλθει το Internet.');
+  editing=null;
+  note.value='';
+  entryFields();
+  return;
+}
+r=editing?await sb.from(table).update(payload).eq('id',editing.id):await sb.from(table).insert(payload);
     if(r.error)return alert(r.error.message);
   }
   editing=null;note.value='';entryFields();await dash();
