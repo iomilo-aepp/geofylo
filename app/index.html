@@ -576,6 +576,30 @@ async function loadWeather(){
       '</div>'
     ).join('');
 
+    // Απλές καιρικές επισημάνσεις για τον παραγωγό.
+    // Είναι ενδεικτικές και δεν αντικαθιστούν γεωπονική συμβουλή ή τις οδηγίες ετικέτας.
+    const advice=[];
+    const maxForecastWind=Math.max(...forecast.map(f=>f.wind));
+    const maxRain=Math.max(...forecast.map(f=>f.rain));
+    const maxForecastTemp=Math.max(...forecast.map(f=>f.max));
+
+    if(maxForecastWind>=30){
+      advice.push('💨 Αυξημένος άνεμος στην 3ήμερη πρόγνωση. Έλεγξε τις συνθήκες πριν από ψεκασμό.');
+    }
+    if(maxRain>=50){
+      advice.push('🌧️ Αυξημένη πιθανότητα βροχής. Λάβε την υπόψη πριν προγραμματίσεις πότισμα ή υπαίθρια εργασία.');
+    }
+    if(maxForecastTemp>=35){
+      advice.push('🌡️ Αναμένονται υψηλές θερμοκρασίες. Έλεγξε έγκαιρα άρδευση, αερισμό και συνθήκες καλλιέργειας.');
+    }
+    if(!advice.length){
+      advice.push('✅ Δεν εντοπίζεται βασική καιρική προειδοποίηση για τις επόμενες 3 ημέρες.');
+    }
+
+    const adviceHtml=advice.map(a=>
+      '<div style="margin-top:6px">'+a+'</div>'
+    ).join('');
+
     box.innerHTML=`
       <div style="font-size:16px;margin-bottom:6px">
         📍 <b>${place.name}</b>
@@ -589,6 +613,11 @@ async function loadWeather(){
       <hr style="margin:14px 0;border:0;border-top:1px solid #e5e7eb">
       <div style="font-weight:700;margin-bottom:8px">📅 Πρόγνωση 3 ημερών</div>
       <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:8px">${forecastHtml}</div>
+      <div style="margin-top:14px;padding:12px;border-radius:12px;background:#f5f8f5;border:1px solid #dfe7df">
+        <div style="font-weight:700">🌱 Συμβουλή GeoFylo</div>
+        ${adviceHtml}
+        <small style="display:block;margin-top:8px">Ενδεικτική ενημέρωση βάσει πρόγνωσης καιρού.</small>
+      </div>
     `;
 
   }catch(e){
