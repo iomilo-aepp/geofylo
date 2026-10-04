@@ -34,7 +34,8 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="dashBox" onclick="showPage('inventory')" style="cursor:pointer"><small>📦 Χαμηλό απόθεμα</small><b id="smartLowStock">0</b></div>
 <div class="dashBox" onclick="showPage('customers')" style="cursor:pointer"><small>💳 Ληξιπρόθεσμα πελατών</small><b id="smartCustomerOverdue">0,00 €</b></div>
 <div class="dashBox" onclick="showPage('suppliers')" style="cursor:pointer"><small>🏪 Ληξιπρόθεσμα προμηθευτών</small><b id="smartSupplierOverdue">0,00 €</b></div>
-</div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div></div>
+</div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div>
+<div id="smartDayPriority" style="margin-top:12px;padding:12px;border-radius:12px;background:#f5f8f5;border:1px solid #dfe7df"><b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:6px"><small>Υπολογισμός προτεραιότητας...</small></div></div></div>
 <div class="card" id="weatherCard">
   <h2>🌦️ Καιρός</h2>
 
@@ -678,6 +679,7 @@ async function loadWeather(){
       </div>
       ${taskWeatherHtml}
     `;
+    setTimeout(loadSmartDayPriority,100);
 
   }catch(e){
     console.error('Weather:',e);
@@ -745,7 +747,8 @@ window.addEventListener('offline',()=>{
 });
 
 setTimeout(updateConnectionStatus,500);
-setTimeout(loadWeather,700); 
+setTimeout(loadWeather,700);
+setTimeout(loadSmartDayPriority,1200); 
 let signup=false,user=null;
 const euro=n=>new Intl.NumberFormat('el-GR',{style:'currency',currency:'EUR'}).format(n||0);
 function toggleAuth(){signup=!signup;authTitle.textContent=signup?'Εγγραφή':'Σύνδεση';nameBox.classList.toggle('hidden',!signup);authBtn.textContent=signup?'Δημιουργία λογαριασμού':'Σύνδεση';toggleBtn.textContent=signup?'Έχω λογαριασμό — Σύνδεση':'Δεν έχω λογαριασμό — Εγγραφή'}
@@ -1704,6 +1707,35 @@ async function loadCalendarHistory(){
  await showCalendarPhotos();
 }
 async function loadCalendar(){await Promise.all([loadTaskCenter(),loadCalendarHistory()]);}
+
+async function loadSmartDayPriority(){
+ const box=document.getElementById('smartDayPriority'); if(!box||!user)return;
+ try{
+  const today=taskLocalYmd();
+  const [tr,sr]=await Promise.all([
+   sb.from('activities').select('activity_type,activity_date,status').eq('user_id',user.id).eq('status','pending').eq('activity_date',today),
+   sb.from('inventory').select('name,quantity,unit').eq('user_id',user.id)
+  ]);
+  if(tr.error||sr.error)throw(tr.error||sr.error);
+  const tasks=tr.data||[], low=(sr.data||[]).filter(x=>Number(x.quantity||0)<=5);
+  const c=(document.getElementById('smartCustomerOverdue')?.textContent||'0').trim();
+  const s=(document.getElementById('smartSupplierOverdue')?.textContent||'0').trim();
+  const overdue=v=>!/^0([,.]00)?\s*€?$/.test(v);
+  const spray=tasks.find(x=>{const t=String(x.activity_type||'').toLocaleLowerCase('el-GR');return t.includes('ψεκασ')||t.includes('φυτοπροστα')});
+  const weather=(document.getElementById('weatherContent')?.textContent||'').toLocaleLowerCase('el-GR');
+  let p='';
+  if(spray&&weather.includes('αλλαγή προγραμματισμού'))p='⚠️ Έλεγξε πρώτα τον προγραμματισμένο ψεκασμό λόγω καιρικών συνθηκών.';
+  else if(tasks.length)p='📅 Έχεις '+tasks.length+' '+(tasks.length===1?'εργασία':'εργασίες')+' για σήμερα. Ξεκίνα από τις σημερινές εκκρεμότητες.';
+  else if(low.length)p='📦 Έλεγξε '+(low.length===1?'το χαμηλό απόθεμα στο '+esc(low[0].name):'τα '+low.length+' είδη με χαμηλό απόθεμα')+'.';
+  else if(overdue(c)||overdue(s))p='💳 Υπάρχουν ληξιπρόθεσμες οικονομικές εκκρεμότητες που χρειάζονται έλεγχο.';
+  else p='✅ Δεν υπάρχει επείγουσα εκκρεμότητα για σήμερα.';
+  box.innerHTML='<b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:7px">'+p+'</div>';
+ }catch(e){
+  console.warn('Smart day priority:',e);
+  box.innerHTML='<b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:7px"><small>Δεν ήταν δυνατός ο υπολογισμός προτεραιότητας.</small></div>';
+ }
+}
+
 
 function quickEntry(type){
  if(!season.value){alert('Επίλεξε πρώτα καλλιεργητική περίοδο.');season.scrollIntoView({behavior:'smooth',block:'center'});return}
