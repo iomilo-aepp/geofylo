@@ -170,6 +170,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" onclick="askGeoFylo('Πώς πάω σε σχέση με τους στόχους μου;')">🎯 Πορεία στόχων</button>
 <button class="soft" onclick="askGeoFylo('Ποια είναι η μεγαλύτερη κατηγορία εξόδων;')">💸 Ανάλυση εξόδων</button>
 <button class="soft" onclick="askGeoFylo('Τι τελειώνει στην αποθήκη;')">📦 Τι τελειώνει;</button>
+<button class="soft" onclick="askGeoFylo('Πώς πάει αυτός ο μήνας;')">📅 Αυτός ο μήνας</button>
 </div>
 
 <div id="assistantChat" style="margin-top:14px">
@@ -180,7 +181,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <input id="assistantInput" placeholder="π.χ. Πόσα είναι τα έξοδά μου;" style="margin:0" onkeydown="if(event.key==='Enter')askGeoFylo()">
 <button style="width:auto;margin:0;white-space:nowrap" onclick="askGeoFylo()">Αποστολή</button>
 </div>
-<small style="display:block;margin-top:8px">GeoFylo Assistant v1.6.3 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
+<small style="display:block;margin-top:8px">GeoFylo Assistant v1.7 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
 </div>
 
@@ -1401,6 +1402,25 @@ async function loadGeoFyloAssistant(){
   }).sort((a,b)=>b.balance-a.balance);
   const supplierDebt=supplierRows.reduce((z,x)=>z+x.balance,0);
 
+  const dateOnly=v=>{
+    if(!v)return '';
+    const m=String(v).match(/^(\d{4})-(\d{2})-(\d{2})/);
+    return m?m[1]+'-'+m[2]+'-'+m[3]:'';
+  };
+  const monthKey=v=>{const d=dateOnly(v);return d?d.slice(0,7):'';};
+  const monthNames=['Ιανουάριος','Φεβρουάριος','Μάρτιος','Απρίλιος','Μάιος','Ιούνιος','Ιούλιος','Αύγουστος','Σεπτέμβριος','Οκτώβριος','Νοέμβριος','Δεκέμβριος'];
+  const monthly={};
+  const ensureMonth=k=>monthly[k]||(monthly[k]={key:k,production:0,soldKg:0,income:0,expenses:0,profit:0});
+  (er.data||[]).forEach(x=>{const k=monthKey(x.expense_date||x.date||x.created_at);if(k)ensureMonth(k).expenses+=Number(x.amount||0);});
+  (hr.data||[]).forEach(x=>{const k=monthKey(x.harvest_date||x.date||x.created_at);if(k)ensureMonth(k).production+=Number(x.kg||0);});
+  (sr.data||[]).forEach(x=>{const k=monthKey(x.sale_date||x.date||x.created_at);if(k){const m=ensureMonth(k);m.soldKg+=Number(x.kg||0);m.income+=Number(x.kg||0)*Number(x.price_per_kg||0);}});
+  Object.values(monthly).forEach(m=>m.profit=m.income-m.expenses);
+  const monthlyRows=Object.values(monthly).sort((a,b)=>a.key.localeCompare(b.key));
+  const now=new Date(), currentMonthKey=now.getFullYear()+'-'+String(now.getMonth()+1).padStart(2,'0');
+  const prevDate=new Date(now.getFullYear(),now.getMonth()-1,1);
+  const previousMonthKey=prevDate.getFullYear()+'-'+String(prevDate.getMonth()+1).padStart(2,'0');
+  const monthLabel=k=>{if(!k)return '';const [y,m]=k.split('-');return monthNames[Number(m)-1]+' '+y;};
+
   const expenseRows=(er.data||[]).map(x=>({
     amount:Number(x.amount||0),
     category:String(x.category||x.type||'Χωρίς κατηγορία').trim()||'Χωρίς κατηγορία',
@@ -1434,6 +1454,7 @@ async function loadGeoFyloAssistant(){
     inventoryRows,usageRows,highestValueStock,
     customerRows,customerDebt,supplierRows,supplierDebt,
     expenseRows,expenseCategories,topExpenses,
+    monthlyRows,currentMonthKey,previousMonthKey,monthNames,monthLabel,
     expenseTarget,productionTarget,incomeTarget,productionRemaining,incomeRemaining,expenseRemaining,
     productionProgress,expenseProgress,incomeProgress,estimatedIncome,estimatedProfit
   };
@@ -1495,6 +1516,54 @@ async function askGeoFylo(preset){
 
  }else if((s.includes('αξία')||s.includes('αξια')) && (s.includes('αποθήκ')||s.includes('αποθηκ')||s.includes('απόθε')||s.includes('αποθε'))){
    ans='📦 Η συνολική αξία της αποθήκης είναι <b>'+euro(d.inventoryValue)+'</b>.';
+
+ // Χρονική ανάλυση
+ }else if(sn.includes('μηνα')||sn.includes('μηνας')||sn.includes('σεπτεμβρ')||sn.includes('οκτωβρ')||sn.includes('νοεμβρ')||sn.includes('δεκεμβρ')||sn.includes('ιανουαρ')||sn.includes('φεβρουαρ')||sn.includes('μαρτι')||sn.includes('απριλ')||sn.includes('μαι')||sn.includes('ιουν')||sn.includes('ιουλ')||sn.includes('αυγουστ')){
+   const monthMap=[
+    ['ιανουαρ',1],['φεβρουαρ',2],['μαρτι',3],['απριλ',4],['μαι',5],['ιουν',6],
+    ['ιουλ',7],['αυγουστ',8],['σεπτεμβρ',9],['οκτωβρ',10],['νοεμβρ',11],['δεκεμβρ',12]
+   ];
+   const getRow=k=>d.monthlyRows.find(x=>x.key===k)||{key:k,production:0,soldKg:0,income:0,expenses:0,profit:0};
+   let targetKey=null;
+   if(sn.includes('αυτον τον μηνα')||sn.includes('αυτο το μηνα')||sn.includes('τρεχον'))targetKey=d.currentMonthKey;
+   if(sn.includes('προηγουμεν'))targetKey=d.previousMonthKey;
+   for(const [word,num] of monthMap){
+     if(sn.includes(word)){
+       const yearMatch=sn.match(/\b(20\d{2})\b/);
+       const year=yearMatch?Number(yearMatch[1]):Number(d.currentMonthKey.slice(0,4));
+       targetKey=year+'-'+String(num).padStart(2,'0');
+       break;
+     }
+   }
+
+   if(sn.includes('καλυτερ')&&sn.includes('μηνα')){
+     const rows=d.monthlyRows.filter(x=>x.income>0).slice().sort((a,b)=>b.income-a.income);
+     ans=rows.length?'🏆 Ο καλύτερος μήνας σε έσοδα είναι <b>'+d.monthLabel(rows[0].key)+'</b> με <b>'+euro(rows[0].income)+'</b>.':'Δεν υπάρχουν αρκετά δεδομένα πωλήσεων ανά μήνα.';
+   }else if(sn.includes('περισσοτερ')&&sn.includes('εξοδ')){
+     const rows=d.monthlyRows.filter(x=>x.expenses>0).slice().sort((a,b)=>b.expenses-a.expenses);
+     ans=rows.length?'💸 Ο μήνας με τα περισσότερα έξοδα είναι <b>'+d.monthLabel(rows[0].key)+'</b> με <b>'+euro(rows[0].expenses)+'</b>.':'Δεν υπάρχουν αρκετά δεδομένα εξόδων ανά μήνα.';
+   }else if(sn.includes('συγκριν')&&sn.includes('προηγουμεν')){
+     const a=getRow(d.currentMonthKey),b=getRow(d.previousMonthKey);
+     const diff=(x,y)=>x-y;
+     ans='📊 <b>'+d.monthLabel(a.key)+' vs '+d.monthLabel(b.key)+'</b>'+
+       '<br>🌱 Παραγωγή: '+a.production.toLocaleString('el-GR')+' kg ('+(diff(a.production,b.production)>=0?'+':'')+diff(a.production,b.production).toLocaleString('el-GR')+' kg)'+
+       '<br>💰 Έσοδα: '+euro(a.income)+' ('+(diff(a.income,b.income)>=0?'+':'')+euro(diff(a.income,b.income))+')'+
+       '<br>💸 Έξοδα: '+euro(a.expenses)+' ('+(diff(a.expenses,b.expenses)>=0?'+':'')+euro(diff(a.expenses,b.expenses))+')'+
+       '<br>📈 Αποτέλεσμα: '+euro(a.profit)+' ('+(diff(a.profit,b.profit)>=0?'+':'')+euro(diff(a.profit,b.profit))+').';
+   }else if(targetKey){
+     const m=getRow(targetKey);
+     if(sn.includes('εσοδ'))ans='💰 Τα έσοδα για <b>'+d.monthLabel(targetKey)+'</b> είναι <b>'+euro(m.income)+'</b>.';
+     else if(sn.includes('εξοδ'))ans='💸 Τα έξοδα για <b>'+d.monthLabel(targetKey)+'</b> είναι <b>'+euro(m.expenses)+'</b>.';
+     else if(sn.includes('κιλ')||sn.includes('παραγωγ'))ans='🌱 Η παραγωγή για <b>'+d.monthLabel(targetKey)+'</b> είναι <b>'+m.production.toLocaleString('el-GR')+' kg</b>.';
+     else ans='📅 <b>'+d.monthLabel(targetKey)+'</b>'+
+       '<br>🌱 Παραγωγή: <b>'+m.production.toLocaleString('el-GR')+' kg</b>'+
+       '<br>⚖️ Πωλημένα: <b>'+m.soldKg.toLocaleString('el-GR')+' kg</b>'+
+       '<br>💰 Έσοδα: <b>'+euro(m.income)+'</b>'+
+       '<br>💸 Έξοδα: <b>'+euro(m.expenses)+'</b>'+
+       '<br>'+(m.profit>=0?'📈':'📉')+' Αποτέλεσμα: <b>'+euro(m.profit)+'</b>.';
+   }else{
+     ans='📅 Πες μου ποιον μήνα θέλεις να αναλύσω, π.χ. «Πώς πήγε ο Σεπτέμβριος;».';
+   }
 
  // Ανάλυση εξόδων
  }else if(
@@ -1642,7 +1711,7 @@ async function askGeoFylo(preset){
    ans+='<br>💶 Μέση τιμή: <b>'+(d.avgPrice===null?'—':euro(d.avgPrice)+'/kg')+'</b> • 🧾 Κόστος/kg: <b>'+(d.costKg===null?'—':euro(d.costKg)+'/kg')+'</b>';
 
  }else{
-   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων και εργασίες.</small>';
+   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων, εργασίες και ανάλυση ανά μήνα.</small>';
  }
  assistantAdd('assistant',ans);
 }
