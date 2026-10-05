@@ -180,7 +180,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <input id="assistantInput" placeholder="π.χ. Πόσα είναι τα έξοδά μου;" style="margin:0" onkeydown="if(event.key==='Enter')askGeoFylo()">
 <button style="width:auto;margin:0;white-space:nowrap" onclick="askGeoFylo()">Αποστολή</button>
 </div>
-<small style="display:block;margin-top:8px">GeoFylo Assistant v1.6.2 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
+<small style="display:block;margin-top:8px">GeoFylo Assistant v1.6.3 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
 </div>
 
@@ -1453,6 +1453,7 @@ async function askGeoFylo(preset){
  if(!d)return assistantAdd('assistant','<small>Δεν υπάρχουν διαθέσιμα δεδομένα για απάντηση.</small>');
 
  const s=q.toLocaleLowerCase('el-GR');
+ const sn=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
  let ans='';
 
  // Τι πρέπει να προσέξω
@@ -1498,12 +1499,12 @@ async function askGeoFylo(preset){
  // Ανάλυση εξόδων
  }else if(
    (
-    (s.includes('μεγαλύτερ')||s.includes('μεγαλυτερ')||s.includes('περισσότερ')||s.includes('περισσοτερ')) &&
-    (s.includes('έξοδ')||s.includes('εξοδ')||s.includes('χρήμα')||s.includes('χρημα')||s.includes('λεφτ')||s.includes('κοστίζ')||s.includes('κοστιζ'))
+    (sn.includes('μεγαλυτερ')||sn.includes('περισσοτερ')) &&
+    (sn.includes('εξοδ')||sn.includes('χρημα')||sn.includes('λεφτ')||sn.includes('κοστιζ')||sn.includes('κατηγορι'))
    ) ||
-   s.includes('πού ξοδεύ')||s.includes('που ξοδευ')||
-   s.includes('πού πάνε τα λεφτά')||s.includes('που πανε τα λεφτα')||
-   s.includes('πού πάνε τα χρήματα')||s.includes('που πανε τα χρηματα')
+   sn.includes('που ξοδευ')||
+   sn.includes('που πανε τα λεφτα')||
+   sn.includes('που πανε τα χρηματα')
  ){
    const top=d.expenseCategories[0];
    if(!top)ans='Δεν υπάρχουν καταγεγραμμένα έξοδα.';
@@ -1512,27 +1513,26 @@ async function askGeoFylo(preset){
      ans='💸 Η μεγαλύτερη κατηγορία εξόδων είναι <b>'+esc(top.name)+'</b> με <b>'+euro(top.amount)+'</b> ('+pct.toLocaleString('el-GR',{maximumFractionDigits:1})+'% των συνολικών εξόδων).';
    }
 
- }else if((s.includes('3')||s.includes('τρία')||s.includes('τρια')) && s.includes('μεγαλ') && s.includes('έξοδ')){
+ }else if((sn.includes('3')||sn.includes('τρια')) && sn.includes('μεγαλ') && sn.includes('εξοδ')){
    const rows=d.topExpenses.slice(0,3);
    ans=rows.length?'🔎 <b>3 μεγαλύτερα έξοδα</b><br>'+rows.map((x,i)=>(i+1)+'. '+euro(x.amount)+' — '+esc(x.category)+(x.note?' • '+esc(x.note):'')).join('<br>'):'Δεν υπάρχουν καταγεγραμμένα έξοδα.';
 
- }else if(s.includes('κατηγορ') && (s.includes('έξοδ')||s.includes('εξοδ'))){
+ }else if(sn.includes('κατηγορι') && sn.includes('εξοδ')){
    if(!d.expenseCategories.length)ans='Δεν υπάρχουν καταγεγραμμένα έξοδα.';
    else ans='📊 <b>Έξοδα ανά κατηγορία</b><br>'+d.expenseCategories.slice(0,8).map(x=>{
      const pct=d.expenses?x.amount/d.expenses*100:0;
      return '• '+esc(x.name)+': <b>'+euro(x.amount)+'</b> ('+pct.toLocaleString('el-GR',{maximumFractionDigits:1})+'%)';
    }).join('<br>');
 
- }else if((s.includes('πόσα')||s.includes('ποσα')||s.includes('ποσοστ')||s.includes('έχω δώσει')||s.includes('εχω δωσει')) && (s.includes('εφόδι')||s.includes('εφοδι')||s.includes('εργατικ')||s.includes('λίπασ')||s.includes('λιπασ')||s.includes('φυτοπροστα')||s.includes('καύσι')||s.includes('καυσι'))){
+ }else if((sn.includes('ποσα')||sn.includes('ποσοστ')||sn.includes('εχω δωσει')) && (sn.includes('εφοδι')||sn.includes('εργατικ')||sn.includes('λιπασ')||sn.includes('φυτοπροστα')||sn.includes('καυσι'))){
    let key='';
-   if(s.includes('εφόδι')||s.includes('εφοδι'))key='εφόδ';
-   else if(s.includes('εργατικ'))key='εργατικ';
-   else if(s.includes('λίπασ')||s.includes('λιπασ'))key='λίπασ';
-   else if(s.includes('φυτοπροστα'))key='φυτοπροστα';
-   else if(s.includes('καύσι')||s.includes('καυσι'))key='καύσι';
+   if(sn.includes('εφοδι'))key='εφοδ';
+   else if(sn.includes('εργατικ'))key='εργατικ';
+   else if(sn.includes('λιπασ'))key='λιπασ';
+   else if(sn.includes('φυτοπροστα'))key='φυτοπροστα';
+   else if(sn.includes('καυσι'))key='καυσι';
    const norm=x=>String(x||'').toLocaleLowerCase('el-GR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
-   const nk=norm(key);
-   const matches=d.expenseCategories.filter(x=>norm(x.name).includes(nk));
+   const matches=d.expenseCategories.filter(x=>norm(x.name).includes(key));
    const amount=matches.reduce((z,x)=>z+x.amount,0);
    const pct=d.expenses?amount/d.expenses*100:0;
    ans=matches.length?'💰 Για '+matches.map(x=>'<b>'+esc(x.name)+'</b>').join(', ')+' έχεις καταγράψει συνολικά <b>'+euro(amount)+'</b> ('+pct.toLocaleString('el-GR',{maximumFractionDigits:1})+'% των εξόδων).':'Δεν βρήκα αντίστοιχη κατηγορία στα καταγεγραμμένα έξοδα.';
