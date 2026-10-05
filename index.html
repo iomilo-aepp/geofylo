@@ -23,10 +23,19 @@
     .features{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.card{background:var(--card);border:1px solid var(--line);border-radius:20px;padding:25px}.card .ico{font-size:2rem}.card h3{margin:10px 0 5px}.card p{margin:0;color:var(--muted)}
     .pricing{display:grid;grid-template-columns:repeat(4,1fr);gap:15px}.price{text-align:center;background:#fff;border:1px solid var(--line);border-radius:20px;padding:28px 15px}.price strong{display:block;font-size:2rem;color:var(--green);margin:8px 0}.price small{color:var(--muted)}.popular{border:2px solid var(--green2);position:relative}.badge{position:absolute;top:-14px;left:50%;transform:translateX(-50%);background:var(--green2);color:#fff;border-radius:999px;padding:4px 12px;font-size:.8rem;font-weight:800}
     .cta{background:var(--green);color:#fff;border-radius:28px;padding:50px;text-align:center}.cta h2{font-size:2.3rem;margin:0 0 10px}.cta p{color:#dce9df}.cta .btn{background:#fff;color:var(--green)}
+    .pain{background:#fff}.pain-grid,.benefit-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}
+    .pain-card{border-left:4px solid var(--gold);background:var(--light);border-radius:16px;padding:22px}
+    .pain-card b{display:block;margin-bottom:6px;font-size:1.05rem}
+    .benefit{background:var(--green);color:#fff;border-radius:20px;padding:25px}.benefit p{color:#dce9df;margin-bottom:0}
+    .how{display:grid;grid-template-columns:repeat(3,1fr);gap:18px}.step{background:#fff;border:1px solid var(--line);border-radius:20px;padding:25px}
+    .step-num{width:38px;height:38px;border-radius:50%;display:grid;place-items:center;background:var(--green2);color:#fff;font-weight:900}
+    .smart{background:#edf5eb}.smart-box{display:grid;grid-template-columns:1fr 1fr;gap:28px;align-items:center;background:#fff;border:1px solid var(--line);border-radius:26px;padding:32px}
+    .smart-demo{background:var(--green);color:#fff;border-radius:20px;padding:24px}.notice{background:#ffffff12;border:1px solid #ffffff25;border-radius:14px;padding:15px;margin-top:12px}
+    .trust{text-align:center;margin-top:24px;color:var(--muted);font-weight:650}
     footer{padding:35px 0;background:#102d21;color:#dce7e0}.footer{display:flex;justify-content:space-between;gap:20px;flex-wrap:wrap}.footer-links{display:flex;gap:18px;flex-wrap:wrap}
     dialog{max-width:780px;width:92%;border:0;border-radius:20px;padding:0;box-shadow:0 25px 70px #0004}dialog::backdrop{background:#0008}.legal{padding:28px;max-height:75vh;overflow:auto}.legal h2{margin-top:0}.close{float:right;border:0;background:#eee;border-radius:9px;padding:8px 12px;cursor:pointer;font-weight:800}
-    @media(max-width:850px){.hero-grid{grid-template-columns:1fr}.features{grid-template-columns:1fr 1fr}.pricing{grid-template-columns:1fr 1fr}.links a:not(.btn){display:none}}
-    @media(max-width:560px){.hero{padding-top:55px}.features,.pricing{grid-template-columns:1fr}.cta{padding:34px 20px}.mock-grid{grid-template-columns:1fr}.brand{font-size:1.35rem}}
+    @media(max-width:850px){.hero-grid,.smart-box{grid-template-columns:1fr}.features,.pain-grid,.benefit-grid,.how{grid-template-columns:1fr 1fr}.pricing{grid-template-columns:1fr 1fr}.links a:not(.btn){display:none}}
+    @media(max-width:560px){.hero{padding-top:55px}.features,.pricing,.pain-grid,.benefit-grid,.how{grid-template-columns:1fr}.cta{padding:34px 20px}.mock-grid{grid-template-columns:1fr}.brand{font-size:1.35rem}}
   </style>
 </head>
 <body>
@@ -47,8 +56,8 @@
   <div class="wrap hero-grid">
     <div>
       <div class="eyebrow">🌱 Ψηφιακή διαχείριση αγροτικής παραγωγής</div>
-      <h1>Η παραγωγή σου,<br>οργανωμένη.</h1>
-      <p class="lead">Το GeoFylo συγκεντρώνει παραγωγή, έξοδα, πωλήσεις, αποθήκη, εργασίες και οικονομική εικόνα σε μία απλή εφαρμογή, σχεδιασμένη για τον παραγωγό.</p>
+      <h1>Ξέρεις πραγματικά<br>τι σου αφήνει η παραγωγή σου;</h1>
+      <p class="lead">Το GeoFylo συγκεντρώνει παραγωγή, έξοδα, πωλήσεις, αποθήκη, εργασίες και οφειλές σε ένα σημείο, ώστε να έχεις καθαρή εικόνα της εκμετάλλευσής σου από το κινητό.</p>
       <div class="actions">
         <a class="btn" href="https://iomilo-aepp.github.io/geofylo/app/">Ξεκίνα 30 ημέρες δωρεάν</a>
         <a class="btn alt" href="#features">Δες τις δυνατότητες</a>
@@ -81,9 +90,60 @@
   </div>
 </section>
 
+
+<section class="pain">
+  <div class="wrap">
+    <div class="section-title"><h2>Από τα χαρτιά σε καθαρή εικόνα</h2><p>Όταν οι πληροφορίες είναι σκορπισμένες, είναι δύσκολο να ξέρεις τι πραγματικά συμβαίνει στην παραγωγή σου.</p></div>
+    <div class="pain-grid">
+      <div class="pain-card"><b>🧾 Πού πήγαν τα έξοδα;</b>Κατέγραψε αγορές και έξοδα και δες το πραγματικό κόστος.</div>
+      <div class="pain-card"><b>💰 Ποιος μου χρωστάει;</b>Παρακολούθησε πελάτες, πληρωμές, υπόλοιπα και ληξιπρόθεσμες οφειλές.</div>
+      <div class="pain-card"><b>📦 Τι έχω στην αποθήκη;</b>Δες διαθέσιμα εφόδια, αγορές και κατανάλωση χωρίς ψάξιμο.</div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-title"><h2>Τι θα ξέρεις κάθε μέρα</h2><p>Οι βασικές πληροφορίες που χρειάζεσαι για να αποφασίζεις με πραγματικά δεδομένα.</p></div>
+    <div class="benefit-grid">
+      <div class="benefit"><h3>📊 Οικονομική εικόνα</h3><p>Έσοδα, έξοδα, αποτέλεσμα και κόστος παραγωγής συγκεντρωμένα.</p></div>
+      <div class="benefit"><h3>🌾 Παραγωγή & απόδοση</h3><p>Συγκομιδές, πωλήσεις και σύγκριση καλλιεργητικών περιόδων.</p></div>
+      <div class="benefit"><h3>⏰ Τι χρειάζεται προσοχή</h3><p>Εκκρεμείς εργασίες, οφειλές, αποθέματα και χρήσιμες ειδοποιήσεις.</p></div>
+    </div>
+  </div>
+</section>
+
+<section class="smart">
+  <div class="wrap smart-box">
+    <div>
+      <div class="eyebrow">🌦️ Πληροφορία που γίνεται πράξη</div>
+      <h2>Καιρός και εργασίες μαζί</h2>
+      <p>Το GeoFylo συνδυάζει την πρόγνωση καιρού με τις προγραμματισμένες εργασίες, ώστε να εντοπίζεις συνθήκες που χρειάζονται προσοχή πριν βγεις στο χωράφι ή στο θερμοκήπιο.</p>
+      <p><b>Παράδειγμα:</b> αν έχεις προγραμματισμένο ψεκασμό και προβλέπεται αυξημένος άνεμος, η εφαρμογή μπορεί να σου το επισημάνει.</p>
+    </div>
+    <div class="smart-demo">
+      <h3>🌱 Συμβουλή GeoFylo</h3>
+      <div class="notice">💨 Αυξημένος άνεμος στην πρόγνωση.<br><b>Έλεγξε τις συνθήκες πριν από ψεκασμό.</b></div>
+      <div class="notice">📅 Προγραμματισμένη εργασία<br><b>Ψεκασμός / Φυτοπροστασία</b></div>
+    </div>
+  </div>
+</section>
+
+<section>
+  <div class="wrap">
+    <div class="section-title"><h2>Ξεκινάς απλά</h2><p>Δεν χρειάζεται να αλλάξεις τον τρόπο που δουλεύεις από την πρώτη ημέρα.</p></div>
+    <div class="how">
+      <div class="step"><div class="step-num">1</div><h3>Δημιουργείς λογαριασμό</h3><p>Ξεκινάς δωρεάν και καταχωρείς την εκμετάλλευσή σου.</p></div>
+      <div class="step"><div class="step-num">2</div><h3>Καταγράφεις την καθημερινότητα</h3><p>Παραγωγή, έξοδα, πωλήσεις, αγορές, εργασίες και αποθήκη.</p></div>
+      <div class="step"><div class="step-num">3</div><h3>Βλέπεις την πραγματική εικόνα</h3><p>Αναφορές και στοιχεία που σε βοηθούν να οργανώνεις καλύτερα την παραγωγή.</p></div>
+    </div>
+    <div class="trust">📱 Χρήση από κινητό &nbsp;•&nbsp; ☁️ Τα δεδομένα σου online &nbsp;•&nbsp; 📄 Αναφορές PDF / Excel</div>
+  </div>
+</section>
+
 <section id="pricing">
   <div class="wrap">
-    <div class="section-title"><h2>Απλές και ξεκάθαρες τιμές</h2><p><p>Δοκίμασε το GeoFylo δωρεάν για 30 ημέρες, χωρίς χρέωση. Μετά τη δοκιμή, επιλέγεις εσύ αν θέλεις να αγοράσεις συνδρομή. Δεν υπάρχει αυτόματη ανανέωση ή χρέωση.</p> </div>
+    <div class="section-title"><h2>Απλές και ξεκάθαρες τιμές</h2><p>Δοκίμασε το GeoFylo δωρεάν για 30 ημέρες, χωρίς χρέωση. Μετά τη δοκιμή, επιλέγεις εσύ αν θέλεις να αγοράσεις συνδρομή. Δεν υπάρχει αυτόματη ανανέωση ή χρέωση.</p></div>
     <div class="pricing">
       <div class="price"><h3>1 μήνας</h3><strong>9,90 €</strong><small>GeoFylo Pro</small></div>
       <div class="price"><h3>3 μήνες</h3><strong>27 €</strong><small>GeoFylo Pro</small></div>
@@ -97,9 +157,9 @@
 <section>
   <div class="wrap">
     <div class="cta">
-      <h2>Ξεκίνα με το GeoFylo</h2>
-      <p>30 ημέρες δωρεάν για να οργανώσεις την παραγωγή σου και να γνωρίσεις την εφαρμογή.</p>
-      <a class="btn" href="https://iomilo-aepp.github.io/geofylo/app/">Δημιουργία λογαριασμού</a>
+      <h2>Δες στην πράξη αν το GeoFylo αξίζει για τη δική σου παραγωγή</h2>
+      <p>30 ημέρες δωρεάν, χωρίς αυτόματη ανανέωση ή χρέωση. Καταχώρησε πραγματικά δεδομένα και δες την εικόνα της εκμετάλλευσής σου.</p>
+      <a class="btn" href="https://iomilo-aepp.github.io/geofylo/app/">Ξεκίνα δωρεάν για 30 ημέρες</a>
     </div>
   </div>
 </section>
