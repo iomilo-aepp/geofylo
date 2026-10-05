@@ -168,7 +168,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" onclick="askGeoFylo('Τι έχω να κάνω σήμερα;')">📅 Εργασίες σήμερα</button>
 <button class="soft" onclick="askGeoFylo('Τι πρέπει να προσέξω;')">⚠️ Τι πρέπει να προσέξω;</button>
 <button class="soft" onclick="askGeoFylo('Πώς πάω σε σχέση με τους στόχους μου;')">🎯 Πορεία στόχων</button>
-<button class="soft" onclick="askGeoFylo('Πού ξοδεύω τα περισσότερα χρήματα;')">💸 Ανάλυση εξόδων</button>
+<button class="soft" onclick="askGeoFylo('Ποια είναι η μεγαλύτερη κατηγορία εξόδων;')">💸 Ανάλυση εξόδων</button>
 <button class="soft" onclick="askGeoFylo('Τι τελειώνει στην αποθήκη;')">📦 Τι τελειώνει;</button>
 </div>
 
@@ -180,7 +180,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <input id="assistantInput" placeholder="π.χ. Πόσα είναι τα έξοδά μου;" style="margin:0" onkeydown="if(event.key==='Enter')askGeoFylo()">
 <button style="width:auto;margin:0;white-space:nowrap" onclick="askGeoFylo()">Αποστολή</button>
 </div>
-<small style="display:block;margin-top:8px">GeoFylo Assistant v1 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
+<small style="display:block;margin-top:8px">GeoFylo Assistant v1.6.2 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
 </div>
 
@@ -1496,7 +1496,15 @@ async function askGeoFylo(preset){
    ans='📦 Η συνολική αξία της αποθήκης είναι <b>'+euro(d.inventoryValue)+'</b>.';
 
  // Ανάλυση εξόδων
- }else if((s.includes('μεγαλύτερ')||s.includes('μεγαλυτερ')||s.includes('περισσότερ')||s.includes('περισσοτερ')||s.includes('πού ξοδεύ')||s.includes('που ξοδευ')) && s.includes('έξοδ')){
+ }else if(
+   (
+    (s.includes('μεγαλύτερ')||s.includes('μεγαλυτερ')||s.includes('περισσότερ')||s.includes('περισσοτερ')) &&
+    (s.includes('έξοδ')||s.includes('εξοδ')||s.includes('χρήμα')||s.includes('χρημα')||s.includes('λεφτ')||s.includes('κοστίζ')||s.includes('κοστιζ'))
+   ) ||
+   s.includes('πού ξοδεύ')||s.includes('που ξοδευ')||
+   s.includes('πού πάνε τα λεφτά')||s.includes('που πανε τα λεφτα')||
+   s.includes('πού πάνε τα χρήματα')||s.includes('που πανε τα χρηματα')
+ ){
    const top=d.expenseCategories[0];
    if(!top)ans='Δεν υπάρχουν καταγεγραμμένα έξοδα.';
    else{
@@ -1508,7 +1516,7 @@ async function askGeoFylo(preset){
    const rows=d.topExpenses.slice(0,3);
    ans=rows.length?'🔎 <b>3 μεγαλύτερα έξοδα</b><br>'+rows.map((x,i)=>(i+1)+'. '+euro(x.amount)+' — '+esc(x.category)+(x.note?' • '+esc(x.note):'')).join('<br>'):'Δεν υπάρχουν καταγεγραμμένα έξοδα.';
 
- }else if(s.includes('κατηγορ') && s.includes('έξοδ')){
+ }else if(s.includes('κατηγορ') && (s.includes('έξοδ')||s.includes('εξοδ'))){
    if(!d.expenseCategories.length)ans='Δεν υπάρχουν καταγεγραμμένα έξοδα.';
    else ans='📊 <b>Έξοδα ανά κατηγορία</b><br>'+d.expenseCategories.slice(0,8).map(x=>{
      const pct=d.expenses?x.amount/d.expenses*100:0;
