@@ -34,8 +34,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="dashBox" onclick="showPage('inventory')" style="cursor:pointer"><small>📦 Χαμηλό απόθεμα</small><b id="smartLowStock">0</b></div>
 <div class="dashBox" onclick="showPage('customers')" style="cursor:pointer"><small>💳 Ληξιπρόθεσμα πελατών</small><b id="smartCustomerOverdue">0,00 €</b></div>
 <div class="dashBox" onclick="showPage('suppliers')" style="cursor:pointer"><small>🏪 Ληξιπρόθεσμα προμηθευτών</small><b id="smartSupplierOverdue">0,00 €</b></div>
-</div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div>
-<div id="smartDayPriority" style="margin-top:12px;padding:12px;border-radius:12px;background:#f5f8f5;border:1px solid #dfe7df"><b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:6px"><small>Υπολογισμός προτεραιότητας...</small></div></div></div>
+</div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div></div>
 <div class="card" id="weatherCard">
   <h2>🌦️ Καιρός</h2>
 
@@ -559,7 +558,6 @@ async function loadWeather(){
       else if(code>=80&&code<=82)icon='🌦️';
       else if(code>=95)icon='⛈️';
       return {
-        date,
         day:dayNames[i]||new Date(date+'T12:00:00').toLocaleDateString('el-GR',{weekday:'short'}),
         icon,
         min:Math.round(data.daily.temperature_2m_min[i]),
@@ -602,63 +600,6 @@ async function loadWeather(){
       '<div style="margin-top:6px">'+a+'</div>'
     ).join('');
 
-    // Σύνδεση πρόγνωσης με προγραμματισμένες εργασίες των επόμενων 3 ημερών.
-    let taskWeatherHtml='';
-    if(user && forecast.length){
-      try{
-        const startDate=forecast[0].date;
-        const endDate=forecast[forecast.length-1].date;
-        const {data:planned,error:plannedError}=await sb
-          .from('activities')
-          .select('id,activity_date,activity_type,note,status')
-          .eq('user_id',user.id)
-          .eq('status','pending')
-          .gte('activity_date',startDate)
-          .lte('activity_date',endDate)
-          .order('activity_date',{ascending:true});
-
-        if(!plannedError && planned?.length){
-          const taskWarnings=[];
-          planned.forEach(task=>{
-            const f=forecast.find(x=>x.date===task.activity_date);
-            if(!f)return;
-
-            const type=String(task.activity_type||'');
-            const isSpray=type.toLocaleLowerCase('el-GR').includes('ψεκασ') ||
-                          type.toLocaleLowerCase('el-GR').includes('φυτοπροστα');
-            const isWater=type.toLocaleLowerCase('el-GR').includes('πότισ');
-
-            const reasons=[];
-            if(isSpray && f.wind>=25) reasons.push('💨 άνεμος '+f.wind+' km/h');
-            if(isSpray && f.rain>=40) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
-            if(isWater && f.rain>=50) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
-            if(!isSpray && !isWater && f.wind>=35) reasons.push('💨 ισχυρός άνεμος '+f.wind+' km/h');
-            if(!isSpray && !isWater && f.rain>=60) reasons.push('🌧️ πιθανότητα βροχής '+f.rain+'%');
-
-            if(reasons.length){
-              taskWarnings.push(
-                '<div style="margin-top:8px;padding:9px;border-radius:10px;background:#fff8e8">'+
-                '⚠️ <b>'+esc(type)+'</b> • '+esc(f.day)+'<br>'+
-                '<small>'+reasons.join(' • ')+' — έλεγξε αν χρειάζεται αλλαγή προγραμματισμού.</small>'+
-                '</div>'
-              );
-            }
-          });
-
-          if(taskWarnings.length){
-            taskWeatherHtml=
-              '<div style="margin-top:14px;padding:12px;border-radius:12px;background:#fff;border:1px solid #ead9aa">'+
-              '<div style="font-weight:700">📅 Καιρός & προγραμματισμένες εργασίες</div>'+
-              taskWarnings.join('')+
-              '<small style="display:block;margin-top:8px">Οι επισημάνσεις είναι ενδεικτικές. Για εφαρμογές φυτοπροστασίας ακολούθησε τις οδηγίες της ετικέτας και του γεωπόνου σου.</small>'+
-              '</div>';
-          }
-        }
-      }catch(taskWeatherError){
-        console.warn('Weather tasks:',taskWeatherError);
-      }
-    }
-
     box.innerHTML=`
       <div style="font-size:16px;margin-bottom:6px">
         📍 <b>${place.name}</b>
@@ -677,9 +618,7 @@ async function loadWeather(){
         ${adviceHtml}
         <small style="display:block;margin-top:8px">Ενδεικτική ενημέρωση βάσει πρόγνωσης καιρού.</small>
       </div>
-      ${taskWeatherHtml}
     `;
-    setTimeout(loadSmartDayPriority,100);
 
   }catch(e){
     console.error('Weather:',e);
@@ -747,8 +686,7 @@ window.addEventListener('offline',()=>{
 });
 
 setTimeout(updateConnectionStatus,500);
-setTimeout(loadWeather,700);
-setTimeout(loadSmartDayPriority,1200); 
+setTimeout(loadWeather,700); 
 let signup=false,user=null;
 const euro=n=>new Intl.NumberFormat('el-GR',{style:'currency',currency:'EUR'}).format(n||0);
 function toggleAuth(){signup=!signup;authTitle.textContent=signup?'Εγγραφή':'Σύνδεση';nameBox.classList.toggle('hidden',!signup);authBtn.textContent=signup?'Δημιουργία λογαριασμού':'Σύνδεση';toggleBtn.textContent=signup?'Έχω λογαριασμό — Σύνδεση':'Δεν έχω λογαριασμό — Εγγραφή'}
@@ -1230,7 +1168,27 @@ async function loadInventory(){
  const total=r.data.reduce((a,x)=>a+Number(x.quantity||0)*Number(x.unit_cost||0),0);
  const v=document.getElementById('inventoryValue');if(v)v.textContent=euro(total);
  const box=document.getElementById('inventoryList');if(!box)return;
- box.innerHTML=r.data.length?r.data.map(x=>`<div class="entry"><div class="entryText"><b>${esc(x.name)}</b><br><small>${esc(x.category)} • ${Number(x.quantity||0).toLocaleString('el-GR')} ${esc(x.unit)} • ${euro(x.unit_cost)}/${esc(x.unit)}${x.supplier?' • '+esc(x.supplier):''}</small><br><small>Αξία: ${euro(Number(x.quantity||0)*Number(x.unit_cost||0))}${x.note?' • '+esc(x.note):''}</small></div><div class="entryActions"><button class="soft" onclick='editInventory(${JSON.stringify(x)})'>✏️</button><button class="danger" onclick="deleteInventory(${x.id})">🗑️</button></div></div>`).join(''):'<small>Δεν υπάρχουν είδη.</small>';
+ let usageByInventory={};
+ try{
+  const ur=await sb.from('inventory_usage').select('inventory_id,quantity');
+  if(!ur.error){
+   (ur.data||[]).forEach(x=>{
+    const id=String(x.inventory_id),q=Number(x.quantity||0);
+    if(q>0){usageByInventory[id]??={total:0,count:0};usageByInventory[id].total+=q;usageByInventory[id].count++;}
+   });
+  }
+ }catch(e){}
+ box.innerHTML=r.data.length?r.data.map(x=>{
+  const u=usageByInventory[String(x.id)],stock=Number(x.quantity||0);
+  let forecast='<small>📊 Δεν υπάρχουν ακόμη αρκετές καταναλώσεις για πρόβλεψη.</small>';
+  if(u&&u.count){
+   const avg=u.total/u.count,uses=avg>0?stock/avg:0;
+   const rounded=uses<10?Math.round(uses*10)/10:Math.round(uses);
+   const warning=uses<=2?' ⚠️ Χρειάζεται σύντομα αναπλήρωση.':uses<=4?' 🟠 Παρακολούθησε το απόθεμα.':' 🟢 Επαρκές με βάση τη μέχρι τώρα χρήση.';
+   forecast='<small>🔮 Μ.Ο. κατανάλωσης: <b>'+avg.toLocaleString('el-GR',{maximumFractionDigits:2})+' '+esc(x.unit)+'/εφαρμογή</b> • Εκτίμηση: <b>~'+rounded+' εφαρμογές</b>.'+warning+'</small>';
+  }
+  return `<div class="entry"><div class="entryText"><b>${esc(x.name)}</b><br><small>${esc(x.category)} • ${stock.toLocaleString('el-GR')} ${esc(x.unit)} • ${euro(x.unit_cost)}/${esc(x.unit)}${x.supplier?' • '+esc(x.supplier):''}</small><br><small>Αξία: ${euro(stock*Number(x.unit_cost||0))}${x.note?' • '+esc(x.note):''}</small><br>${forecast}</div><div class="entryActions"><button class="soft" onclick='editInventory(${JSON.stringify(x)})'>✏️</button><button class="danger" onclick="deleteInventory(${x.id})">🗑️</button></div></div>`;
+ }).join(''):'<small>Δεν υπάρχουν είδη.</small>';
  await loadPurchases(r.data);
 }
 let purchaseInventoryCache=[];
@@ -1707,35 +1665,6 @@ async function loadCalendarHistory(){
  await showCalendarPhotos();
 }
 async function loadCalendar(){await Promise.all([loadTaskCenter(),loadCalendarHistory()]);}
-
-async function loadSmartDayPriority(){
- const box=document.getElementById('smartDayPriority'); if(!box||!user)return;
- try{
-  const today=taskLocalYmd();
-  const [tr,sr]=await Promise.all([
-   sb.from('activities').select('activity_type,activity_date,status').eq('user_id',user.id).eq('status','pending').eq('activity_date',today),
-   sb.from('inventory').select('name,quantity,unit').eq('user_id',user.id)
-  ]);
-  if(tr.error||sr.error)throw(tr.error||sr.error);
-  const tasks=tr.data||[], low=(sr.data||[]).filter(x=>Number(x.quantity||0)<=5);
-  const c=(document.getElementById('smartCustomerOverdue')?.textContent||'0').trim();
-  const s=(document.getElementById('smartSupplierOverdue')?.textContent||'0').trim();
-  const overdue=v=>!/^0([,.]00)?\s*€?$/.test(v);
-  const spray=tasks.find(x=>{const t=String(x.activity_type||'').toLocaleLowerCase('el-GR');return t.includes('ψεκασ')||t.includes('φυτοπροστα')});
-  const weather=(document.getElementById('weatherContent')?.textContent||'').toLocaleLowerCase('el-GR');
-  let p='';
-  if(spray&&weather.includes('αλλαγή προγραμματισμού'))p='⚠️ Έλεγξε πρώτα τον προγραμματισμένο ψεκασμό λόγω καιρικών συνθηκών.';
-  else if(tasks.length)p='📅 Έχεις '+tasks.length+' '+(tasks.length===1?'εργασία':'εργασίες')+' για σήμερα. Ξεκίνα από τις σημερινές εκκρεμότητες.';
-  else if(low.length)p='📦 Έλεγξε '+(low.length===1?'το χαμηλό απόθεμα στο '+esc(low[0].name):'τα '+low.length+' είδη με χαμηλό απόθεμα')+'.';
-  else if(overdue(c)||overdue(s))p='💳 Υπάρχουν ληξιπρόθεσμες οικονομικές εκκρεμότητες που χρειάζονται έλεγχο.';
-  else p='✅ Δεν υπάρχει επείγουσα εκκρεμότητα για σήμερα.';
-  box.innerHTML='<b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:7px">'+p+'</div>';
- }catch(e){
-  console.warn('Smart day priority:',e);
-  box.innerHTML='<b>🧠 Προτεραιότητα σήμερα</b><div style="margin-top:7px"><small>Δεν ήταν δυνατός ο υπολογισμός προτεραιότητας.</small></div>';
- }
-}
-
 
 function quickEntry(type){
  if(!season.value){alert('Επίλεξε πρώτα καλλιεργητική περίοδο.');season.scrollIntoView({behavior:'smooth',block:'center'});return}
