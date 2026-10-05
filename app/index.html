@@ -168,6 +168,8 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" onclick="askGeoFylo('Τι έχω να κάνω σήμερα;')">📅 Εργασίες σήμερα</button>
 <button class="soft" onclick="askGeoFylo('Τι πρέπει να προσέξω;')">⚠️ Τι πρέπει να προσέξω;</button>
 <button class="soft" onclick="askGeoFylo('Πώς πάω σε σχέση με τους στόχους μου;')">🎯 Πορεία στόχων</button>
+<button class="soft" onclick="askGeoFylo('Πού ξοδεύω τα περισσότερα χρήματα;')">💸 Ανάλυση εξόδων</button>
+<button class="soft" onclick="askGeoFylo('Τι τελειώνει στην αποθήκη;')">📦 Τι τελειώνει;</button>
 </div>
 
 <div id="assistantChat" style="margin-top:14px">
@@ -1341,7 +1343,7 @@ async function loadGeoFyloAssistant(){
  }
  try{
   const today=new Date().toISOString().slice(0,10);
-  const [er,hr,sr,ar,ivr,cr,pr,supr,pir,piir,spr]=await Promise.all([
+  const [er,hr,sr,ar,ivr,cr,pr,supr,pir,piir,spr,iur]=await Promise.all([
    sb.from('expenses').select('*').eq('greenhouse_id',gh.value),
    sb.from('harvests').select('*').eq('greenhouse_id',gh.value),
    sb.from('sales').select('*').eq('greenhouse_id',gh.value),
@@ -1352,9 +1354,10 @@ async function loadGeoFyloAssistant(){
    sb.from('suppliers').select('*'),
    sb.from('purchase_invoices').select('*'),
    sb.from('purchase_invoice_items').select('*'),
-   sb.from('supplier_payments').select('*')
+   sb.from('supplier_payments').select('*'),
+   sb.from('inventory_usage').select('*').eq('greenhouse_id',gh.value)
   ]);
-  const all=[er,hr,sr,ar,ivr,cr,pr,supr,pir,piir,spr];
+  const all=[er,hr,sr,ar,ivr,cr,pr,supr,pir,piir,spr,iur];
   const bad=all.find(x=>x.error); if(bad)throw bad.error;
 
   const expenses=(er.data||[]).reduce((z,x)=>z+Number(x.amount||0),0);
@@ -1363,6 +1366,19 @@ async function loadGeoFyloAssistant(){
   const income=(sr.data||[]).reduce((z,x)=>z+Number(x.kg||0)*Number(x.price_per_kg||0),0);
   const inventoryValue=(ivr.data||[]).reduce((z,x)=>z+Number(x.quantity||0)*Number(x.unit_cost||0),0);
   const lowStock=(ivr.data||[]).filter(x=>Number(x.quantity||0)<=5);
+  const inventoryRows=(ivr.data||[]).map(x=>({
+    id:Number(x.id),name:String(x.name||'Άγνωστο εφόδιο'),category:String(x.category||''),
+    quantity:Number(x.quantity||0),unit:String(x.unit||''),unitCost:Number(x.unit_cost||0),
+    value:Number(x.quantity||0)*Number(x.unit_cost||0)
+  }));
+  const usageById={};
+  (iur.data||[]).forEach(x=>{
+    const id=Number(x.inventory_id),q=Number(x.quantity||0);
+    usageById[id]=(usageById[id]||0)+q;
+  });
+  const usageRows=inventoryRows.map(x=>({...x,used:usageById[x.id]||0,usedCost:(usageById[x.id]||0)*x.unitCost}))
+    .filter(x=>x.used>0).sort((a,b)=>b.usedCost-a.usedCost);
+  const highestValueStock=[...inventoryRows].sort((a,b)=>b.value-a.value)[0]||null;
   const pending=(ar.data||[]).filter(x=>x.status==='pending'||x.scheduled===true);
   const todayTasks=pending.filter(x=>x.activity_date===today);
 
@@ -1385,6 +1401,19 @@ async function loadGeoFyloAssistant(){
   }).sort((a,b)=>b.balance-a.balance);
   const supplierDebt=supplierRows.reduce((z,x)=>z+x.balance,0);
 
+  const expenseRows=(er.data||[]).map(x=>({
+    amount:Number(x.amount||0),
+    category:String(x.category||x.type||'Χωρίς κατηγορία').trim()||'Χωρίς κατηγορία',
+    note:String(x.note||'').trim(),
+    date:x.expense_date||x.date||''
+  }));
+  const expenseByCategory={};
+  expenseRows.forEach(x=>expenseByCategory[x.category]=(expenseByCategory[x.category]||0)+x.amount);
+  const expenseCategories=Object.entries(expenseByCategory)
+    .map(([name,amount])=>({name,amount}))
+    .sort((a,b)=>b.amount-a.amount);
+  const topExpenses=[...expenseRows].sort((a,b)=>b.amount-a.amount);
+
   const b=budgetRead(Number(gh.value));
   const expenseTarget=Number(b.expenseTarget||0),productionTarget=Number(b.productionTarget||0),incomeTarget=Number(b.incomeTarget||0);
   const productionRemaining=productionTarget?Math.max(0,productionTarget-production):0;
@@ -1402,7 +1431,9 @@ async function loadGeoFyloAssistant(){
     expenses,production,soldKg,income,profit:income-expenses,
     avgPrice:soldKg?income/soldKg:null,costKg:production?expenses/production:null,
     inventoryValue,lowStock,pending,todayTasks,inventory:ivr.data||[],
+    inventoryRows,usageRows,highestValueStock,
     customerRows,customerDebt,supplierRows,supplierDebt,
+    expenseRows,expenseCategories,topExpenses,
     expenseTarget,productionTarget,incomeTarget,productionRemaining,incomeRemaining,expenseRemaining,
     productionProgress,expenseProgress,incomeProgress,estimatedIncome,estimatedProfit
   };
@@ -1428,14 +1459,75 @@ async function askGeoFylo(preset){
  if(s.includes('προσέξ')||s.includes('προσεξ')||s.includes('προσοχ')||s.includes('έλεγξ')||s.includes('ελεγξ')){
    const alerts=[];
    if(d.todayTasks.length)alerts.push('📅 Έχεις <b>'+d.todayTasks.length+'</b> '+(d.todayTasks.length===1?'εργασία':'εργασίες')+' προγραμματισμένη για σήμερα.');
-   if(d.lowStock.length)alerts.push('📦 Υπάρχουν <b>'+d.lowStock.length+'</b> είδη με χαμηλό απόθεμα.');
+   if(d.lowStock.length)alerts.push('📦 Χαμηλό απόθεμα σε <b>'+d.lowStock.length+'</b> είδη: '+d.lowStock.slice(0,3).map(x=>esc(x.name)).join(', ')+(d.lowStock.length>3?'…':'')+'.');
    if(d.customerDebt>0)alerts.push('💳 Οι πελάτες σου οφείλουν συνολικά <b>'+euro(d.customerDebt)+'</b>.');
    if(d.supplierDebt>0)alerts.push('🧾 Οι οφειλές προς προμηθευτές είναι <b>'+euro(d.supplierDebt)+'</b>.');
    if(d.profit<0)alerts.push('📉 Το τρέχον οικονομικό αποτέλεσμα είναι αρνητικό: <b>'+euro(d.profit)+'</b>.');
    if(d.expenseTarget&&d.expenses>d.expenseTarget)alerts.push('🔴 Έχεις υπερβεί τον προϋπολογισμό εξόδων κατά <b>'+euro(d.expenses-d.expenseTarget)+'</b>.');
    else if(d.expenseProgress!==null&&d.expenseProgress>=85)alerts.push('🟠 Έχεις χρησιμοποιήσει το <b>'+d.expenseProgress.toLocaleString('el-GR',{maximumFractionDigits:1})+'%</b> του προϋπολογισμού εξόδων.');
    if(d.productionTarget&&d.productionRemaining>0)alerts.push('🎯 Απομένουν <b>'+d.productionRemaining.toLocaleString('el-GR')+' kg</b> για τον στόχο παραγωγής.');
+   const topCat=d.expenseCategories[0];
+   if(topCat&&d.expenses>0){
+     const topPct=topCat.amount/d.expenses*100;
+     if(topPct>=50)alerts.push('💸 Η κατηγορία <b>'+esc(topCat.name)+'</b> αποτελεί το <b>'+topPct.toLocaleString('el-GR',{maximumFractionDigits:1})+'%</b> των εξόδων.');
+   }
    ans=alerts.length?'⚠️ <b>Σημεία προσοχής</b><br>'+alerts.join('<br>'):'✅ Δεν εντοπίζω κάποιο βασικό σημείο που χρειάζεται άμεση προσοχή από τα διαθέσιμα δεδομένα.';
+
+ // Έξυπνη αποθήκη
+ }else if((s.includes('τι τελειών')||s.includes('τι τελειων')||s.includes('χαμηλ')||s.includes('αγοράσω')||s.includes('αγορασω')) && (s.includes('απόθε')||s.includes('αποθε')||s.includes('αποθήκ')||s.includes('αποθηκ')||s.includes('τελειών')||s.includes('τελειων')||s.includes('αγοράσω')||s.includes('αγορασω'))){
+   if(!d.lowStock.length)ans='✅ Δεν υπάρχουν είδη με απόθεμα έως 5 μονάδες.';
+   else ans='📦 <b>Χαμηλό απόθεμα</b><br>'+d.lowStock.slice().sort((a,b)=>Number(a.quantity||0)-Number(b.quantity||0)).map(x=>'• '+esc(x.name)+': <b>'+Number(x.quantity||0).toLocaleString('el-GR')+' '+esc(x.unit||'')+'</b>').join('<br>');
+
+ }else if((s.includes('ακριβότερ')||s.includes('ακριβοτερ')||s.includes('μεγαλύτερη αξία')||s.includes('μεγαλυτερη αξια')) && (s.includes('απόθε')||s.includes('αποθε')||s.includes('αποθήκ')||s.includes('αποθηκ'))){
+   const x=d.highestValueStock;
+   ans=x?'💎 Το απόθεμα με τη μεγαλύτερη συνολική αξία είναι <b>'+esc(x.name)+'</b>: '+x.quantity.toLocaleString('el-GR')+' '+esc(x.unit)+' × '+euro(x.unitCost)+' = <b>'+euro(x.value)+'</b>.':'Η αποθήκη είναι κενή.';
+
+ }else if((s.includes('χρησιμοποίη')||s.includes('χρησιμοποιη')||s.includes('κατανάλ')||s.includes('καταναλ')) && (s.includes('περισσότερ')||s.includes('περισσοτερ')||s.includes('εφόδι')||s.includes('εφοδι'))){
+   const rows=d.usageRows.slice(0,5);
+   ans=rows.length?'🌱 <b>Μεγαλύτερες καταναλώσεις εφοδίων</b><br>'+rows.map((x,i)=>(i+1)+'. '+esc(x.name)+': <b>'+x.used.toLocaleString('el-GR')+' '+esc(x.unit)+'</b> • κόστος '+euro(x.usedCost)).join('<br>'):'Δεν υπάρχουν καταγεγραμμένες καταναλώσεις εφοδίων για το επιλεγμένο αγροτεμάχιο.';
+
+ }else if((s.includes('πόσο')||s.includes('ποσο')||s.includes('έχω')||s.includes('εχω')) && (s.includes('λίπασ')||s.includes('λιπασ')||s.includes('φυτοπροστα')||s.includes('σπόρ')||s.includes('σπορ'))){
+   const norm=x=>String(x||'').toLocaleLowerCase('el-GR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+   let key=s.includes('λίπασ')||s.includes('λιπασ')?'λιπασ':s.includes('φυτοπροστα')?'φυτοπροστα':'σπορ';
+   const rows=d.inventoryRows.filter(x=>norm(x.name).includes(key)||norm(x.category).includes(key));
+   ans=rows.length?'📦 '+rows.map(x=>'<b>'+esc(x.name)+'</b>: '+x.quantity.toLocaleString('el-GR')+' '+esc(x.unit)+' ('+euro(x.value)+')').join('<br>'):'Δεν βρήκα αντίστοιχο είδος στην αποθήκη.';
+
+ }else if((s.includes('αξία')||s.includes('αξια')) && (s.includes('αποθήκ')||s.includes('αποθηκ')||s.includes('απόθε')||s.includes('αποθε'))){
+   ans='📦 Η συνολική αξία της αποθήκης είναι <b>'+euro(d.inventoryValue)+'</b>.';
+
+ // Ανάλυση εξόδων
+ }else if((s.includes('μεγαλύτερ')||s.includes('μεγαλυτερ')||s.includes('περισσότερ')||s.includes('περισσοτερ')||s.includes('πού ξοδεύ')||s.includes('που ξοδευ')) && s.includes('έξοδ')){
+   const top=d.expenseCategories[0];
+   if(!top)ans='Δεν υπάρχουν καταγεγραμμένα έξοδα.';
+   else{
+     const pct=d.expenses?top.amount/d.expenses*100:0;
+     ans='💸 Η μεγαλύτερη κατηγορία εξόδων είναι <b>'+esc(top.name)+'</b> με <b>'+euro(top.amount)+'</b> ('+pct.toLocaleString('el-GR',{maximumFractionDigits:1})+'% των συνολικών εξόδων).';
+   }
+
+ }else if((s.includes('3')||s.includes('τρία')||s.includes('τρια')) && s.includes('μεγαλ') && s.includes('έξοδ')){
+   const rows=d.topExpenses.slice(0,3);
+   ans=rows.length?'🔎 <b>3 μεγαλύτερα έξοδα</b><br>'+rows.map((x,i)=>(i+1)+'. '+euro(x.amount)+' — '+esc(x.category)+(x.note?' • '+esc(x.note):'')).join('<br>'):'Δεν υπάρχουν καταγεγραμμένα έξοδα.';
+
+ }else if(s.includes('κατηγορ') && s.includes('έξοδ')){
+   if(!d.expenseCategories.length)ans='Δεν υπάρχουν καταγεγραμμένα έξοδα.';
+   else ans='📊 <b>Έξοδα ανά κατηγορία</b><br>'+d.expenseCategories.slice(0,8).map(x=>{
+     const pct=d.expenses?x.amount/d.expenses*100:0;
+     return '• '+esc(x.name)+': <b>'+euro(x.amount)+'</b> ('+pct.toLocaleString('el-GR',{maximumFractionDigits:1})+'%)';
+   }).join('<br>');
+
+ }else if((s.includes('πόσα')||s.includes('ποσα')||s.includes('ποσοστ')||s.includes('έχω δώσει')||s.includes('εχω δωσει')) && (s.includes('εφόδι')||s.includes('εφοδι')||s.includes('εργατικ')||s.includes('λίπασ')||s.includes('λιπασ')||s.includes('φυτοπροστα')||s.includes('καύσι')||s.includes('καυσι'))){
+   let key='';
+   if(s.includes('εφόδι')||s.includes('εφοδι'))key='εφόδ';
+   else if(s.includes('εργατικ'))key='εργατικ';
+   else if(s.includes('λίπασ')||s.includes('λιπασ'))key='λίπασ';
+   else if(s.includes('φυτοπροστα'))key='φυτοπροστα';
+   else if(s.includes('καύσι')||s.includes('καυσι'))key='καύσι';
+   const norm=x=>String(x||'').toLocaleLowerCase('el-GR').normalize('NFD').replace(/[\u0300-\u036f]/g,'');
+   const nk=norm(key);
+   const matches=d.expenseCategories.filter(x=>norm(x.name).includes(nk));
+   const amount=matches.reduce((z,x)=>z+x.amount,0);
+   const pct=d.expenses?amount/d.expenses*100:0;
+   ans=matches.length?'💰 Για '+matches.map(x=>'<b>'+esc(x.name)+'</b>').join(', ')+' έχεις καταγράψει συνολικά <b>'+euro(amount)+'</b> ('+pct.toLocaleString('el-GR',{maximumFractionDigits:1})+'% των εξόδων).':'Δεν βρήκα αντίστοιχη κατηγορία στα καταγεγραμμένα έξοδα.';
 
  // Στόχοι / προϋπολογισμός / πρόβλεψη
  }else if(s.includes('στόχ')||s.includes('στοχ')||s.includes('προϋπολογ')||s.includes('προυπολογ')||s.includes('πρόβλεψ')||s.includes('προβλεψ')||s.includes('μου λείπ')||s.includes('μου λειπ')){
@@ -1542,7 +1634,7 @@ async function askGeoFylo(preset){
    ans+='<br>💶 Μέση τιμή: <b>'+(d.avgPrice===null?'—':euro(d.avgPrice)+'/kg')+'</b> • 🧾 Κόστος/kg: <b>'+(d.costKg===null?'—':euro(d.costKg)+'/kg')+'</b>';
 
  }else{
-   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, πελάτες, προμηθευτές, στόχους, προϋπολογισμό, πρόβλεψη, αποθήκη, εργασίες ή τι χρειάζεται προσοχή.</small>';
+   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων και εργασίες.</small>';
  }
  assistantAdd('assistant',ans);
 }
