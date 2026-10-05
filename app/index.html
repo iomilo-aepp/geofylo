@@ -167,6 +167,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" onclick="askGeoFylo('Τι έχω στην αποθήκη;')">📦 Κατάσταση αποθήκης</button>
 <button class="soft" onclick="askGeoFylo('Τι έχω να κάνω σήμερα;')">📅 Εργασίες σήμερα</button>
 <button class="soft" onclick="askGeoFylo('Τι πρέπει να προσέξω;')">⚠️ Τι πρέπει να προσέξω;</button>
+<button class="soft" onclick="askGeoFylo('Πώς πάω σε σχέση με τους στόχους μου;')">🎯 Πορεία στόχων</button>
 </div>
 
 <div id="assistantChat" style="margin-top:14px">
@@ -1384,11 +1385,26 @@ async function loadGeoFyloAssistant(){
   }).sort((a,b)=>b.balance-a.balance);
   const supplierDebt=supplierRows.reduce((z,x)=>z+x.balance,0);
 
+  const b=budgetRead(Number(gh.value));
+  const expenseTarget=Number(b.expenseTarget||0),productionTarget=Number(b.productionTarget||0),incomeTarget=Number(b.incomeTarget||0);
+  const productionRemaining=productionTarget?Math.max(0,productionTarget-production):0;
+  const incomeRemaining=incomeTarget?Math.max(0,incomeTarget-income):0;
+  const expenseRemaining=expenseTarget?expenseTarget-expenses:null;
+  const productionProgress=productionTarget?(production/productionTarget*100):null;
+  const expenseProgress=expenseTarget?(expenses/expenseTarget*100):null;
+  const incomeProgress=incomeTarget?(income/incomeTarget*100):null;
+  const avgSalePrice=soldKg?income/soldKg:0;
+  const projectedByTarget=avgSalePrice&&productionTarget?productionTarget*avgSalePrice:0;
+  const estimatedIncome=productionTarget?Math.max(income,projectedByTarget):null;
+  const estimatedProfit=estimatedIncome===null?null:estimatedIncome-expenses;
+
   geoFyloAssistantData={
     expenses,production,soldKg,income,profit:income-expenses,
     avgPrice:soldKg?income/soldKg:null,costKg:production?expenses/production:null,
     inventoryValue,lowStock,pending,todayTasks,inventory:ivr.data||[],
-    customerRows,customerDebt,supplierRows,supplierDebt
+    customerRows,customerDebt,supplierRows,supplierDebt,
+    expenseTarget,productionTarget,incomeTarget,productionRemaining,incomeRemaining,expenseRemaining,
+    productionProgress,expenseProgress,incomeProgress,estimatedIncome,estimatedProfit
   };
  }catch(e){
   geoFyloAssistantData=null;
@@ -1416,7 +1432,36 @@ async function askGeoFylo(preset){
    if(d.customerDebt>0)alerts.push('💳 Οι πελάτες σου οφείλουν συνολικά <b>'+euro(d.customerDebt)+'</b>.');
    if(d.supplierDebt>0)alerts.push('🧾 Οι οφειλές προς προμηθευτές είναι <b>'+euro(d.supplierDebt)+'</b>.');
    if(d.profit<0)alerts.push('📉 Το τρέχον οικονομικό αποτέλεσμα είναι αρνητικό: <b>'+euro(d.profit)+'</b>.');
+   if(d.expenseTarget&&d.expenses>d.expenseTarget)alerts.push('🔴 Έχεις υπερβεί τον προϋπολογισμό εξόδων κατά <b>'+euro(d.expenses-d.expenseTarget)+'</b>.');
+   else if(d.expenseProgress!==null&&d.expenseProgress>=85)alerts.push('🟠 Έχεις χρησιμοποιήσει το <b>'+d.expenseProgress.toLocaleString('el-GR',{maximumFractionDigits:1})+'%</b> του προϋπολογισμού εξόδων.');
+   if(d.productionTarget&&d.productionRemaining>0)alerts.push('🎯 Απομένουν <b>'+d.productionRemaining.toLocaleString('el-GR')+' kg</b> για τον στόχο παραγωγής.');
    ans=alerts.length?'⚠️ <b>Σημεία προσοχής</b><br>'+alerts.join('<br>'):'✅ Δεν εντοπίζω κάποιο βασικό σημείο που χρειάζεται άμεση προσοχή από τα διαθέσιμα δεδομένα.';
+
+ // Στόχοι / προϋπολογισμός / πρόβλεψη
+ }else if(s.includes('στόχ')||s.includes('στοχ')||s.includes('προϋπολογ')||s.includes('προυπολογ')||s.includes('πρόβλεψ')||s.includes('προβλεψ')||s.includes('μου λείπ')||s.includes('μου λειπ')){
+   if(!d.expenseTarget&&!d.productionTarget&&!d.incomeTarget){
+     ans='🎯 Δεν έχουν οριστεί ακόμη στόχοι για το επιλεγμένο αγροτεμάχιο / θερμοκήπιο.';
+   }else if((s.includes('παραγωγ')||s.includes('κιλ')||s.includes('λείπ')||s.includes('λειπ'))&&d.productionTarget){
+     ans='🎯 Στόχος παραγωγής: <b>'+d.productionTarget.toLocaleString('el-GR')+' kg</b>.<br>📦 Μέχρι σήμερα: <b>'+d.production.toLocaleString('el-GR')+' kg</b>.';
+     ans+='<br>📈 Πρόοδος: <b>'+d.productionProgress.toLocaleString('el-GR',{maximumFractionDigits:1})+'%</b>.';
+     ans+=d.productionRemaining>0?'<br>➡️ Απομένουν <b>'+d.productionRemaining.toLocaleString('el-GR')+' kg</b>.':'<br>✅ Ο στόχος παραγωγής έχει επιτευχθεί.';
+   }else if((s.includes('έξοδ')||s.includes('εξοδ')||s.includes('προϋπολογ')||s.includes('προυπολογ'))&&d.expenseTarget){
+     ans='💶 Προϋπολογισμός εξόδων: <b>'+euro(d.expenseTarget)+'</b>.<br>💸 Έξοδα μέχρι σήμερα: <b>'+euro(d.expenses)+'</b>.';
+     ans+='<br>📊 Χρήση προϋπολογισμού: <b>'+d.expenseProgress.toLocaleString('el-GR',{maximumFractionDigits:1})+'%</b>.';
+     ans+=d.expenseRemaining>=0?'<br>➡️ Διαθέσιμο υπόλοιπο: <b>'+euro(d.expenseRemaining)+'</b>.':'<br>🔴 Υπέρβαση κατά <b>'+euro(Math.abs(d.expenseRemaining))+'</b>.';
+   }else if((s.includes('έσοδ')||s.includes('εσοδ'))&&d.incomeTarget){
+     ans='💰 Στόχος εσόδων: <b>'+euro(d.incomeTarget)+'</b>.<br>Έσοδα μέχρι σήμερα: <b>'+euro(d.income)+'</b>.';
+     ans+='<br>📈 Πρόοδος: <b>'+d.incomeProgress.toLocaleString('el-GR',{maximumFractionDigits:1})+'%</b>.';
+     ans+=d.incomeRemaining>0?'<br>➡️ Απομένουν <b>'+euro(d.incomeRemaining)+'</b>.':'<br>✅ Ο στόχος εσόδων έχει επιτευχθεί.';
+   }else if(s.includes('πρόβλεψ')||s.includes('προβλεψ')){
+     if(d.estimatedIncome===null)ans='🔮 Χρειάζεται στόχος παραγωγής για να υπολογιστεί η πρόβλεψη.';
+     else ans='🔮 Εκτιμώμενα τελικά έσοδα: <b>'+euro(d.estimatedIncome)+'</b>.<br>💰 Εκτιμώμενο αποτέλεσμα: <b>'+euro(d.estimatedProfit)+'</b>.';
+   }else{
+     ans='🎯 <b>Πορεία στόχων</b>';
+     if(d.productionTarget)ans+='<br>⚖️ Παραγωγή: '+d.production.toLocaleString('el-GR')+' / '+d.productionTarget.toLocaleString('el-GR')+' kg ('+d.productionProgress.toLocaleString('el-GR',{maximumFractionDigits:1})+'%).';
+     if(d.expenseTarget)ans+='<br>💶 Έξοδα: '+euro(d.expenses)+' / '+euro(d.expenseTarget)+' ('+d.expenseProgress.toLocaleString('el-GR',{maximumFractionDigits:1})+'%).';
+     if(d.incomeTarget)ans+='<br>💰 Έσοδα: '+euro(d.income)+' / '+euro(d.incomeTarget)+' ('+d.incomeProgress.toLocaleString('el-GR',{maximumFractionDigits:1})+'%).';
+   }
 
  // Πελάτες / απαιτήσεις
  }else if(s.includes('πελάτ')||s.includes('πελατ')||s.includes('μου χρωστ')){
@@ -1497,7 +1542,7 @@ async function askGeoFylo(preset){
    ans+='<br>💶 Μέση τιμή: <b>'+(d.avgPrice===null?'—':euro(d.avgPrice)+'/kg')+'</b> • 🧾 Κόστος/kg: <b>'+(d.costKg===null?'—':euro(d.costKg)+'/kg')+'</b>';
 
  }else{
-   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, πελάτες, προμηθευτές, αποθήκη, εργασίες ή τι χρειάζεται προσοχή.</small>';
+   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, πελάτες, προμηθευτές, στόχους, προϋπολογισμό, πρόβλεψη, αποθήκη, εργασίες ή τι χρειάζεται προσοχή.</small>';
  }
  assistantAdd('assistant',ans);
 }
