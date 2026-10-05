@@ -171,6 +171,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" onclick="askGeoFylo('Ποια είναι η μεγαλύτερη κατηγορία εξόδων;')">💸 Ανάλυση εξόδων</button>
 <button class="soft" onclick="askGeoFylo('Τι τελειώνει στην αποθήκη;')">📦 Τι τελειώνει;</button>
 <button class="soft" onclick="askGeoFylo('Πώς πάει αυτός ο μήνας;')">📅 Αυτός ο μήνας</button>
+<button class="soft" onclick="askGeoFylo('Σύγκρινε την τωρινή περίοδο με την προηγούμενη')">📊 Σύγκριση περιόδων</button>
 </div>
 
 <div id="assistantChat" style="margin-top:14px">
@@ -181,7 +182,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <input id="assistantInput" placeholder="π.χ. Πόσα είναι τα έξοδά μου;" style="margin:0" onkeydown="if(event.key==='Enter')askGeoFylo()">
 <button style="width:auto;margin:0;white-space:nowrap" onclick="askGeoFylo()">Αποστολή</button>
 </div>
-<small style="display:block;margin-top:8px">GeoFylo Assistant v1.7 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
+<small style="display:block;margin-top:8px">GeoFylo Assistant v1.8 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
 </div>
 
@@ -1463,6 +1464,38 @@ async function loadGeoFyloAssistant(){
   if(box)box.innerHTML='<div class="quickSummary"><b>🌱 GeoFylo</b><br><small>Δεν μπόρεσα να φορτώσω τα δεδομένα: '+esc(e.message||String(e))+'</small></div>';
  }
 }
+
+async function geoFyloSeasonComparison(){
+ const sr=await sb.from('seasons').select('id,name,created_at').order('created_at');
+ if(sr.error)throw sr.error;
+ const seasons=sr.data||[];
+ if(seasons.length<2)return {error:'Χρειάζονται τουλάχιστον δύο καλλιεργητικές περίοδοι για σύγκριση.'};
+
+ const currentId=Number(document.getElementById('season')?.value||0);
+ let currentIndex=seasons.findIndex(x=>Number(x.id)===currentId);
+ if(currentIndex<0)currentIndex=seasons.length-1;
+ const previousIndex=currentIndex>0?currentIndex-1:null;
+ if(previousIndex===null)return {error:'Δεν υπάρχει προηγούμενη καλλιεργητική περίοδος πριν από την τρέχουσα.'};
+
+ const aSeason=seasons[previousIndex],bSeason=seasons[currentIndex];
+ const [a,b]=await Promise.all([seasonTotals(aSeason.id),seasonTotals(bSeason.id)]);
+ const enrich=x=>{
+   const soldPrice=(x.production&&x.income)?x.income/x.production:null;
+   return {...x,avgApprox:soldPrice};
+ };
+ return {previous:{season:aSeason,...enrich(a)},current:{season:bSeason,...enrich(b)}};
+}
+function geoFyloPct(oldValue,newValue){
+ oldValue=Number(oldValue||0);newValue=Number(newValue||0);
+ if(!oldValue)return null;
+ return (newValue-oldValue)/Math.abs(oldValue)*100;
+}
+function geoFyloDeltaText(oldValue,newValue,suffix=''){
+ const p=geoFyloPct(oldValue,newValue);
+ if(p===null)return '—';
+ return (p>=0?'+':'')+p.toLocaleString('el-GR',{maximumFractionDigits:1})+'%'+suffix;
+}
+
 async function askGeoFylo(preset){
  const input=document.getElementById('assistantInput');
  const q=(preset||(input?.value||'')).trim();
@@ -1516,6 +1549,37 @@ async function askGeoFylo(preset){
 
  }else if((s.includes('αξία')||s.includes('αξια')) && (s.includes('αποθήκ')||s.includes('αποθηκ')||s.includes('απόθε')||s.includes('αποθε'))){
    ans='📦 Η συνολική αξία της αποθήκης είναι <b>'+euro(d.inventoryValue)+'</b>.';
+
+ // Σύγκριση καλλιεργητικών περιόδων
+ }else if((sn.includes('περιοδ')||sn.includes('περυσι')) && (sn.includes('συγκριν')||sn.includes('καλυτερ')||sn.includes('κερδ')||sn.includes('κοστος')||sn.includes('παραγωγ')||sn.includes('βελτιω')||sn.includes('προηγουμεν'))){
+   try{
+     const c=await geoFyloSeasonComparison();
+     if(c.error)ans='📊 '+c.error;
+     else{
+       const a=c.previous,b=c.current;
+       if(sn.includes('μεγαλυτερ')&&sn.includes('παραγωγ')){
+         ans='🌱 <b>Παραγωγή περιόδων</b><br>'+esc(a.season.name)+': '+a.production.toLocaleString('el-GR')+' kg<br>'+esc(b.season.name)+': '+b.production.toLocaleString('el-GR')+' kg<br>➡️ '+(b.production>=a.production?'<b>'+esc(b.season.name)+'</b> έχει μεγαλύτερη παραγωγή.':'<b>'+esc(a.season.name)+'</b> είχε μεγαλύτερη παραγωγή.');
+       }else if(sn.includes('μικροτερ')&&sn.includes('κοσ')){
+         ans='🧾 <b>Κόστος/kg</b><br>'+esc(a.season.name)+': '+(a.costkg===null?'—':euro(a.costkg)+'/kg')+'<br>'+esc(b.season.name)+': '+(b.costkg===null?'—':euro(b.costkg)+'/kg');
+         if(a.costkg!==null&&b.costkg!==null)ans+='<br>➡️ '+(b.costkg<=a.costkg?'<b>'+esc(b.season.name)+'</b> έχει χαμηλότερο κόστος/kg.':'<b>'+esc(a.season.name)+'</b> είχε χαμηλότερο κόστος/kg.');
+       }else if(sn.includes('κερδ')||sn.includes('καλυτερ')){
+         ans='💰 <b>Καθαρό αποτέλεσμα</b><br>'+esc(a.season.name)+': '+euro(a.profit)+'<br>'+esc(b.season.name)+': '+euro(b.profit)+'<br>➡️ '+(b.profit>=a.profit?'<b>'+esc(b.season.name)+'</b> έχει καλύτερο οικονομικό αποτέλεσμα.':'<b>'+esc(a.season.name)+'</b> είχε καλύτερο οικονομικό αποτέλεσμα.');
+       }else{
+         const prodP=geoFyloPct(a.production,b.production), expP=geoFyloPct(a.expenses,b.expenses), incP=geoFyloPct(a.income,b.income), profitP=geoFyloPct(a.profit,b.profit);
+         ans='📊 <b>'+esc(b.season.name)+' σε σύγκριση με '+esc(a.season.name)+'</b>'+
+          '<br>🌱 Παραγωγή: <b>'+b.production.toLocaleString('el-GR')+' kg</b> ('+geoFyloDeltaText(a.production,b.production)+')'+
+          '<br>💰 Έσοδα: <b>'+euro(b.income)+'</b> ('+geoFyloDeltaText(a.income,b.income)+')'+
+          '<br>💸 Έξοδα: <b>'+euro(b.expenses)+'</b> ('+geoFyloDeltaText(a.expenses,b.expenses)+')'+
+          '<br>📈 Αποτέλεσμα: <b>'+euro(b.profit)+'</b> ('+geoFyloDeltaText(a.profit,b.profit)+')'+
+          '<br>🧾 Κόστος/kg: <b>'+(b.costkg===null?'—':euro(b.costkg)+'/kg')+'</b>';
+         const notes=[];
+         if(prodP!==null)notes.push(prodP>=0?'η παραγωγή αυξήθηκε':'η παραγωγή μειώθηκε');
+         if(expP!==null)notes.push(expP<=0?'τα έξοδα μειώθηκαν':'τα έξοδα αυξήθηκαν');
+         if(profitP!==null)notes.push(profitP>=0?'το αποτέλεσμα βελτιώθηκε':'το αποτέλεσμα υποχώρησε');
+         if(notes.length)ans+='<br><br>🌱 <b>Σύνοψη:</b> '+notes.join(', ')+'.';
+       }
+     }
+   }catch(e){ans='Δεν μπόρεσα να συγκρίνω τις περιόδους: '+esc(e.message||String(e));}
 
  // Χρονική ανάλυση
  }else if(sn.includes('μηνα')||sn.includes('μηνας')||sn.includes('σεπτεμβρ')||sn.includes('οκτωβρ')||sn.includes('νοεμβρ')||sn.includes('δεκεμβρ')||sn.includes('ιανουαρ')||sn.includes('φεβρουαρ')||sn.includes('μαρτι')||sn.includes('απριλ')||sn.includes('μαι')||sn.includes('ιουν')||sn.includes('ιουλ')||sn.includes('αυγουστ')){
@@ -1711,7 +1775,7 @@ async function askGeoFylo(preset){
    ans+='<br>💶 Μέση τιμή: <b>'+(d.avgPrice===null?'—':euro(d.avgPrice)+'/kg')+'</b> • 🧾 Κόστος/kg: <b>'+(d.costKg===null?'—':euro(d.costKg)+'/kg')+'</b>';
 
  }else{
-   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων, εργασίες και ανάλυση ανά μήνα.</small>';
+   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων, εργασίες, ανάλυση ανά μήνα και σύγκριση καλλιεργητικών περιόδων.</small>';
  }
  assistantAdd('assistant',ans);
 }
