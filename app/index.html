@@ -1317,6 +1317,11 @@ let geoFyloAssistantData=null;
 
 function assistantAdd(role,html){
  const box=document.getElementById('assistantChat');if(!box)return;
+
+ // Κάθε νέα ερώτηση ξεκινά καθαρή συνομιλία:
+ // διαγράφεται η προηγούμενη ερώτηση/απάντηση.
+ if(role==='user') box.innerHTML='';
+
  const wrap=document.createElement('div');
  wrap.className='quickSummary';
  wrap.style.marginTop='10px';
