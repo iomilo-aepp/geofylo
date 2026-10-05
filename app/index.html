@@ -1374,28 +1374,70 @@ async function askGeoFylo(preset){
 
  const s=q.toLocaleLowerCase('el-GR');
  let ans='';
- if(s.includes('αποθήκ')||s.includes('αποθεμ')){
+
+ // Πωλημένα κιλά
+ if((s.includes('πουλ')||s.includes('πωλή')) && (s.includes('κιλ')||s.includes('kg'))){
+   ans='⚖️ Έχεις πουλήσει συνολικά <b>'+d.soldKg.toLocaleString('el-GR')+' kg</b>.';
+   if(d.avgPrice!==null)ans+='<br>💶 Μέση τιμή πώλησης: <b>'+euro(d.avgPrice)+'/kg</b>.';
+
+ // Παραγωγή / συγκομιδή
+ }else if((s.includes('παραγωγ')||s.includes('συγκομ')) && (s.includes('κιλ')||s.includes('ποσ')||s.includes('πόσ'))){
+   ans='🌱 Η συνολική καταγεγραμμένη παραγωγή είναι <b>'+d.production.toLocaleString('el-GR')+' kg</b>.';
+
+ // Έσοδα
+ }else if(s.includes('έσοδ')||s.includes('εσοδ')){
+   ans='💰 Τα συνολικά έσοδα είναι <b>'+euro(d.income)+'</b>.';
+   if(d.soldKg)ans+='<br>⚖️ Πωλημένα: <b>'+d.soldKg.toLocaleString('el-GR')+' kg</b> • Μέση τιμή: <b>'+euro(d.avgPrice)+'/kg</b>.';
+
+ // Έξοδα
+ }else if(s.includes('έξοδ')||s.includes('εξοδ')){
+   ans='💸 Τα συνολικά έξοδα είναι <b>'+euro(d.expenses)+'</b>.';
+   if(d.costKg!==null)ans+='<br>🧾 Κόστος ανά παραγόμενο kg: <b>'+euro(d.costKg)+'/kg</b>.';
+
+ // Κέρδος / αποτέλεσμα
+ }else if(s.includes('κέρδ')||s.includes('κερδ')||s.includes('αποτέλεσμα')||s.includes('αποτελεσμα')){
+   ans=(d.profit>=0?'📈':'📉')+' Το τρέχον οικονομικό αποτέλεσμα είναι <b>'+euro(d.profit)+'</b>.';
+   ans+='<br><small>Υπολογισμός: έσοδα '+euro(d.income)+' − έξοδα '+euro(d.expenses)+'.</small>';
+
+ // Μέση τιμή
+ }else if(s.includes('μέση τιμή')||s.includes('μεση τιμη')||s.includes('τιμή πώλησης')||s.includes('τιμη πωλησης')){
+   ans=d.avgPrice===null?'Δεν υπάρχουν αρκετές πωλήσεις για υπολογισμό μέσης τιμής.':'💶 Η μέση τιμή πώλησης είναι <b>'+euro(d.avgPrice)+'/kg</b>.';
+
+ // Κόστος/kg
+ }else if((s.includes('κόσ')||s.includes('κοσ')) && (s.includes('κιλ')||s.includes('kg'))){
+   ans=d.costKg===null?'Δεν υπάρχουν αρκετά δεδομένα παραγωγής για κόστος ανά kg.':'🧾 Το τρέχον κόστος παραγωγής είναι <b>'+euro(d.costKg)+'/kg</b>.';
+
+ // Αποθήκη
+ }else if(s.includes('αποθήκ')||s.includes('αποθεμ')){
    ans='📦 Η συνολική αξία αποθήκης είναι <b>'+euro(d.inventoryValue)+'</b>.';
    if(d.lowStock.length)ans+='<br>⚠️ Χαμηλό απόθεμα: '+d.lowStock.slice(0,5).map(x=>'<b>'+esc(x.name)+'</b> ('+Number(x.quantity||0).toLocaleString('el-GR')+' '+esc(x.unit||'')+')').join(', ')+'.';
    else ans+='<br>✅ Δεν εντοπίζω είδος με απόθεμα ≤ 5 μονάδες.';
- }else if(s.includes('σήμερα')||s.includes('εργασ')){
+
+ // Σημερινές / εκκρεμείς εργασίες
+ }else if(s.includes('σήμερα')||s.includes('σημερα')){
    if(d.todayTasks.length)ans='📅 Για σήμερα έχεις <b>'+d.todayTasks.length+'</b> '+(d.todayTasks.length===1?'εργασία':'εργασίες')+':<br>'+d.todayTasks.map(x=>'• '+esc(x.activity_type)+(x.note?' — '+esc(x.note):'')).join('<br>');
    else ans='✅ Δεν βρίσκω προγραμματισμένη εκκρεμή εργασία για σήμερα.';
-   if(d.pending.length)ans+='<br><small>Συνολικά εκκρεμείς εργασίες: '+d.pending.length+'.</small>';
- }else if(s.includes('έξοδ')||s.includes('εσοδ')||s.includes('έσοδ')||s.includes('οικονομ')||s.includes('κέρδ')||s.includes('τιμή')||s.includes('κοστο')||s.includes('κόσ')){
-   ans='💰 Έσοδα: <b>'+euro(d.income)+'</b><br>💸 Έξοδα: <b>'+euro(d.expenses)+'</b><br>📈 Καθαρό αποτέλεσμα: <b>'+euro(d.profit)+'</b>';
-   ans+='<br>💶 Μέση τιμή πώλησης: <b>'+(d.avgPrice===null?'—':euro(d.avgPrice)+'/kg')+'</b>';
-   ans+='<br>🧾 Κόστος ανά παραγόμενο kg: <b>'+(d.costKg===null?'—':euro(d.costKg)+'/kg')+'</b>';
- }else if(s.includes('παραγωγ')||s.includes('καλλιέργ')||s.includes('πως πά')||s.includes('πώς πά')||s.includes('σύνοψ')){
-   ans='🌱 Μέχρι σήμερα έχεις παραγωγή <b>'+d.production.toLocaleString('el-GR')+' kg</b> και πωλήσεις <b>'+d.soldKg.toLocaleString('el-GR')+' kg</b>.';
-   ans+='<br>💰 Έσοδα <b>'+euro(d.income)+'</b> • Έξοδα <b>'+euro(d.expenses)+'</b> • Αποτέλεσμα <b>'+euro(d.profit)+'</b>.';
-   ans+='<br>📅 Εκκρεμείς εργασίες: <b>'+d.pending.length+'</b> • 📦 Χαμηλά αποθέματα: <b>'+d.lowStock.length+'</b>.';
+ }else if(s.includes('εκκρεμ')||s.includes('εργασ')){
+   if(d.pending.length)ans='📅 Έχεις <b>'+d.pending.length+'</b> εκκρεμείς εργασίες.<br>'+d.pending.slice(0,5).map(x=>'• '+esc(x.activity_type)+(x.activity_date?' — '+esc(x.activity_date):'')).join('<br>');
+   else ans='✅ Δεν βρίσκω εκκρεμείς εργασίες.';
+
+ // Γενική εικόνα / σύνοψη
+ }else if(s.includes('πως πά')||s.includes('πώς πά')||s.includes('γενικά')||s.includes('γενικα')||s.includes('σύνοψ')||s.includes('συνοψ')||s.includes('καλλιέργ')){
+   ans='🌱 <b>Σύνοψη καλλιέργειας</b><br>Παραγωγή: <b>'+d.production.toLocaleString('el-GR')+' kg</b> • Πωλημένα: <b>'+d.soldKg.toLocaleString('el-GR')+' kg</b>.';
+   ans+='<br>💰 Έσοδα: <b>'+euro(d.income)+'</b> • Έξοδα: <b>'+euro(d.expenses)+'</b> • Αποτέλεσμα: <b>'+euro(d.profit)+'</b>.';
+   ans+='<br>📦 Αξία αποθήκης: <b>'+euro(d.inventoryValue)+'</b> • 📅 Εκκρεμείς εργασίες: <b>'+d.pending.length+'</b>.';
+   if(d.lowStock.length)ans+='<br>⚠️ Υπάρχουν <b>'+d.lowStock.length+'</b> είδη με χαμηλό απόθεμα.';
+
+ // Οικονομική εικόνα
+ }else if(s.includes('οικονομ')){
+   ans='💰 <b>Οικονομική εικόνα</b><br>Έσοδα: <b>'+euro(d.income)+'</b><br>Έξοδα: <b>'+euro(d.expenses)+'</b><br>Αποτέλεσμα: <b>'+euro(d.profit)+'</b>';
+   ans+='<br>💶 Μέση τιμή: <b>'+(d.avgPrice===null?'—':euro(d.avgPrice)+'/kg')+'</b> • 🧾 Κόστος/kg: <b>'+(d.costKg===null?'—':euro(d.costKg)+'/kg')+'</b>';
+
  }else{
-   ans='Μπορώ αυτή τη στιγμή να απαντήσω για <b>παραγωγή, οικονομικά, αποθήκη και εργασίες</b>.<br><small>Δοκίμασε π.χ. «Πώς πάει η καλλιέργειά μου;» ή «Τι έχω να κάνω σήμερα;»</small>';
+   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, μέση τιμή, κόστος/kg, αποθήκη ή εργασίες.</small>';
  }
  assistantAdd('assistant',ans);
 }
-
 async function dash(){if(!gh.value){const ml=document.getElementById('movementsList');if(ml)ml.innerHTML='<small>Επίλεξε αγροτεμάχιο.</small>';return}
 let [a,b,c,d]=await Promise.all([sb.from('expenses').select('*').eq('greenhouse_id',gh.value),sb.from('harvests').select('*').eq('greenhouse_id',gh.value),sb.from('sales').select('*').eq('greenhouse_id',gh.value),sb.from('activities').select('*').eq('greenhouse_id',gh.value)]);
 if(a.error||b.error||c.error||d.error)return alert((a.error||b.error||c.error||d.error).message);
