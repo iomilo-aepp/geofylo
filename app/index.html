@@ -172,6 +172,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" onclick="askGeoFylo('Τι τελειώνει στην αποθήκη;')">📦 Τι τελειώνει;</button>
 <button class="soft" onclick="askGeoFylo('Πώς πάει αυτός ο μήνας;')">📅 Αυτός ο μήνας</button>
 <button class="soft" onclick="askGeoFylo('Σύγκρινε την τωρινή περίοδο με την προηγούμενη')">📊 Σύγκριση περιόδων</button>
+<button class="soft" onclick="askGeoFylo('Έχω καθυστερημένες εργασίες;')">🔴 Καθυστερημένες εργασίες</button>
 </div>
 
 <div id="assistantChat" style="margin-top:14px">
@@ -182,7 +183,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <input id="assistantInput" placeholder="π.χ. Πόσα είναι τα έξοδά μου;" style="margin:0" onkeydown="if(event.key==='Enter')askGeoFylo()">
 <button style="width:auto;margin:0;white-space:nowrap" onclick="askGeoFylo()">Αποστολή</button>
 </div>
-<small style="display:block;margin-top:8px">GeoFylo Assistant v1.8 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
+<small style="display:block;margin-top:8px">GeoFylo Assistant v1.9 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
 </div>
 
@@ -1381,8 +1382,18 @@ async function loadGeoFyloAssistant(){
   const usageRows=inventoryRows.map(x=>({...x,used:usageById[x.id]||0,usedCost:(usageById[x.id]||0)*x.unitCost}))
     .filter(x=>x.used>0).sort((a,b)=>b.usedCost-a.usedCost);
   const highestValueStock=[...inventoryRows].sort((a,b)=>b.value-a.value)[0]||null;
-  const pending=(ar.data||[]).filter(x=>x.status==='pending'||x.scheduled===true);
+  const pending=(ar.data||[]).filter(x=>x.status==='pending');
   const todayTasks=pending.filter(x=>x.activity_date===today);
+  const overdueTasks=pending.filter(x=>x.activity_date&&x.activity_date<today).sort((a,b)=>String(a.activity_date).localeCompare(String(b.activity_date)));
+  const upcomingTasks=pending.filter(x=>x.activity_date&&x.activity_date>today).sort((a,b)=>String(a.activity_date).localeCompare(String(b.activity_date)));
+  const tomorrowDate=new Date();tomorrowDate.setDate(tomorrowDate.getDate()+1);
+  const tomorrow=tomorrowDate.getFullYear()+'-'+String(tomorrowDate.getMonth()+1).padStart(2,'0')+'-'+String(tomorrowDate.getDate()).padStart(2,'0');
+  const tomorrowTasks=pending.filter(x=>x.activity_date===tomorrow);
+  const weekEndDate=new Date();weekEndDate.setDate(weekEndDate.getDate()+7);
+  const weekEnd=weekEndDate.getFullYear()+'-'+String(weekEndDate.getMonth()+1).padStart(2,'0')+'-'+String(weekEndDate.getDate()).padStart(2,'0');
+  const weekTasks=pending.filter(x=>x.activity_date>=today&&x.activity_date<=weekEnd).sort((a,b)=>String(a.activity_date).localeCompare(String(b.activity_date)));
+  const currentMonth=today.slice(0,7);
+  const completedThisMonth=(ar.data||[]).filter(x=>x.status!=='pending'&&String(x.activity_date||'').slice(0,7)===currentMonth);
 
   // Customer balances: same logic as existing customer cards (sales by buyer minus payments)
   const customerRows=(cr.data||[]).map(c=>{
@@ -1451,7 +1462,7 @@ async function loadGeoFyloAssistant(){
   geoFyloAssistantData={
     expenses,production,soldKg,income,profit:income-expenses,
     avgPrice:soldKg?income/soldKg:null,costKg:production?expenses/production:null,
-    inventoryValue,lowStock,pending,todayTasks,inventory:ivr.data||[],
+    inventoryValue,lowStock,pending,todayTasks,overdueTasks,upcomingTasks,tomorrowTasks,weekTasks,completedThisMonth,inventory:ivr.data||[],
     inventoryRows,usageRows,highestValueStock,
     customerRows,customerDebt,supplierRows,supplierDebt,
     expenseRows,expenseCategories,topExpenses,
@@ -1513,6 +1524,7 @@ async function askGeoFylo(preset){
  // Τι πρέπει να προσέξω
  if(s.includes('προσέξ')||s.includes('προσεξ')||s.includes('προσοχ')||s.includes('έλεγξ')||s.includes('ελεγξ')){
    const alerts=[];
+   if(d.overdueTasks.length)alerts.push('🔴 Έχεις <b>'+d.overdueTasks.length+'</b> καθυστερημένη'+(d.overdueTasks.length===1?' εργασία':' εργασίες')+'.');
    if(d.todayTasks.length)alerts.push('📅 Έχεις <b>'+d.todayTasks.length+'</b> '+(d.todayTasks.length===1?'εργασία':'εργασίες')+' προγραμματισμένη για σήμερα.');
    if(d.lowStock.length)alerts.push('📦 Χαμηλό απόθεμα σε <b>'+d.lowStock.length+'</b> είδη: '+d.lowStock.slice(0,3).map(x=>esc(x.name)).join(', ')+(d.lowStock.length>3?'…':'')+'.');
    if(d.customerDebt>0)alerts.push('💳 Οι πελάτες σου οφείλουν συνολικά <b>'+euro(d.customerDebt)+'</b>.');
@@ -1549,6 +1561,24 @@ async function askGeoFylo(preset){
 
  }else if((s.includes('αξία')||s.includes('αξια')) && (s.includes('αποθήκ')||s.includes('αποθηκ')||s.includes('απόθε')||s.includes('αποθε'))){
    ans='📦 Η συνολική αξία της αποθήκης είναι <b>'+euro(d.inventoryValue)+'</b>.';
+
+ // Έξυπνες εργασίες & ημερολόγιο
+ }else if(sn.includes('εργασ') && (sn.includes('αυριο')||sn.includes('εβδομαδ')||sn.includes('καθυστερ')||sn.includes('επομεν')||sn.includes('ολοκληρω')||sn.includes('σημερα'))){
+   const taskLines=rows=>rows.map(x=>'• <b>'+esc(x.activity_type||'Εργασία')+'</b> — '+new Date(x.activity_date+'T12:00:00').toLocaleDateString('el-GR')+(x.note?' • '+esc(x.note):'')).join('<br>');
+   if(sn.includes('καθυστερ')){
+     ans=d.overdueTasks.length?'🔴 <b>Καθυστερημένες εργασίες ('+d.overdueTasks.length+')</b><br>'+taskLines(d.overdueTasks):'✅ Δεν έχεις καθυστερημένες εργασίες.';
+   }else if(sn.includes('αυριο')){
+     ans=d.tomorrowTasks.length?'📅 <b>Εργασίες για αύριο ('+d.tomorrowTasks.length+')</b><br>'+taskLines(d.tomorrowTasks):'✅ Δεν έχεις προγραμματισμένη εργασία για αύριο.';
+   }else if(sn.includes('εβδομαδ')){
+     ans=d.weekTasks.length?'📆 <b>Εργασίες επόμενων 7 ημερών ('+d.weekTasks.length+')</b><br>'+taskLines(d.weekTasks):'✅ Δεν έχεις προγραμματισμένες εργασίες για τις επόμενες 7 ημέρες.';
+   }else if(sn.includes('επομεν')){
+     const x=d.upcomingTasks[0];
+     ans=x?'➡️ Η επόμενη εργασία είναι <b>'+esc(x.activity_type||'Εργασία')+'</b> στις <b>'+new Date(x.activity_date+'T12:00:00').toLocaleDateString('el-GR')+'</b>'+(x.note?'<br>'+esc(x.note):'')+'.':'✅ Δεν υπάρχει επόμενη προγραμματισμένη εργασία.';
+   }else if(sn.includes('ολοκληρω')){
+     ans=d.completedThisMonth.length?'✅ Αυτόν τον μήνα έχουν ολοκληρωθεί <b>'+d.completedThisMonth.length+'</b> εργασίες.<br>'+taskLines(d.completedThisMonth.slice().sort((a,b)=>String(b.activity_date).localeCompare(String(a.activity_date))).slice(0,10)):'Δεν υπάρχουν ολοκληρωμένες εργασίες αυτόν τον μήνα.';
+   }else{
+     ans=d.todayTasks.length?'📅 <b>Εργασίες σήμερα ('+d.todayTasks.length+')</b><br>'+taskLines(d.todayTasks):'✅ Δεν έχεις προγραμματισμένη εργασία για σήμερα.';
+   }
 
  // Σύγκριση καλλιεργητικών περιόδων
  }else if((sn.includes('περιοδ')||sn.includes('περυσι')) && (sn.includes('συγκριν')||sn.includes('καλυτερ')||sn.includes('κερδ')||sn.includes('κοστος')||sn.includes('παραγωγ')||sn.includes('βελτιω')||sn.includes('προηγουμεν'))){
@@ -1775,7 +1805,7 @@ async function askGeoFylo(preset){
    ans+='<br>💶 Μέση τιμή: <b>'+(d.avgPrice===null?'—':euro(d.avgPrice)+'/kg')+'</b> • 🧾 Κόστος/kg: <b>'+(d.costKg===null?'—':euro(d.costKg)+'/kg')+'</b>';
 
  }else{
-   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων, εργασίες, ανάλυση ανά μήνα και σύγκριση καλλιεργητικών περιόδων.</small>';
+   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων, εργασίες σήμερα/αύριο/εβδομάδα, καθυστερημένες εργασίες, ανάλυση ανά μήνα και σύγκριση περιόδων.</small>';
  }
  assistantAdd('assistant',ans);
 }
