@@ -166,6 +166,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" onclick="askGeoFylo('Δώσε μου οικονομική εικόνα')">💰 Οικονομική εικόνα</button>
 <button class="soft" onclick="askGeoFylo('Τι έχω στην αποθήκη;')">📦 Κατάσταση αποθήκης</button>
 <button class="soft" onclick="askGeoFylo('Τι έχω να κάνω σήμερα;')">📅 Εργασίες σήμερα</button>
+<button class="soft" onclick="askGeoFylo('Τι πρέπει να προσέξω;')">⚠️ Τι πρέπει να προσέξω;</button>
 </div>
 
 <div id="assistantChat" style="margin-top:14px">
@@ -1339,29 +1340,61 @@ async function loadGeoFyloAssistant(){
  }
  try{
   const today=new Date().toISOString().slice(0,10);
-  const [er,hr,sr,ar,ir]=await Promise.all([
+  const [er,hr,sr,ar,ivr,cr,pr,supr,pir,piir,spr]=await Promise.all([
    sb.from('expenses').select('*').eq('greenhouse_id',gh.value),
    sb.from('harvests').select('*').eq('greenhouse_id',gh.value),
    sb.from('sales').select('*').eq('greenhouse_id',gh.value),
    sb.from('activities').select('*').eq('greenhouse_id',gh.value),
-   sb.from('inventory').select('*')
+   sb.from('inventory').select('*'),
+   sb.from('customers').select('*'),
+   sb.from('payments').select('*'),
+   sb.from('suppliers').select('*'),
+   sb.from('purchase_invoices').select('*'),
+   sb.from('purchase_invoice_items').select('*'),
+   sb.from('supplier_payments').select('*')
   ]);
-  if(er.error||hr.error||sr.error||ar.error||ir.error)throw(er.error||hr.error||sr.error||ar.error||ir.error);
+  const all=[er,hr,sr,ar,ivr,cr,pr,supr,pir,piir,spr];
+  const bad=all.find(x=>x.error); if(bad)throw bad.error;
+
   const expenses=(er.data||[]).reduce((z,x)=>z+Number(x.amount||0),0);
   const production=(hr.data||[]).reduce((z,x)=>z+Number(x.kg||0),0);
   const soldKg=(sr.data||[]).reduce((z,x)=>z+Number(x.kg||0),0);
   const income=(sr.data||[]).reduce((z,x)=>z+Number(x.kg||0)*Number(x.price_per_kg||0),0);
-  const inventoryValue=(ir.data||[]).reduce((z,x)=>z+Number(x.quantity||0)*Number(x.unit_cost||0),0);
-  const lowStock=(ir.data||[]).filter(x=>Number(x.quantity||0)<=5);
+  const inventoryValue=(ivr.data||[]).reduce((z,x)=>z+Number(x.quantity||0)*Number(x.unit_cost||0),0);
+  const lowStock=(ivr.data||[]).filter(x=>Number(x.quantity||0)<=5);
   const pending=(ar.data||[]).filter(x=>x.status==='pending'||x.scheduled===true);
   const todayTasks=pending.filter(x=>x.activity_date===today);
-  geoFyloAssistantData={expenses,production,soldKg,income,profit:income-expenses,avgPrice:soldKg?income/soldKg:null,costKg:production?expenses/production:null,inventoryValue,lowStock,pending,todayTasks,inventory:ir.data||[]};
+
+  // Customer balances: same logic as existing customer cards (sales by buyer minus payments)
+  const customerRows=(cr.data||[]).map(c=>{
+    const sales=(sr.data||[]).filter(x=>(x.buyer||'').trim()===(c.name||'').trim());
+    const totalSales=sales.reduce((z,x)=>z+Number(x.kg||0)*Number(x.price_per_kg||0),0);
+    const paid=(pr.data||[]).filter(x=>Number(x.customer_id)===Number(c.id)).reduce((z,x)=>z+Number(x.amount||0),0);
+    return {name:c.name||'',balance:Math.max(0,totalSales-paid),credit:Math.max(0,paid-totalSales)};
+  }).sort((a,b)=>b.balance-a.balance);
+  const customerDebt=customerRows.reduce((z,x)=>z+x.balance,0);
+
+  // Supplier balances: same logic as existing supplier screen
+  const itemsBy={};(piir.data||[]).forEach(x=>(itemsBy[x.invoice_id]??=[]).push(x));
+  const supplierRows=(supr.data||[]).map(su=>{
+    const purchases=(pir.data||[]).filter(h=>(h.supplier||'').trim()===(su.name||'').trim())
+      .reduce((z,h)=>z+(itemsBy[h.id]||[]).reduce((a,x)=>a+Number(x.quantity||0)*Number(x.unit_cost||0),0),0);
+    const paid=(spr.data||[]).filter(x=>(x.supplier||'').trim()===(su.name||'').trim()).reduce((z,x)=>z+Number(x.amount||0),0);
+    return {name:su.name||'',balance:Math.max(0,purchases-paid),credit:Math.max(0,paid-purchases)};
+  }).sort((a,b)=>b.balance-a.balance);
+  const supplierDebt=supplierRows.reduce((z,x)=>z+x.balance,0);
+
+  geoFyloAssistantData={
+    expenses,production,soldKg,income,profit:income-expenses,
+    avgPrice:soldKg?income/soldKg:null,costKg:production?expenses/production:null,
+    inventoryValue,lowStock,pending,todayTasks,inventory:ivr.data||[],
+    customerRows,customerDebt,supplierRows,supplierDebt
+  };
  }catch(e){
   geoFyloAssistantData=null;
   if(box)box.innerHTML='<div class="quickSummary"><b>🌱 GeoFylo</b><br><small>Δεν μπόρεσα να φορτώσω τα δεδομένα: '+esc(e.message||String(e))+'</small></div>';
  }
 }
-
 async function askGeoFylo(preset){
  const input=document.getElementById('assistantInput');
  const q=(preset||(input?.value||'')).trim();
@@ -1375,8 +1408,38 @@ async function askGeoFylo(preset){
  const s=q.toLocaleLowerCase('el-GR');
  let ans='';
 
+ // Τι πρέπει να προσέξω
+ if(s.includes('προσέξ')||s.includes('προσεξ')||s.includes('προσοχ')||s.includes('έλεγξ')||s.includes('ελεγξ')){
+   const alerts=[];
+   if(d.todayTasks.length)alerts.push('📅 Έχεις <b>'+d.todayTasks.length+'</b> '+(d.todayTasks.length===1?'εργασία':'εργασίες')+' προγραμματισμένη για σήμερα.');
+   if(d.lowStock.length)alerts.push('📦 Υπάρχουν <b>'+d.lowStock.length+'</b> είδη με χαμηλό απόθεμα.');
+   if(d.customerDebt>0)alerts.push('💳 Οι πελάτες σου οφείλουν συνολικά <b>'+euro(d.customerDebt)+'</b>.');
+   if(d.supplierDebt>0)alerts.push('🧾 Οι οφειλές προς προμηθευτές είναι <b>'+euro(d.supplierDebt)+'</b>.');
+   if(d.profit<0)alerts.push('📉 Το τρέχον οικονομικό αποτέλεσμα είναι αρνητικό: <b>'+euro(d.profit)+'</b>.');
+   ans=alerts.length?'⚠️ <b>Σημεία προσοχής</b><br>'+alerts.join('<br>'):'✅ Δεν εντοπίζω κάποιο βασικό σημείο που χρειάζεται άμεση προσοχή από τα διαθέσιμα δεδομένα.';
+
+ // Πελάτες / απαιτήσεις
+ }else if(s.includes('πελάτ')||s.includes('πελατ')||s.includes('μου χρωστ')){
+   const top=d.customerRows.find(x=>x.balance>0);
+   if(s.includes('περισσότερ')||s.includes('περισσοτερ')||s.includes('μεγαλύτερ')||s.includes('μεγαλυτερ')){
+     ans=top?'💳 Ο πελάτης με τη μεγαλύτερη οφειλή είναι <b>'+esc(top.name)+'</b> με <b>'+euro(top.balance)+'</b>.':'✅ Δεν βρίσκω οφειλή πελάτη.';
+   }else{
+     ans=d.customerDebt>0?'💳 Οι συνολικές οφειλές πελατών προς εσένα είναι <b>'+euro(d.customerDebt)+'</b>.':'✅ Δεν βρίσκω ανεξόφλητη οφειλή πελάτη.';
+     if(top)ans+='<br>Μεγαλύτερη οφειλή: <b>'+esc(top.name)+'</b> — '+euro(top.balance)+'.';
+   }
+
+ // Προμηθευτές / οφειλές
+ }else if(s.includes('προμηθευτ')||s.includes('χρωστάω')||s.includes('χρωσταω')){
+   const top=d.supplierRows.find(x=>x.balance>0);
+   if(s.includes('περισσότερ')||s.includes('περισσοτερ')||s.includes('μεγαλύτερ')||s.includes('μεγαλυτερ')){
+     ans=top?'🧾 Η μεγαλύτερη οφειλή σου είναι προς <b>'+esc(top.name)+'</b>: <b>'+euro(top.balance)+'</b>.':'✅ Δεν βρίσκω οφειλή προς προμηθευτή.';
+   }else{
+     ans=d.supplierDebt>0?'🧾 Οι συνολικές οφειλές προς προμηθευτές είναι <b>'+euro(d.supplierDebt)+'</b>.':'✅ Δεν βρίσκω ανεξόφλητη οφειλή προς προμηθευτή.';
+     if(top)ans+='<br>Μεγαλύτερη οφειλή: <b>'+esc(top.name)+'</b> — '+euro(top.balance)+'.';
+   }
+
  // Πωλημένα κιλά
- if((s.includes('πουλ')||s.includes('πωλή')) && (s.includes('κιλ')||s.includes('kg'))){
+ }else if((s.includes('πουλ')||s.includes('πωλή')) && (s.includes('κιλ')||s.includes('kg'))){
    ans='⚖️ Έχεις πουλήσει συνολικά <b>'+d.soldKg.toLocaleString('el-GR')+' kg</b>.';
    if(d.avgPrice!==null)ans+='<br>💶 Μέση τιμή πώλησης: <b>'+euro(d.avgPrice)+'/kg</b>.';
 
@@ -1434,7 +1497,7 @@ async function askGeoFylo(preset){
    ans+='<br>💶 Μέση τιμή: <b>'+(d.avgPrice===null?'—':euro(d.avgPrice)+'/kg')+'</b> • 🧾 Κόστος/kg: <b>'+(d.costKg===null?'—':euro(d.costKg)+'/kg')+'</b>';
 
  }else{
-   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, μέση τιμή, κόστος/kg, αποθήκη ή εργασίες.</small>';
+   ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, πελάτες, προμηθευτές, αποθήκη, εργασίες ή τι χρειάζεται προσοχή.</small>';
  }
  assistantAdd('assistant',ans);
 }
