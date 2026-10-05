@@ -26,7 +26,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 
 <div id="main" class="hidden"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small id="who"></small>
 <div id="connectionStatus" style="margin:6px 0 10px;font-size:13px;font-weight:700"></div>
-<nav class="bottomNav"><button id="nav-home" class="active" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-calendar" onclick="showPage('calendar')"><span class="ico">📅</span>Εργασίες</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-customers" onclick="showPage('customers')"><span class="ico">👥</span>Πελάτες</button><button id="nav-payments" onclick="showPage('payments')"><span class="ico">💳</span>Πληρωμές</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-suppliers" onclick="showPage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button id="nav-cashflow" onclick="showPage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button id="nav-budget" onclick="showPage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button id="nav-assistant" onclick="showPage('assistant')"><span class="ico">🤖</span>Assistant</button><button id="nav-profile" onclick="showPage('profile')"><span class="ico">👤</span>Προφίλ</button><button id="nav-admin" class="hidden" onclick="showPage('admin')"><span class="ico">👑</span>Διαχείριση</button></nav>
+<nav class="bottomNav"><button id="nav-home" class="active" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-calendar" onclick="showPage('calendar')"><span class="ico">📅</span>Εργασίες</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-customers" onclick="showPage('customers')"><span class="ico">👥</span>Πελάτες</button><button id="nav-payments" onclick="showPage('payments')"><span class="ico">💳</span>Πληρωμές</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-suppliers" onclick="showPage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button id="nav-cashflow" onclick="showPage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button id="nav-budget" onclick="showPage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button id="nav-mydata" onclick="showPage('mydata')"><span class="ico">🏛️</span>ΑΑΔΕ</button><button id="nav-assistant" onclick="showPage('assistant')"><span class="ico">🤖</span>Assistant</button><button id="nav-profile" onclick="showPage('profile')"><span class="ico">👤</span>Προφίλ</button><button id="nav-admin" class="hidden" onclick="showPage('admin')"><span class="ico">👑</span>Διαχείριση</button></nav>
 <div id="page-home" class="page active"><div class="card" id="smartHomeCard">
 <div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div>
 <div class="dashGrid" style="margin-top:12px">
@@ -156,6 +156,17 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <h4>Υπόλοιπα πελατών</h4><div id="customerBalances"><small>Δεν υπάρχουν στοιχεία.</small></div>
 <h4>Ιστορικό πληρωμών</h4><div id="paymentsPager"></div><div id="paymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div></div>
 
+<div id="page-mydata" class="page">
+<div class="card">
+<div class="reportTitle"><h2 style="margin:0">🏛️ ΑΑΔΕ / myDATA</h2><button class="soft" style="width:auto" onclick="loadMyData()">🔄 Ανανέωση</button></div>
+<small>Ανάγνωση στοιχείων από το δοκιμαστικό περιβάλλον myDATA της ΑΑΔΕ. Δεν αποστέλλονται ή τροποποιούνται παραστατικά.</small>
+<div class="grid" style="margin-top:12px"><label>Από<input id="myDataFrom" type="date" value="2026-01-01"></label><label>Έως<input id="myDataTo" type="date" value="2026-12-31"></label></div>
+<button onclick="loadMyData()">📥 Ανάκτηση από ΑΑΔΕ</button>
+<div id="myDataStatus" class="quickSummary"><small>Πάτησε «Ανάκτηση από ΑΑΔΕ» για έλεγχο σύνδεσης.</small></div>
+</div>
+<div class="card"><h3>📊 Κατάσταση myDATA</h3><div class="dashGrid"><div class="dashBox"><small>💰 Έσοδα</small><b id="myDataIncomeStatus">—</b></div><div class="dashBox"><small>💸 Έξοδα</small><b id="myDataExpenseStatus">—</b></div></div></div>
+<div class="card"><h3>ℹ️ Πληροφορίες</h3><div id="myDataInfo"><small>Τα οικονομικά σύνολα θα εμφανιστούν όταν ολοκληρωθεί η ανάγνωση και ανάλυση των XML δεδομένων της ΑΑΔΕ.</small></div></div>
+</div>
 <div id="page-assistant" class="page">
 <div class="card">
 <h2 style="margin-top:0">🌱 GeoFylo Assistant</h2>
@@ -479,7 +490,28 @@ async function verifySubscriptionGate(){
  if(!subscriptionAccess(q.data).ok){showSubscriptionExpired(q.data);return false}
  return true;
 }
-async function showPage(n){if(!(await verifySubscriptionGate()))return;document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));document.getElementById('page-'+n)?.classList.add('active');document.getElementById('nav-'+n)?.classList.add('active');if(n==='home')dash();if(n==='movements')dash();if(n==='calendar')loadCalendar();if(n==='reports')loadReports();if(n==='profile')loadProfile();if(n==='customers')loadCustomers();if(n==='payments')loadPayments();if(n==='inventory')loadInventory();if(n==='assistant')loadGeoFyloAssistant();if(n==='suppliers')loadSuppliers();if(n==='cashflow')loadCashflow();if(n==='budget')loadBudget();if(n==='admin')loadAdminSubscriptions();window.scrollTo({top:0,behavior:'smooth'});}
+async function showPage(n){if(!(await verifySubscriptionGate()))return;document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));document.getElementById('page-'+n)?.classList.add('active');document.getElementById('nav-'+n)?.classList.add('active');if(n==='home')dash();if(n==='movements')dash();if(n==='calendar')loadCalendar();if(n==='reports')loadReports();if(n==='profile')loadProfile();if(n==='customers')loadCustomers();if(n==='payments')loadPayments();if(n==='inventory')loadInventory();if(n==='mydata')loadMyData();if(n==='assistant')loadGeoFyloAssistant();if(n==='suppliers')loadSuppliers();if(n==='cashflow')loadCashflow();if(n==='budget')loadBudget();if(n==='admin')loadAdminSubscriptions();window.scrollTo({top:0,behavior:'smooth'});}
+
+async function loadMyData(){
+ const status=document.getElementById('myDataStatus');
+ const inc=document.getElementById('myDataIncomeStatus');
+ const exp=document.getElementById('myDataExpenseStatus');
+ const info=document.getElementById('myDataInfo');
+ if(!status||!inc||!exp||!info)return;
+ if(!navigator.onLine){status.innerHTML='<small>📴 Χρειάζεται σύνδεση στο Internet.</small>';return}
+ status.innerHTML='<small>⏳ Σύνδεση με ΑΑΔΕ myDATA...</small>';inc.textContent='…';exp.textContent='…';
+ try{
+  const from=document.getElementById('myDataFrom')?.value||'2026-01-01';
+  const to=document.getElementById('myDataTo')?.value||'2026-12-31';
+  const {data,error}=await sb.functions.invoke('mydata-test',{body:{dateFrom:from,dateTo:to}});
+  if(error)throw error;
+  const incomeOk=Number(data?.income?.status)===200, expenseOk=Number(data?.expenses?.status)===200;
+  inc.textContent=incomeOk?'✅ 200 OK':'❌ '+(data?.income?.status??'Σφάλμα');
+  exp.textContent=expenseOk?'✅ 200 OK':'❌ '+(data?.expenses?.status??'Σφάλμα');
+  status.innerHTML=(incomeOk&&expenseOk)?'<b>✅ Συνδεδεμένο με ΑΑΔΕ myDATA TEST</b><br><small>Η ανάκτηση εσόδων και εξόδων ολοκληρώθηκε επιτυχώς.</small>':'<b>⚠️ Η ανάκτηση δεν ολοκληρώθηκε.</b>';
+  info.innerHTML=`<small><b>Περιβάλλον:</b> ${esc(data?.environment||'AADE myDATA TEST')}<br><b>Περίοδος που επέστρεψε η function:</b> ${esc(data?.dateFrom||from)} έως ${esc(data?.dateTo||to)}<br><b>Λειτουργία:</b> μόνο ανάγνωση</small>`;
+ }catch(e){console.error('myDATA:',e);inc.textContent='❌';exp.textContent='❌';status.innerHTML='<b>❌ Αποτυχία σύνδεσης με myDATA</b><br><small>'+esc(e?.message||String(e))+'</small>';}
+}
 
 const I18N={
  el:{quick:'🌱 Γρήγορη καταχώρηση',choose:'Επίλεξε τι θέλεις να καταχωρήσεις',expense:'💶 Έξοδο',harvest:'⚖️ Συγκομιδή',sale:'💰 Πώληση',activity:'📅 Εργασία',voice:'🎤 Πες το με τη φωνή',current:'Τρέχουσα επιλογή',reports:'📊 Αναφορές & Στατιστικά',calendar:'📅 Ημερολόγιο Καλλιέργειας',newEntry:'Νέα καταχώρηση'},
