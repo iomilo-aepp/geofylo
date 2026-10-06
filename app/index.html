@@ -1100,6 +1100,29 @@ async function startStripeCheckout(months){
   location.href=data.url;
  }catch(e){if(msg)msg.textContent='❌ '+(e?.message||'Σφάλμα Stripe Checkout');else alert('❌ '+(e?.message||'Σφάλμα Stripe Checkout'));}
 }
+async function invokeMyDataCredentials(method,body){
+ const {data:{session},error:sessionError}=await sb.auth.getSession();
+ if(sessionError)throw sessionError;
+ if(!session?.access_token)throw new Error('Η συνεδρία έληξε. Κάνε ξανά είσοδο στο GeoFylo.');
+
+ const url='https://yaoumcvuzvzrdcnmpmhv.supabase.co/functions/v1/mydata-credentials';
+ const options={
+  method:method,
+  headers:{
+   'Authorization':'Bearer '+session.access_token,
+   'apikey':'sb_publishable_N9tUlIyCPO9wgPg42MsppQ__PRnSuax',
+   'Content-Type':'application/json'
+  }
+ };
+ if(body!==undefined)options.body=JSON.stringify(body);
+
+ const response=await fetch(url,options);
+ let data=null;
+ try{data=await response.json()}catch(e){}
+ if(!response.ok)throw new Error(data?.error||data?.message||('HTTP '+response.status));
+ return data;
+}
+
 async function loadMyDataCredentials(){
  const state=document.getElementById('myDataCredentialState');
  const uid=document.getElementById('myDataCredentialUser');
@@ -1111,8 +1134,7 @@ async function loadMyDataCredentials(){
  if(msg)msg.textContent='';
  state.innerHTML='<small>⏳ Έλεγχος σύνδεσης...</small>';
  try{
-  const {data,error}=await sb.functions.invoke('mydata-credentials',{method:'GET'});
-  if(error)throw error;
+  const data=await invokeMyDataCredentials('GET');
   if(data?.connected&&data?.credential){
    uid.value=data.credential.aadeUserId||'';
    key.value='';
@@ -1142,11 +1164,9 @@ async function saveMyDataCredentials(){
  if(!aadeUserId||!subscriptionKey){if(msg)msg.textContent='Συμπλήρωσε myDATA User ID και Subscription Key.';return}
  if(btn)btn.disabled=true;if(msg)msg.textContent='Ασφαλής αποθήκευση...';
  try{
-  const {data,error}=await sb.functions.invoke('mydata-credentials',{
-   method:'POST',
-   body:{aadeUserId,subscriptionKey,environment:env?.value||'test'}
+  const data=await invokeMyDataCredentials('POST',{
+   aadeUserId,subscriptionKey,environment:env?.value||'test'
   });
-  if(error)throw error;
   if(!data?.ok)throw new Error(data?.error||'Δεν αποθηκεύτηκαν τα στοιχεία.');
   key.value='';
   if(msg)msg.textContent='✅ Τα στοιχεία myDATA αποθηκεύτηκαν κρυπτογραφημένα.';
@@ -1161,8 +1181,7 @@ async function deleteMyDataCredentials(){
  if(!confirm('Να αποσυνδεθεί το myDATA από αυτόν τον λογαριασμό GeoFylo;'))return;
  const msg=document.getElementById('myDataCredentialMsg');
  try{
-  const {data,error}=await sb.functions.invoke('mydata-credentials',{method:'DELETE'});
-  if(error)throw error;
+  const data=await invokeMyDataCredentials('DELETE');
   if(!data?.ok)throw new Error(data?.error||'Δεν αφαιρέθηκε η σύνδεση.');
   await loadMyDataCredentials();
   if(msg)msg.textContent='✅ Η σύνδεση myDATA αφαιρέθηκε.';
