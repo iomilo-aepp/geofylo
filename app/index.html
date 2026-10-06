@@ -506,10 +506,13 @@ async function loadMyData(){
   const {data,error}=await sb.functions.invoke('mydata-test',{body:{dateFrom:from,dateTo:to}});
   if(error)throw error;
   const incomeOk=Number(data?.income?.status)===200, expenseOk=Number(data?.expenses?.status)===200;
-  inc.textContent=incomeOk?'✅ 200 OK':'❌ '+(data?.income?.status??'Σφάλμα');
-  exp.textContent=expenseOk?'✅ 200 OK':'❌ '+(data?.expenses?.status??'Σφάλμα');
+  const incomeCount=Number(data?.income?.count||0), expenseCount=Number(data?.expenses?.count||0);
+  inc.textContent=incomeOk ? incomeCount+' '+(incomeCount===1?'παραστατικό':'παραστατικά') : '❌ '+(data?.income?.status??'Σφάλμα');
+  exp.textContent=expenseOk ? expenseCount+' '+(expenseCount===1?'παραστατικό':'παραστατικά') : '❌ '+(data?.expenses?.status??'Σφάλμα');
   status.innerHTML=(incomeOk&&expenseOk)?'<b>✅ Συνδεδεμένο με ΑΑΔΕ myDATA TEST</b><br><small>Η ανάκτηση εσόδων και εξόδων ολοκληρώθηκε επιτυχώς.</small>':'<b>⚠️ Η ανάκτηση δεν ολοκληρώθηκε.</b>';
-  info.innerHTML=`<small><b>Περιβάλλον:</b> ${esc(data?.environment||'AADE myDATA TEST')}<br><b>Περίοδος που επέστρεψε η function:</b> ${esc(data?.dateFrom||from)} έως ${esc(data?.dateTo||to)}<br><b>Λειτουργία:</b> μόνο ανάγνωση</small>`;
+  const incomeMessage=data?.income?.message||(incomeOk?(incomeCount?'Βρέθηκαν '+incomeCount+' παραστατικά εσόδων.':'Δεν βρέθηκαν έσοδα για το επιλεγμένο διάστημα.'):'Η ανάκτηση εσόδων απέτυχε.');
+  const expenseMessage=data?.expenses?.message||(expenseOk?(expenseCount?'Βρέθηκαν '+expenseCount+' παραστατικά εξόδων.':'Δεν βρέθηκαν έξοδα για το επιλεγμένο διάστημα.'):'Η ανάκτηση εξόδων απέτυχε.');
+  info.innerHTML='<div class="quickSummary"><b>💰 Έσοδα</b><br><small>'+esc(incomeMessage)+'</small></div><div class="quickSummary"><b>💸 Έξοδα</b><br><small>'+esc(expenseMessage)+'</small></div><small style="display:block;margin-top:10px"><b>Περιβάλλον:</b> '+esc(data?.environment||'AADE myDATA TEST')+'<br><b>Περίοδος:</b> '+esc(data?.dateFrom||from)+' έως '+esc(data?.dateTo||to)+'<br><b>Λειτουργία:</b> μόνο ανάγνωση</small>';
  }catch(e){console.error('myDATA:',e);inc.textContent='❌';exp.textContent='❌';status.innerHTML='<b>❌ Αποτυχία σύνδεσης με myDATA</b><br><small>'+esc(e?.message||String(e))+'</small>';}
 }
 
