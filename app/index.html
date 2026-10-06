@@ -513,50 +513,240 @@ async function loadMyData(requestType='all'){
  const inc=document.getElementById('myDataIncomeStatus');
  const exp=document.getElementById('myDataExpenseStatus');
  const info=document.getElementById('myDataInfo');
+
  if(!status||!inc||!exp||!info)return;
- if(!navigator.onLine){status.innerHTML='<small>📴 Χρειάζεται σύνδεση στο Internet.</small>';return}
+
+ if(!navigator.onLine){
+  status.innerHTML='<small>📴 Χρειάζεται σύνδεση στο Internet.</small>';
+  return;
+ }
+
  status.innerHTML='<small>⏳ Σύνδεση με ΑΑΔΕ myDATA...</small>';
+
  if(requestType!=='expenses')inc.textContent='…';
  if(requestType!=='income')exp.textContent='…';
+
  try{
   const from=document.getElementById('myDataFrom')?.value||'2026-01-01';
   const to=document.getElementById('myDataTo')?.value||'2026-12-31';
-  const {data,error}=await sb.functions.invoke('mydata-test',{body:{dateFrom:from,dateTo:to,requestType}});
+
+  const {data,error}=await sb.functions.invoke('mydata-test',{
+   body:{
+    dateFrom:from,
+    dateTo:to,
+    requestType
+   }
+  });
+
   if(error)throw error;
 
-  const income=data?.income, expenses=data?.expenses;
+  const income=data?.income;
+  const expenses=data?.expenses;
+
   const incomeOk=!income || Number(income.status)===200;
   const expenseOk=!expenses || Number(expenses.status)===200;
-  const incomeCount=Number(income?.count||0), expenseCount=Number(expenses?.count||0);
+
+  const incomeCount=Number(
+   income?.documentCount ??
+   income?.count ??
+   0
+  );
+
+  const expenseCount=Number(
+   expenses?.documentCount ??
+   expenses?.count ??
+   0
+  );
 
   if(income){
-   inc.textContent=Number(income.status)===200 ? incomeCount+' '+(incomeCount===1?'παραστατικό':'παραστατικά') : (Number(income.status)===429?'⏳ Προσωρινός περιορισμός':'❌ '+(income.status??'Σφάλμα'));
-  }
-  if(expenses){
-   exp.textContent=Number(expenses.status)===200 ? expenseCount+' '+(expenseCount===1?'παραστατικό':'παραστατικά') : (Number(expenses.status)===429?'⏳ Προσωρινός περιορισμός':'❌ '+(expenses.status??'Σφάλμα'));
+   inc.textContent=
+    Number(income.status)===200
+     ? incomeCount+' '+(incomeCount===1?'παραστατικό':'παραστατικά')
+     : Number(income.status)===429
+       ? '⏳ Προσωρινός περιορισμός'
+       : '❌ '+(income.status??'Σφάλμα');
   }
 
-  const limited=(income?.rateLimited||expenses?.rateLimited||data?.rateLimited);
-  const retry=income?.retryAfterSeconds??expenses?.retryAfterSeconds??data?.retryAfterSeconds??null;
+  if(expenses){
+   exp.textContent=
+    Number(expenses.status)===200
+     ? expenseCount+' '+(expenseCount===1?'παραστατικό':'παραστατικά')
+     : Number(expenses.status)===429
+       ? '⏳ Προσωρινός περιορισμός'
+       : '❌ '+(expenses.status??'Σφάλμα');
+  }
+
+  const limited=
+   income?.rateLimited ||
+   expenses?.rateLimited ||
+   data?.rateLimited;
+
+  const retry=
+   income?.retryAfterSeconds ??
+   expenses?.retryAfterSeconds ??
+   data?.retryAfterSeconds ??
+   null;
+
   if(limited){
-   const retryText=retry?('Δοκιμάστε ξανά σε περίπου <b>'+retry+' δευτερόλεπτα</b>.'):'Δοκιμάστε ξανά σε λίγο.';
+   const retryText=retry
+    ? 'Δοκιμάστε ξανά σε περίπου <b>'+retry+' δευτερόλεπτα</b>.'
+    : 'Δοκιμάστε ξανά σε λίγο.';
+
    const limitedType=income?.rateLimited?'income':'expenses';
    const label=limitedType==='income'?'έσοδα':'έξοδα';
-   status.innerHTML='<b>⏳ Προσωρινός περιορισμός από ΑΑΔΕ</b><br><small>'+retryText+'</small><br><button type="button" style="margin-top:8px" onclick="loadMyData(\''+limitedType+'\')">🔄 Ανάκτηση μόνο '+label+'</button>';
+
+   status.innerHTML=
+    '<b>⏳ Προσωρινός περιορισμός από ΑΑΔΕ</b><br>'+
+    '<small>'+retryText+'</small><br>'+
+    '<button type="button" style="margin-top:8px" '+
+    'onclick="loadMyData(\''+limitedType+'\')">'+
+    '🔄 Ανάκτηση μόνο '+label+
+    '</button>';
   }else{
-   status.innerHTML=(incomeOk&&expenseOk)?'<b>✅ Συνδεδεμένο με '+(data?.environment||'ΑΑΔΕ myDATA')+'</b><br><small>Η ανάκτηση ολοκληρώθηκε επιτυχώς.</small>':'<b>⚠️ Η ανάκτηση δεν ολοκληρώθηκε.</b>';
+   status.innerHTML=
+    (incomeOk&&expenseOk)
+     ? '<b>✅ Συνδεδεμένο με '+(data?.environment||'ΑΑΔΕ myDATA')+'</b>'+
+       '<br><small>Η ανάκτηση ολοκληρώθηκε επιτυχώς.</small>'
+     : '<b>⚠️ Η ανάκτηση δεν ολοκληρώθηκε.</b>';
   }
 
-  const incomeMessage=income?.message||(income&&Number(income.status)===200?(incomeCount?'Βρέθηκαν '+incomeCount+' εγγραφές εσόδων.':'Δεν βρέθηκαν έσοδα για το επιλεγμένο διάστημα.'):'');
-  const expenseMessage=expenses?.message||(expenses&&Number(expenses.status)===200?(expenseCount?'Βρέθηκαν '+expenseCount+' εγγραφές εξόδων.':'Δεν βρέθηκαν έξοδα για το επιλεγμένο διάστημα.'):'');
+  const incomeNet=Number(income?.netValue||0);
+  const incomeVat=Number(income?.vatAmount||0);
+  const incomeGross=Number(income?.grossValue||0);
+
+  const expenseNet=Number(expenses?.netValue||0);
+  const expenseVat=Number(expenses?.vatAmount||0);
+  const expenseGross=Number(expenses?.grossValue||0);
+
+  const netResult=Number(
+   data?.totals?.netResult ??
+   data?.result?.net ??
+   (incomeNet-expenseNet)
+  );
+
+  const grossResult=Number(
+   data?.totals?.grossResult ??
+   data?.result?.gross ??
+   (incomeGross-expenseGross)
+  );
+
+  const vatDifference=incomeVat-expenseVat;
+
+  const euro=value=>
+   Number(value||0).toLocaleString(
+    'el-GR',
+    {
+     minimumFractionDigits:2,
+     maximumFractionDigits:2
+    }
+   )+' €';
+
   let details='';
-  if(income)details+='<div class="quickSummary"><b>💰 Έσοδα</b><br><small>'+incomeMessage+'</small></div>';
-  if(expenses)details+='<div class="quickSummary"><b>💸 Έξοδα</b><br><small>'+expenseMessage+'</small></div>';
-  details+='<small><b>Περιβάλλον:</b> '+(data?.environment||'—')+'<br><b>Περίοδος:</b> '+formatMyDataDate(from)+' έως '+formatMyDataDate(to)+'<br><b>Λειτουργία:</b> μόνο ανάγνωση</small>';
+
+  if(income){
+   details+=`
+    <div class="quickSummary">
+     <b>💰 Έσοδα</b>
+     <div class="dashGrid" style="margin-top:10px">
+      <div class="dashBox">
+       <small>Παραστατικά</small>
+       <b>${incomeCount}</b>
+      </div>
+      <div class="dashBox">
+       <small>Καθαρή αξία</small>
+       <b>${euro(incomeNet)}</b>
+      </div>
+      <div class="dashBox">
+       <small>ΦΠΑ</small>
+       <b>${euro(incomeVat)}</b>
+      </div>
+      <div class="dashBox">
+       <small>Συνολική αξία</small>
+       <b>${euro(incomeGross)}</b>
+      </div>
+     </div>
+    </div>
+   `;
+  }
+
+  if(expenses){
+   details+=`
+    <div class="quickSummary">
+     <b>💸 Έξοδα</b>
+     <div class="dashGrid" style="margin-top:10px">
+      <div class="dashBox">
+       <small>Παραστατικά</small>
+       <b>${expenseCount}</b>
+      </div>
+      <div class="dashBox">
+       <small>Καθαρή αξία</small>
+       <b>${euro(expenseNet)}</b>
+      </div>
+      <div class="dashBox">
+       <small>ΦΠΑ</small>
+       <b>${euro(expenseVat)}</b>
+      </div>
+      <div class="dashBox">
+       <small>Συνολική αξία</small>
+       <b>${euro(expenseGross)}</b>
+      </div>
+     </div>
+    </div>
+   `;
+  }
+
+  if(incomeOk && expenseOk && income && expenses){
+   const resultIcon=netResult>=0?'📈':'📉';
+
+   details+=`
+    <div class="quickSummary" style="margin-top:14px">
+     <b>${resultIcon} Οικονομικό αποτέλεσμα</b>
+     <div class="dashGrid" style="margin-top:10px">
+      <div class="dashBox">
+       <small>Έσοδα χωρίς ΦΠΑ</small>
+       <b>${euro(incomeNet)}</b>
+      </div>
+      <div class="dashBox">
+       <small>Έξοδα χωρίς ΦΠΑ</small>
+       <b>${euro(expenseNet)}</b>
+      </div>
+      <div class="dashBox">
+       <small>Καθαρό αποτέλεσμα</small>
+       <b>${euro(netResult)}</b>
+      </div>
+      <div class="dashBox">
+       <small>Αποτέλεσμα με ΦΠΑ</small>
+       <b>${euro(grossResult)}</b>
+      </div>
+     </div>
+     <div style="margin-top:12px">
+      <small>Διαφορά ΦΠΑ</small><br>
+      <b>${euro(vatDifference)}</b>
+     </div>
+    </div>
+   `;
+  }
+
+  details+=`
+   <div style="margin-top:14px">
+    <small>
+     <b>Περιβάλλον:</b> ${data?.environment||'—'}
+     <br>
+     <b>Περίοδος:</b> ${formatMyDataDate(from)} έως ${formatMyDataDate(to)}
+     <br>
+     <b>Λειτουργία:</b> μόνο ανάγνωση
+    </small>
+   </div>
+  `;
+
   info.innerHTML=details;
+
  }catch(e){
   console.error('myDATA:',e);
-  status.innerHTML='<b>❌ Αποτυχία σύνδεσης με myDATA</b><br><small>'+(e?.message||String(e))+'</small>';
+
+  status.innerHTML=
+   '<b>❌ Αποτυχία σύνδεσης με myDATA</b><br>'+
+   '<small>'+(e?.message||String(e))+'</small>';
  }
 }
 
