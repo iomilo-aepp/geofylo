@@ -265,6 +265,17 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <small id="profileMsg"></small>
 </div>
 <div class="card">
+<h3>🏛️ Σύνδεση ΑΑΔΕ / myDATA</h3>
+<small>Σύνδεσε τα δικά σου στοιχεία myDATA API. Δεν χρησιμοποιούνται οι κωδικοί TAXISnet.</small>
+<div id="myDataCredentialState" class="quickSummary" style="margin-top:10px"><small>Έλεγχος σύνδεσης...</small></div>
+<label>myDATA User ID<input id="myDataCredentialUser" autocomplete="off" placeholder="myDATA User ID"></label>
+<label>Subscription Key<input id="myDataCredentialKey" type="password" autocomplete="new-password" placeholder="Subscription Key"></label>
+<label>Περιβάλλον<select id="myDataCredentialEnv"><option value="test">Δοκιμαστικό (TEST)</option><option value="production">Παραγωγικό (PRODUCTION)</option></select></label>
+<button id="saveMyDataCredentialBtn" onclick="saveMyDataCredentials()">🔗 Σύνδεση με myDATA</button>
+<button class="danger" id="deleteMyDataCredentialBtn" onclick="deleteMyDataCredentials()">🔌 Αποσύνδεση myDATA</button>
+<small id="myDataCredentialMsg" style="display:block;margin-top:7px"></small>
+</div>
+<div class="card">
 <h3>💳 Η συνδρομή μου</h3>
 <div id="mySubscriptionBox"><small>Φόρτωση συνδρομής...</small></div>
 </div>
@@ -1061,10 +1072,83 @@ async function startStripeCheckout(months){
   location.href=data.url;
  }catch(e){if(msg)msg.textContent='❌ '+(e?.message||'Σφάλμα Stripe Checkout');else alert('❌ '+(e?.message||'Σφάλμα Stripe Checkout'));}
 }
+async function loadMyDataCredentials(){
+ const state=document.getElementById('myDataCredentialState');
+ const uid=document.getElementById('myDataCredentialUser');
+ const key=document.getElementById('myDataCredentialKey');
+ const env=document.getElementById('myDataCredentialEnv');
+ const msg=document.getElementById('myDataCredentialMsg');
+ const del=document.getElementById('deleteMyDataCredentialBtn');
+ if(!state||!uid||!key||!env)return;
+ if(msg)msg.textContent='';
+ state.innerHTML='<small>⏳ Έλεγχος σύνδεσης...</small>';
+ try{
+  const {data,error}=await sb.functions.invoke('mydata-credentials',{method:'GET'});
+  if(error)throw error;
+  if(data?.connected&&data?.credential){
+   uid.value=data.credential.aadeUserId||'';
+   key.value='';
+   env.value=data.credential.environment||'test';
+   state.innerHTML='<b>🟢 myDATA συνδεδεμένο</b><br><small>Το Subscription Key είναι αποθηκευμένο κρυπτογραφημένο και δεν εμφανίζεται.</small>';
+   if(del)del.classList.remove('hidden');
+  }else{
+   uid.value='';key.value='';env.value='test';
+   state.innerHTML='<b>⚪ Δεν έχει συνδεθεί myDATA</b><br><small>Συμπλήρωσε τα στοιχεία myDATA API.</small>';
+   if(del)del.classList.add('hidden');
+  }
+ }catch(e){
+  console.error('myDATA credentials:',e);
+  state.innerHTML='<b>⚠️ Δεν έγινε έλεγχος σύνδεσης myDATA.</b>';
+  if(msg)msg.textContent=e?.message||String(e);
+ }
+}
+
+async function saveMyDataCredentials(){
+ const uid=document.getElementById('myDataCredentialUser');
+ const key=document.getElementById('myDataCredentialKey');
+ const env=document.getElementById('myDataCredentialEnv');
+ const msg=document.getElementById('myDataCredentialMsg');
+ const btn=document.getElementById('saveMyDataCredentialBtn');
+ const aadeUserId=(uid?.value||'').trim();
+ const subscriptionKey=(key?.value||'').trim();
+ if(!aadeUserId||!subscriptionKey){if(msg)msg.textContent='Συμπλήρωσε myDATA User ID και Subscription Key.';return}
+ if(btn)btn.disabled=true;if(msg)msg.textContent='Ασφαλής αποθήκευση...';
+ try{
+  const {data,error}=await sb.functions.invoke('mydata-credentials',{
+   method:'POST',
+   body:{aadeUserId,subscriptionKey,environment:env?.value||'test'}
+  });
+  if(error)throw error;
+  if(!data?.ok)throw new Error(data?.error||'Δεν αποθηκεύτηκαν τα στοιχεία.');
+  key.value='';
+  if(msg)msg.textContent='✅ Τα στοιχεία myDATA αποθηκεύτηκαν κρυπτογραφημένα.';
+  await loadMyDataCredentials();
+ }catch(e){
+  console.error('save myDATA credentials:',e);
+  if(msg)msg.textContent='❌ '+(e?.message||String(e));
+ }finally{if(btn)btn.disabled=false}
+}
+
+async function deleteMyDataCredentials(){
+ if(!confirm('Να αποσυνδεθεί το myDATA από αυτόν τον λογαριασμό GeoFylo;'))return;
+ const msg=document.getElementById('myDataCredentialMsg');
+ try{
+  const {data,error}=await sb.functions.invoke('mydata-credentials',{method:'DELETE'});
+  if(error)throw error;
+  if(!data?.ok)throw new Error(data?.error||'Δεν αφαιρέθηκε η σύνδεση.');
+  await loadMyDataCredentials();
+  if(msg)msg.textContent='✅ Η σύνδεση myDATA αφαιρέθηκε.';
+ }catch(e){
+  console.error('delete myDATA credentials:',e);
+  if(msg)msg.textContent='❌ '+(e?.message||String(e));
+ }
+}
+
 async function loadProfile(){
  updatePinSettingsUI();
  // Commercial v1.3.1: refresh the signed-in user's subscription whenever Profile opens.
  await loadMySubscription();
+ await loadMyDataCredentials();
  const m=document.getElementById('profileMsg');if(m)m.textContent='';
  const r=await sb.from('profiles').select('full_name,phone,farm_name,area').eq('id',user.id).maybeSingle();
  if(r.error){if(m)m.textContent='Δεν φορτώθηκε το προφίλ: '+r.error.message;return}
