@@ -10,6 +10,8 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 @media(max-width:700px){.app{padding:14px}.bottomNav{display:flex;overflow-x:auto;overflow-y:hidden;gap:4px;padding:6px 4px;scroll-snap-type:x proximity;-webkit-overflow-scrolling:touch;scrollbar-width:none}.bottomNav::-webkit-scrollbar{display:none}.bottomNav button{flex:0 0 82px;min-width:82px;scroll-snap-align:start;padding:8px 4px;font-size:11px}.ico{font-size:20px}}
 
 .page{position:relative}.tabRefresh{position:sticky;top:8px;z-index:30;float:right;width:auto!important;margin:8px 8px 4px 8px!important;padding:8px 12px!important;border-radius:10px!important}.tabRefresh::after{content:"";display:block;clear:both}@media(max-width:600px){.tabRefresh{padding:7px 10px!important;font-size:14px}}
+
+.installBar{margin:12px 0}.installBtn{background:#174d34!important;font-size:17px!important;box-shadow:0 8px 22px rgba(23,77,52,.18)}
 </style><meta name="theme-color" content="#216b3a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -17,7 +19,12 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 </head><body><div id="completionModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;padding:18px;overflow:auto"><div class="card" style="max-width:520px;margin:8vh auto;background:#fff"><h3>✅ Ολοκλήρωση εργασίας</h3><small>Δήλωσε το εφόδιο και την πραγματική ποσότητα που χρησιμοποιήθηκε. Αν δεν χρησιμοποιήθηκε εφόδιο, επίλεξε «Χωρίς εφόδιο».</small><label style="margin-top:14px">📦 Εφόδιο<select id="completionInventory" onchange="completionInventoryChanged()"><option value="">— Χωρίς εφόδιο —</option></select></label><div id="completionAvailable"><small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small></div><label>Ποσότητα που χρησιμοποιήθηκε<input id="completionQty" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="π.χ. 2,5" disabled></label><div class="grid"><button class="soft" onclick="closeCompletionModal()">Ακύρωση</button><button id="confirmCompletionBtn" onclick="confirmActivityCompletion()">✅ Ολοκλήρωση εργασίας</button></div></div></div><div class="app">
-<div id="auth"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small>Commercial v1.2 • 30 ημέρες δωρεάν + συνδρομή</small><div class="card">
+<div id="auth"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small>Commercial v1.2 • 30 ημέρες δωρεάν + συνδρομή</small>
+<div id="installBar" class="installBar hidden">
+  <button id="installAppBtn" class="installBtn" type="button" onclick="installGeoFylo()">📲 Εγκατάσταση GeoFylo</button>
+  <small id="installHint">Εγκατάστησέ το στο κινητό ή στον υπολογιστή σου.</small>
+</div>
+<div class="card">
 <div id="emailAuthBox"><h2 id="authTitle">Σύνδεση</h2><div id="nameBox" class="hidden"><input id="name" placeholder="Ονοματεπώνυμο"></div>
 <input id="email" type="email" placeholder="Email"><input id="pass" type="password" placeholder="Κωδικός (6+ χαρακτήρες)">
 <button onclick="submitAuth()" id="authBtn">Σύνδεση</button><button class="soft" onclick="toggleAuth()" id="toggleBtn">Δεν έχω λογαριασμό — Εγγραφή</button></div>
@@ -305,6 +312,74 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <small id="dataManageMsg"></small>
 </div></div>
 <div style="margin-top:18px"><button class="soft" onclick="logout()">🚪 Έξοδος</button></div></div></div>
+<script>
+let deferredInstallPrompt = null;
+
+function isGeoFyloInstalled(){
+  return window.matchMedia('(display-mode: standalone)').matches ||
+         window.navigator.standalone === true;
+}
+
+function updateInstallUI(){
+  const bar = document.getElementById('installBar');
+  const btn = document.getElementById('installAppBtn');
+  const hint = document.getElementById('installHint');
+  if(!bar || !btn) return;
+
+  if(isGeoFyloInstalled()){
+    bar.classList.add('hidden');
+    return;
+  }
+
+  bar.classList.remove('hidden');
+
+  const ua = navigator.userAgent || '';
+  const isiOS = /iphone|ipad|ipod/i.test(ua);
+
+  if(isiOS && !deferredInstallPrompt){
+    btn.textContent = '📲 Πώς εγκαθίσταται το GeoFylo';
+    if(hint) hint.textContent = 'Σε iPhone/iPad: Κοινοποίηση → Προσθήκη στην οθόνη Αφετηρίας.';
+  } else if(!deferredInstallPrompt) {
+    btn.textContent = '📲 Εγκατάσταση GeoFylo';
+    if(hint) hint.textContent = 'Αν δεν εμφανιστεί εγκατάσταση, χρησιμοποίησε το μενού του browser → Εγκατάσταση εφαρμογής.';
+  } else {
+    btn.textContent = '📲 Εγκατάσταση GeoFylo';
+    if(hint) hint.textContent = 'Πάτησε για εγκατάσταση στο κινητό ή στον υπολογιστή.';
+  }
+}
+
+window.addEventListener('beforeinstallprompt', (event) => {
+  event.preventDefault();
+  deferredInstallPrompt = event;
+  updateInstallUI();
+});
+
+window.addEventListener('appinstalled', () => {
+  deferredInstallPrompt = null;
+  updateInstallUI();
+});
+
+async function installGeoFylo(){
+  if(isGeoFyloInstalled()) return;
+
+  if(deferredInstallPrompt){
+    deferredInstallPrompt.prompt();
+    try { await deferredInstallPrompt.userChoice; } catch(e) {}
+    deferredInstallPrompt = null;
+    updateInstallUI();
+    return;
+  }
+
+  const isiOS = /iphone|ipad|ipod/i.test(navigator.userAgent || '');
+  if(isiOS){
+    alert('Για εγκατάσταση σε iPhone/iPad: πάτησε Κοινοποίηση και μετά «Προσθήκη στην οθόνη Αφετηρίας».');
+  } else {
+    alert('Αν δεν ανοίξει αυτόματα η εγκατάσταση, άνοιξε το μενού του Chrome/Edge και επίλεξε «Εγκατάσταση εφαρμογής» ή «Προσθήκη στην αρχική οθόνη».');
+  }
+}
+
+document.addEventListener('DOMContentLoaded', updateInstallUI);
+</script>
 <script>
 let movementTypeFilter='all';
 window.allMovementRows=window.allMovementRows||[];
