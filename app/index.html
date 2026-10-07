@@ -1133,7 +1133,7 @@ function showSubscriptionExpired(s){
  page.classList.add('active');
  const end=s?.subscription_ends_at||s?.trial_ends_at;
  const d=end?new Date(end).toLocaleDateString('el-GR'):'—';
- page.innerHTML=`<div class="card" style="max-width:620px;margin:24px auto;text-align:center"><h2>🔒 Η συνδρομή σας έχει λήξει</h2><p>Η δοκιμαστική περίοδος ή η συνδρομή σας έληξε στις <b>${esc(d)}</b>.</p><p>Τα δεδομένα σας παραμένουν ασφαλή. Επιλέξτε πακέτο για να συνεχίσετε να χρησιμοποιείτε το GeoFylo.</p><div class="quickGrid" style="margin-top:14px"><button onclick="startStripeCheckout(1)">1 μήνας — 9,90 €</button><button onclick="startStripeCheckout(3)">3 μήνες — 27 €</button><button onclick="startStripeCheckout(6)">6 μήνες — 49 €</button><button onclick="startStripeCheckout(12)">12 μήνες — 89 €</button></div><small id="stripeCheckoutMsg" style="display:block;margin-top:10px"></small><button class="soft" style="margin-top:14px" onclick="logout()">🔒 Έξοδος / Κλείδωμα</button></div>`;
+ page.innerHTML=`<div class="card" style="max-width:620px;margin:24px auto;text-align:center"><h2>🔒 Η συνδρομή σας έχει λήξει</h2><p>Η δοκιμαστική περίοδος ή η συνδρομή σας έληξε στις <b>${esc(d)}</b>.</p><p>Τα δεδομένα σας παραμένουν ασφαλή. Επιλέξτε πακέτο για να συνεχίσετε να χρησιμοποιείτε το GeoFylo.</p><div class="quickGrid" style="margin-top:14px"><button onclick="startStripeCheckout(1)">1 μήνας — 9,90 €</button><button onclick="startStripeCheckout(3)">3 μήνες — 27 €</button><button onclick="startStripeCheckout(6)">6 μήνες — 49 €</button><button onclick="startStripeCheckout(12)">12 μήνες — 89 €</button></div><small id="stripeCheckoutMsg" style="display:block;margin-top:10px"></small><button class="soft" style="margin-top:12px" onclick="toggleManualSubscriptionPayment('expired')">🏦 Πληρωμή χωρίς κάρτα — IRIS / Τραπεζική κατάθεση</button><div id="manualPaymentBox-expired" class="hidden" style="margin-top:10px;padding:14px;border:1px solid #dfe7df;border-radius:12px;background:#f7faf6;text-align:left">${manualSubscriptionPaymentHtml()}</div><button class="soft" style="margin-top:14px" onclick="logout()">🔒 Έξοδος / Κλείδωμα</button></div>`;
  const nav=main.querySelector('.bottomNav');if(nav)nav.classList.add('hidden');
 }
 async function setupAdminUI(){
@@ -1343,8 +1343,29 @@ async function loadMySubscription(){
   <button onclick="startStripeCheckout(3)">3 μήνες — 27 €</button>
   <button onclick="startStripeCheckout(6)">6 μήνες — 49 €</button>
   <button onclick="startStripeCheckout(12)">12 μήνες — 89 €</button>
- </div><small id="stripeCheckoutMsg" style="display:block;margin-top:8px"></small></div>`;
+ </div><small id="stripeCheckoutMsg" style="display:block;margin-top:8px"></small>
+ <button class="soft" style="margin-top:12px" onclick="toggleManualSubscriptionPayment('profile')">🏦 Πληρωμή χωρίς κάρτα — IRIS / Τραπεζική κατάθεση</button>
+ <div id="manualPaymentBox-profile" class="hidden" style="margin-top:10px;padding:14px;border:1px solid #dfe7df;border-radius:12px;background:#f7faf6">
+  ${manualSubscriptionPaymentHtml()}
+ </div></div>`;
 }
+function manualSubscriptionPaymentHtml(){
+ const accountEmail=esc(user?.email||'το email του λογαριασμού σου');
+ return `<div>
+  <h4 style="margin:0 0 8px">🏦 Πληρωμή χωρίς κάρτα</h4>
+  <small>Μπορείς να πληρώσεις με IRIS ή τραπεζική κατάθεση. Η συνδρομή ενεργοποιείται μετά την επιβεβαίωση της πληρωμής.</small>
+  <div class="quickSummary" style="margin-top:12px"><b>📱 IRIS</b><br><small>Στοιχείο IRIS:</small><br><b>6978676722</b></div>
+  <div class="quickSummary" style="margin-top:10px"><b>🏦 Τραπεζική κατάθεση</b><br><small>Τράπεζα:</small> <b>Τράπεζα Πειραιώς</b><br><small>IBAN:</small> <b>GR5901711550006155010254260</b><br><small>Δικαιούχος: </small> <b>ΜΗΛΟΛΙΔΑΚΗΣ ΙΩΑΝΝΗΣ</b></div>
+  <div class="quickSummary" style="margin-top:10px"><b>📝 Αιτιολογία πληρωμής</b><br><small>GeoFylo — ${accountEmail}</small></div>
+  <small style="display:block;margin-top:10px">Μετά την πληρωμή, η ενεργοποίηση γίνεται αφού επιβεβαιωθεί η κατάθεση.</small>
+ </div>`;
+}
+function toggleManualSubscriptionPayment(where){
+ const box=document.getElementById('manualPaymentBox-'+where);
+ if(!box)return;
+ box.classList.toggle('hidden');
+}
+
 const STRIPE_CHECKOUT_PLANS={
  1:'price_1UMLOyI4vp1ziwO7clxZ0mRR',
  3:'price_1UMLSVI4vp1ziwO7fEPzUIh0',
