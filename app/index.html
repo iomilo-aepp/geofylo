@@ -19,7 +19,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
 </head><body><div id="completionModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;padding:18px;overflow:auto"><div class="card" style="max-width:520px;margin:8vh auto;background:#fff"><h3>✅ Ολοκλήρωση εργασίας</h3><small>Δήλωσε το εφόδιο και την πραγματική ποσότητα που χρησιμοποιήθηκε. Αν δεν χρησιμοποιήθηκε εφόδιο, επίλεξε «Χωρίς εφόδιο».</small><label style="margin-top:14px">📦 Εφόδιο<select id="completionInventory" onchange="completionInventoryChanged()"><option value="">— Χωρίς εφόδιο —</option></select></label><div id="completionAvailable"><small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small></div><label>Ποσότητα που χρησιμοποιήθηκε<input id="completionQty" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="π.χ. 2,5" disabled></label><div class="grid"><button class="soft" onclick="closeCompletionModal()">Ακύρωση</button><button id="confirmCompletionBtn" onclick="confirmActivityCompletion()">✅ Ολοκλήρωση εργασίας</button></div></div></div><div class="app">
-<div id="auth"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small>Commercial v1.2 • 30 ημέρες δωρεάν + συνδρομή</small>
+<div id="auth"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small></small>
 <div id="installBar" class="installBar hidden">
   <button id="installAppBtn" class="installBtn" type="button" onclick="installGeoFylo()">📲 Εγκατάσταση GeoFylo</button>
   <small id="installHint">Εγκατάστησέ το στο κινητό ή στον υπολογιστή σου.</small>
