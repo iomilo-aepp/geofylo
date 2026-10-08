@@ -18,7 +18,14 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <meta name="apple-mobile-web-app-title" content="GeoFylo">
 <link rel="manifest" href="./manifest.webmanifest">
 <link rel="apple-touch-icon" href="./icon-192.png">
-</head><body><div id="completionModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;padding:18px;overflow:auto"><div class="card" style="max-width:520px;margin:8vh auto;background:#fff"><h3>✅ Ολοκλήρωση εργασίας</h3><small>Δήλωσε το εφόδιο και την πραγματική ποσότητα που χρησιμοποιήθηκε. Αν δεν χρησιμοποιήθηκε εφόδιο, επίλεξε «Χωρίς εφόδιο».</small><label style="margin-top:14px">📦 Εφόδιο<select id="completionInventory" onchange="completionInventoryChanged()"><option value="">— Χωρίς εφόδιο —</option></select></label><div id="completionAvailable"><small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small></div><label>Ποσότητα που χρησιμοποιήθηκε<input id="completionQty" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="π.χ. 2,5" disabled></label><div class="grid"><button class="soft" onclick="closeCompletionModal()">Ακύρωση</button><button id="confirmCompletionBtn" onclick="confirmActivityCompletion()">✅ Ολοκλήρωση εργασίας</button></div></div></div><div class="app">
+</head><body><div id="completionModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;padding:18px;overflow:auto"><div class="card" style="max-width:520px;margin:8vh auto;background:#fff"><h3>✅ Ολοκλήρωση εργασίας</h3><small>Δήλωσε το εφόδιο και την πραγματική ποσότητα που χρησιμοποιήθηκε. Αν δεν χρησιμοποιήθηκε εφόδιο, επίλεξε «Χωρίς εφόδιο».</small><label style="margin-top:14px">📦 Εφόδιο<select id="completionInventory" onchange="completionInventoryChanged()"><option value="">— Χωρίς εφόδιο —</option></select></label><div id="completionAvailable"><small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small></div><label>Ποσότητα που χρησιμοποιήθηκε<input id="completionQty" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="π.χ. 2,5" disabled></label><div class="grid"><button class="soft" onclick="closeCompletionModal()">Ακύρωση</button><button id="confirmCompletionBtn" onclick="confirmActivityCompletion()">✅ Ολοκλήρωση εργασίας</button></div></div></div><div id="pinSetupModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;padding:18px;overflow:auto">
+<div class="card" style="max-width:420px;margin:12vh auto;background:#fff">
+<h3 id="pinSetupTitle">🔐 Ορισμός PIN</h3>
+<small id="pinSetupHint">Πληκτρολόγησε έναν 4ψήφιο PIN.</small>
+<input id="pinSetupInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password" placeholder="••••" style="text-align:center;font-size:30px;letter-spacing:12px" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onkeydown="if(event.key==='Enter')submitPinSetupStep()">
+<div class="grid"><button class="soft" type="button" onclick="cancelPinSetup()">Ακύρωση</button><button type="button" onclick="submitPinSetupStep()">Συνέχεια</button></div>
+<small id="pinSetupMsg" style="display:block;margin-top:7px"></small>
+</div></div><div class="app">
 <div id="auth"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small></small>
 <div id="installBar" class="installBar hidden">
   <button id="installAppBtn" class="installBtn" type="button" onclick="installGeoFylo()">📲 Εγκατάσταση GeoFylo</button>
@@ -1072,12 +1079,52 @@ const pinLockKey=u=>'geofylo_pin_lock_'+u.id;
 const pinSessionKey=u=>'geofylo_pin_unlocked_'+u.id;
 async function pinHash(pin,u){const b=new TextEncoder().encode('GeoFylo|'+u.id+'|'+pin);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')}
 async function savePin(pin,u){localStorage.setItem(pinKey(u),await pinHash(pin,u));localStorage.removeItem(pinFailKey(u));localStorage.removeItem(pinLockKey(u))}
-async function setupPin(u){
- let p=prompt('Όρισε έναν 4ψήφιο PIN για γρήγορη είσοδο σε αυτή τη συσκευή:');
- if(p===null)return true;
- p=String(p).trim();if(!/^\d{4}$/.test(p)){alert('Ο PIN πρέπει να έχει ακριβώς 4 ψηφία.');return setupPin(u)}
- let p2=prompt('Ξαναγράψε τον 4ψήφιο PIN:');if(p2!==p){alert('Οι PIN δεν ταιριάζουν. Δοκίμασε ξανά.');return setupPin(u)}
- await savePin(p,u);alert('✅ Ο PIN αποθηκεύτηκε σε αυτή τη συσκευή.');updatePinSettingsUI();return true
+let pinSetupState=null;
+function setupPin(u){
+ return new Promise(resolve=>{
+  pinSetupState={u,step:1,first:'',resolve};
+  const modal=document.getElementById('pinSetupModal'),input=document.getElementById('pinSetupInput'),title=document.getElementById('pinSetupTitle'),hint=document.getElementById('pinSetupHint'),msg=document.getElementById('pinSetupMsg');
+  if(title)title.textContent='🔐 Ορισμός PIN';
+  if(hint)hint.textContent='Πληκτρολόγησε έναν 4ψήφιο PIN. Τα ψηφία δεν εμφανίζονται στην οθόνη.';
+  if(msg)msg.textContent='';
+  if(input){input.value='';input.type='password'}
+  modal?.classList.remove('hidden');
+  setTimeout(()=>input?.focus(),50);
+ });
+}
+async function submitPinSetupStep(){
+ if(!pinSetupState)return;
+ const input=document.getElementById('pinSetupInput'),hint=document.getElementById('pinSetupHint'),msg=document.getElementById('pinSetupMsg');
+ const p=String(input?.value||'').trim();
+ if(!/^\d{4}$/.test(p)){if(msg)msg.textContent='Ο PIN πρέπει να έχει ακριβώς 4 ψηφία.';input?.focus();return}
+ if(pinSetupState.step===1){
+  pinSetupState.first=p;pinSetupState.step=2;
+  if(hint)hint.textContent='Ξαναγράψε τον ίδιο 4ψήφιο PIN για επιβεβαίωση.';
+  if(msg)msg.textContent='';
+  if(input){input.value='';input.focus()}
+  return;
+ }
+ if(p!==pinSetupState.first){
+  pinSetupState.step=1;pinSetupState.first='';
+  if(hint)hint.textContent='Οι PIN δεν ταιριάζουν. Πληκτρολόγησε ξανά νέο 4ψήφιο PIN.';
+  if(msg)msg.textContent='❌ Οι PIN δεν ταιριάζουν.';
+  if(input){input.value='';input.focus()}
+  return;
+ }
+ const {u,resolve}=pinSetupState;
+ await savePin(p,u);
+ document.getElementById('pinSetupModal')?.classList.add('hidden');
+ pinSetupState=null;
+ updatePinSettingsUI();
+ alert('✅ Ο PIN αποθηκεύτηκε σε αυτή τη συσκευή.');
+ resolve(true);
+}
+function cancelPinSetup(){
+ if(!pinSetupState)return;
+ const {resolve}=pinSetupState;
+ document.getElementById('pinSetupModal')?.classList.add('hidden');
+ pinSetupState=null;
+ resolve(true);
 }
 function updatePinSettingsUI(){
  const st=document.getElementById('pinSettingsStatus'),dis=document.getElementById('pinDisableBtn'),set=document.getElementById('pinSetBtn');
