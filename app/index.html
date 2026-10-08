@@ -613,7 +613,24 @@ async function loadFirstSteps(){
   set('fsProfile',profileOk);set('fsSeason',seasonOk);set('fsGH',ghOk);set('fsEntry',entryOk);
   const done=[profileOk,seasonOk,ghOk,entryOk].filter(Boolean).length;
   const st=document.getElementById('firstStepsStatus');
-  if(st)st.textContent=done===4?'🎉 Τα βασικά βήματα έχουν ολοκληρωθεί.':done+' από 4 βήματα ολοκληρώθηκαν.';
+  const card=document.getElementById('firstStepsCard');
+  const completedKey='geofylo_first_steps_completed_'+user.id;
+
+  if(done===4){
+   try{localStorage.setItem(completedKey,'1')}catch(_){}
+   if(card)card.classList.add('hidden');
+   return;
+  }
+
+  let alreadyCompleted=false;
+  try{alreadyCompleted=localStorage.getItem(completedKey)==='1'}catch(_){}
+  if(alreadyCompleted){
+   if(card)card.classList.add('hidden');
+   return;
+  }
+
+  if(card)card.classList.remove('hidden');
+  if(st)st.textContent=done+' από 4 βήματα ολοκληρώθηκαν.';
  }catch(e){console.warn('First steps:',e)}
 }
 async function refreshTab(n,btn){
