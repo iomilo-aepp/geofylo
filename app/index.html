@@ -12,6 +12,14 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 .page{position:relative}.tabRefresh{position:sticky;top:8px;z-index:30;float:right;width:auto!important;margin:8px 8px 4px 8px!important;padding:8px 12px!important;border-radius:10px!important}.tabRefresh::after{content:"";display:block;clear:both}@media(max-width:600px){.tabRefresh{padding:7px 10px!important;font-size:14px}}
 
 .installBar{margin:12px 0}.installBtn{background:#174d34!important;font-size:17px!important;box-shadow:0 8px 22px rgba(23,77,52,.18)}
+.globalContext{background:#fff;border:1px solid #dfe7df;border-radius:14px;padding:10px 12px;margin:8px 0 12px}
+.globalContext .contextTop{display:flex;align-items:center;justify-content:space-between;gap:8px;margin-bottom:6px}
+.globalContext .contextGrid{display:grid;grid-template-columns:1fr 1fr;gap:8px}
+.globalContext label{font-size:12px;font-weight:800;color:#526357}
+.globalContext select{margin:3px 0 0;padding:9px;font-size:14px;background:#f7faf6}
+.contextLoading{font-size:12px;color:#718078}
+@media(max-width:560px){.globalContext .contextGrid{grid-template-columns:1fr}}
+
 </style><meta name="theme-color" content="#216b3a">
 <meta name="apple-mobile-web-app-capable" content="yes">
 <meta name="apple-mobile-web-app-status-bar-style" content="default">
@@ -39,7 +47,18 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <p id="msg"></p></div></div>
 
 <div id="main" class="hidden"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small id="who"></small>
-<div id="connectionStatus" style="margin:6px 0 10px;font-size:13px;font-weight:700"></div>
+<div id="connectionStatus" style="margin:6px 0 6px;font-size:13px;font-weight:700"></div>
+<div id="globalContext" class="globalContext">
+  <div class="contextTop"><b>🌱 Τρέχουσα επιλογή</b><span id="globalContextStatus" class="contextLoading"></span></div>
+  <div class="contextGrid">
+    <label>Καλλιεργητική περίοδος
+      <select id="globalSeason" onchange="changeGlobalSeason(this.value)"></select>
+    </label>
+    <label>Αγροτεμάχιο / Θερμοκήπιο
+      <select id="globalGH" onchange="changeGlobalGH(this.value)"></select>
+    </label>
+  </div>
+</div>
 <nav class="bottomNav"><button id="nav-home" class="active" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-calendar" onclick="showPage('calendar')"><span class="ico">📅</span>Εργασίες</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-customers" onclick="showPage('customers')"><span class="ico">👥</span>Πελάτες</button><button id="nav-payments" onclick="showPage('payments')"><span class="ico">💳</span>Πληρωμές</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-suppliers" onclick="showPage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button id="nav-cashflow" onclick="showPage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button id="nav-budget" onclick="showPage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button id="nav-mydata" onclick="showPage('mydata')"><span class="ico">🏛️</span>ΑΑΔΕ</button><button id="nav-assistant" onclick="showPage('assistant')"><span class="ico">🤖</span>Assistant</button><button id="nav-profile" onclick="showPage('profile')"><span class="ico">👤</span>Προφίλ</button><button id="nav-admin" class="hidden" onclick="showPage('admin')"><span class="ico">👑</span>Διαχείριση</button></nav>
 <div id="page-home" class="page active"><div class="card" id="smartHomeCard">
 <div class="reportTitle"><div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div><button class="soft" type="button" style="width:auto" onclick="window.location.reload()">🔄 Ανανέωση</button></div>
@@ -94,9 +113,9 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <small id="voiceMsg"></small>
 <select id="etype" onchange="entryFields()"><option value="expense">Έξοδο</option><option value="harvest">Συγκομιδή</option><option value="sale">Πώληση</option><option value="activity">📅 Εργασία / Ημερολόγιο</option></select>
 <div id="fields"></div><input id="note" placeholder="Σημείωση"><button id="saveEntryBtn" onclick="addEntry()">Αποθήκευση</button></div>
-<div class="card"><h3>Καλλιεργητική περίοδος</h3><select id="season" onchange="loadGH()"></select><input id="newSeason" placeholder="π.χ. 2026–27"><button onclick="addSeason()">+ Περίοδος</button>
+<div class="card"><h3>Καλλιεργητική περίοδος</h3><select id="season" onchange="if(user&&this.value)localStorage.setItem(currentSeasonKey(user),this.value);if(user)localStorage.removeItem(currentGHKey(user));loadGH()"></select><input id="newSeason" placeholder="π.χ. 2026–27"><button onclick="addSeason()">+ Περίοδος</button>
 <div class="grid"><button class="soft" onclick="renameSeason()">✏️ Μετονομασία περιόδου</button><button class="danger" onclick="deleteSeason()">🗑️ Διαγραφή περιόδου</button></div></div>
-<div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="dash()"></select><input id="ghName" placeholder="Όνομα"><div class="grid"><input id="area" type="number" step=".1" placeholder="Στρέμματα"><select id="crop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option></select></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
+<div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="if(user&&this.value)localStorage.setItem(currentGHKey(user),this.value);syncGlobalContext();dash()"></select><input id="ghName" placeholder="Όνομα"><div class="grid"><input id="area" type="number" step=".1" placeholder="Στρέμματα"><select id="crop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option></select></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
 <div class="grid"><button class="soft" onclick="editGH()">✏️ Επεξεργασία</button><button class="danger" onclick="deleteGH()">🗑️ Διαγραφή</button></div></div>
 </div><div id="page-movements" class="page"><div class="card" id="movementsCard">
 <h3>🧾 Κινήσεις</h3>
@@ -1752,9 +1771,80 @@ function editInventory(x){editingInventoryId=x.id;inventoryName.value=x.name||''
 function cancelInventoryEdit(){editingInventoryId=null;inventoryName.value='';inventoryQty.value='';inventoryCost.value='';inventorySupplier.value='';inventoryNote.value='';inventoryCategory.value='Λίπασμα';inventoryUnit.value='kg';saveInventoryBtn.textContent='💾 Αποθήκευση είδους';cancelInventoryBtn.classList.add('hidden')}
 async function deleteInventory(id){if(!confirm('Να διαγραφεί το είδος από την αποθήκη;'))return;const r=await sb.from('inventory').delete().eq('id',id);if(r.error)return alert(r.error.message);await loadInventory()}
 
-async function loadSeasons(){let r=await sb.from('seasons').select('*').order('created_at');if(r.error)return alert(r.error.message);season.innerHTML=r.data.map(x=>`<option value="${x.id}">${x.name}</option>`).join('');loadGH()}
-async function addSeason(){if(!newSeason.value.trim())return;let r=await sb.from('seasons').insert({user_id:user.id,name:newSeason.value.trim()});if(r.error)return alert(r.error.message);newSeason.value='';loadSeasons()}
-async function loadGH(){if(!season.value){gh.innerHTML='';return}let r=await sb.from('greenhouses').select('*').eq('season_id',season.value);if(r.error)return alert(r.error.message);gh.innerHTML=r.data.map(x=>`<option value="${x.id}">${x.name} • ${x.crop}</option>`).join('');dash()}
+const currentSeasonKey=u=>'geofylo_current_season_'+u.id;
+const currentGHKey=u=>'geofylo_current_gh_'+u.id;
+
+function syncGlobalContext(){
+ const gs=document.getElementById('globalSeason'),gg=document.getElementById('globalGH');
+ if(gs&&season){
+  gs.innerHTML=season.innerHTML;
+  gs.value=season.value||'';
+ }
+ if(gg&&gh){
+  gg.innerHTML=gh.innerHTML;
+  gg.value=gh.value||'';
+ }
+ const hs=document.getElementById('homeSelection');
+ if(hs&&season?.value&&gh?.value){
+  const sn=season.options[season.selectedIndex]?.text||'';
+  const gn=gh.options[gh.selectedIndex]?.text||'';
+  hs.textContent=sn+' • '+gn;
+ }
+}
+async function loadSeasons(){
+ let r=await sb.from('seasons').select('*').order('created_at');
+ if(r.error)return alert(r.error.message);
+ season.innerHTML=r.data.map(x=>`<option value="${x.id}">${x.name}</option>`).join('');
+ const saved=user?localStorage.getItem(currentSeasonKey(user)):'';
+ if(saved&&[...season.options].some(o=>o.value===saved))season.value=saved;
+ else if(season.value&&user)localStorage.setItem(currentSeasonKey(user),season.value);
+ await loadGH();
+}
+async function addSeason(){if(!newSeason.value.trim())return;let r=await sb.from('seasons').insert({user_id:user.id,name:newSeason.value.trim()});if(r.error)return alert(r.error.message);newSeason.value='';await loadSeasons()}
+async function loadGH(){
+ if(!season.value){gh.innerHTML='';syncGlobalContext();return}
+ if(user)localStorage.setItem(currentSeasonKey(user),season.value);
+ let r=await sb.from('greenhouses').select('*').eq('season_id',season.value);
+ if(r.error)return alert(r.error.message);
+ gh.innerHTML=r.data.map(x=>`<option value="${x.id}">${x.name} • ${x.crop}</option>`).join('');
+ const saved=user?localStorage.getItem(currentGHKey(user)):'';
+ if(saved&&[...gh.options].some(o=>o.value===saved))gh.value=saved;
+ else if(gh.value&&user)localStorage.setItem(currentGHKey(user),gh.value);
+ syncGlobalContext();
+ await dash();
+}
+async function changeGlobalSeason(id){
+ if(!season)return;
+ season.value=String(id||'');
+ if(user&&season.value)localStorage.setItem(currentSeasonKey(user),season.value);
+ if(user)localStorage.removeItem(currentGHKey(user));
+ const st=document.getElementById('globalContextStatus');if(st)st.textContent='⏳ Φόρτωση...';
+ await loadGH();
+ await refreshCurrentContextData();
+ if(st){st.textContent='✓ Ενημερώθηκε';setTimeout(()=>{if(st)st.textContent=''},900)}
+}
+async function changeGlobalGH(id){
+ if(!gh)return;
+ gh.value=String(id||'');
+ if(user&&gh.value)localStorage.setItem(currentGHKey(user),gh.value);
+ syncGlobalContext();
+ const st=document.getElementById('globalContextStatus');if(st)st.textContent='⏳ Φόρτωση...';
+ await refreshCurrentContextData();
+ if(st){st.textContent='✓ Ενημερώθηκε';setTimeout(()=>{if(st)st.textContent=''},900)}
+}
+async function refreshCurrentContextData(){
+ // Η επιλογή season/gh είναι κοινή για όλη την εφαρμογή. Ανανεώνουμε τα δεδομένα
+ // που εξαρτώνται από το τρέχον αγροτεμάχιο και οι υπόλοιπες καρτέλες θα διαβάσουν
+ // την ίδια επιλογή όταν ανοίξουν.
+ await dash();
+ const active=document.querySelector('.page.active')?.id?.replace('page-','')||'home';
+ if(active==='calendar')await loadCalendar();
+ else if(active==='reports')await loadReports();
+ else if(active==='assistant')await loadGeoFyloAssistant();
+ else if(active==='budget')await loadBudget();
+ else if(active==='movements')renderMovements();
+ syncGlobalContext();
+}
 async function addGH(){
  if(!season.value)return alert('Φτιάξε πρώτα περίοδο.');
  const n=ghName.value.trim(), ar=Number(area.value);
