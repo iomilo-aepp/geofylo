@@ -593,6 +593,10 @@ async function exportExcel(){
 
 document.addEventListener('input',e=>{if(e.target?.classList?.contains('purchaseQty')||e.target?.classList?.contains('purchaseCost'))updatePurchaseTotal()});
 document.addEventListener('DOMContentLoaded',()=>{const d=document.getElementById('purchaseDate');if(d&&!d.value)d.value=new Date().toISOString().slice(0,10)});
+
+// Live ενημέρωση του οδηγού πρώτης εκκίνησης χωρίς reload.
+document.addEventListener('geofylo:data-changed',()=>{ try{loadFirstSteps()}catch(_){} });
+
 async function loadFirstSteps(){
  if(!user)return;
  const set=(id,ok)=>{const e=document.getElementById(id);if(e)e.textContent=ok?'✅':'⬜'};
@@ -647,7 +651,7 @@ async function refreshTab(n,btn){
   else if(n==='assistant') await loadGeoFyloAssistant();
   else if(n==='suppliers') await loadSuppliers();
   else if(n==='cashflow') await loadCashflow();
-  else if(n==='profile') await loadProfile();
+  else if(n==='profile') await loadProfile();await loadFirstSteps();
   if(btn){btn.innerHTML='✅ Ανανεώθηκε';setTimeout(()=>{btn.innerHTML=old||'🔄 Ανανέωση';btn.disabled=false},900)}
  }catch(e){console.error(e);if(btn){btn.innerHTML='⚠️ Σφάλμα';setTimeout(()=>{btn.innerHTML=old||'🔄 Ανανέωση';btn.disabled=false},1200)}}
 }
@@ -1360,7 +1364,7 @@ async function enter(u){
   const nav=main.querySelector('.bottomNav');if(nav)nav.classList.remove('hidden');
   auth.classList.add('hidden');main.classList.remove('hidden');who.textContent=u.user_metadata?.full_name||u.email;
   await setupAdminUI();
-  await loadSeasons();entryFields();
+  await loadSeasons();await loadFirstSteps();entryFields();
  }catch(e){console.error(e);msg.textContent=e.message;main.classList.add('hidden');auth.classList.remove('hidden')}
 }
 // Commercial v1.6.2: while the app remains open, re-check subscription periodically.
@@ -1417,7 +1421,7 @@ async function restoreFullBackup(){
   if(b.settings?.overdue_days)localStorage.setItem('geofylo_overdue_days',String(b.settings.overdue_days));
   pendingRestoreBackup=null;const box=document.getElementById('restoreBackupPreview');box.classList.add('hidden');box.innerHTML='';
   if(m)m.textContent='✅ Η επαναφορά ολοκληρώθηκε. Τα δεδομένα του Backup φορτώθηκαν.';
-  await loadSeasons();await loadProfile();await dash();
+  await loadSeasons();await loadFirstSteps();await loadProfile();await loadFirstSteps();await dash();
  }catch(e){if(m)m.textContent='❌ Η επαναφορά σταμάτησε: '+e.message+' — ΜΗΝ κάνεις νέα διαγραφή. Κράτησε το αρχείο Backup και στείλε μου αυτό το μήνυμα.'}
 }
 async function deleteAllGeoFyloData(){
@@ -1871,7 +1875,7 @@ async function loadSeasons(){
  const saved=user?localStorage.getItem(currentSeasonKey(user)):'';
  if(saved&&[...season.options].some(o=>o.value===saved))season.value=saved;
  else if(season.value&&user)localStorage.setItem(currentSeasonKey(user),season.value);
- await loadGH();
+ await loadGH();await loadFirstSteps();
 }
 async function addSeason(){if(!newSeason.value.trim())return;let r=await sb.from('seasons').insert({user_id:user.id,name:newSeason.value.trim()});if(r.error)return alert(r.error.message);newSeason.value='';await loadSeasons()}
 async function loadGH(){
@@ -1892,7 +1896,7 @@ async function changeGlobalSeason(id){
  if(user&&season.value)localStorage.setItem(currentSeasonKey(user),season.value);
  if(user)localStorage.removeItem(currentGHKey(user));
  const st=document.getElementById('globalContextStatus');if(st)st.textContent='⏳ Φόρτωση...';
- await loadGH();
+ await loadGH();await loadFirstSteps();
  await refreshCurrentContextData();
  if(st){st.textContent='✓ Ενημερώθηκε';setTimeout(()=>{if(st)st.textContent=''},900)}
 }
@@ -1925,7 +1929,7 @@ async function addGH(){
  if(!Number.isFinite(ar)||ar<=0)return alert('Συμπλήρωσε έκταση μεγαλύτερη από 0 στρέμματα.');
  let r=await sb.from('greenhouses').insert({user_id:user.id,season_id:+season.value,name:n,crop:crop.value,area:ar});
  if(r.error)return alert('Δεν έγινε η δημιουργία: '+r.error.message);
- ghName.value='';area.value='';await loadGH();
+ ghName.value='';area.value='';await loadGH();await loadFirstSteps();
 }
 async function renameSeason(){
  if(!season.value)return alert('Δεν υπάρχει επιλεγμένη περίοδος.');
@@ -1933,7 +1937,7 @@ async function renameSeason(){
  const n=prompt('Νέο όνομα καλλιεργητικής περιόδου:',old);
  if(n===null||!n.trim())return;
  const r=await sb.from('seasons').update({name:n.trim()}).eq('id',+season.value);
- if(r.error)return alert(r.error.message);await loadSeasons();
+ if(r.error)return alert(r.error.message);await loadSeasons();await loadFirstSteps();
 }
 async function deleteSeason(){
  if(!season.value)return alert('Δεν υπάρχει επιλεγμένη περίοδος.');
@@ -1941,7 +1945,7 @@ async function deleteSeason(){
  if(!confirm('ΠΡΟΣΟΧΗ: Θα διαγραφεί η περίοδος "'+n+'" μαζί με ΟΛΑ τα αγροτεμάχια, τις συγκομιδές, τις πωλήσεις και τα έξοδά της. Συνέχεια;'))return;
  if(!confirm('Τελική επιβεβαίωση: Θέλεις οριστική διαγραφή της περιόδου "'+n+'";'))return;
  const r=await sb.from('seasons').delete().eq('id',id);
- if(r.error)return alert(r.error.message);await loadSeasons();
+ if(r.error)return alert(r.error.message);await loadSeasons();await loadFirstSteps();
 }
 async function editGH(){
  if(!gh.value)return alert('Δεν υπάρχει επιλεγμένο αγροτεμάχιο.');
@@ -1954,14 +1958,14 @@ async function editGH(){
  if(!Number.isFinite(arN)||arN<=0)return alert('Η έκταση πρέπει να είναι μεγαλύτερη από 0.');
  const c=prompt('Καλλιέργεια:',r.data.crop);if(c===null||!c.trim())return;
  const u=await sb.from('greenhouses').update({name:n.trim(),area:arN,crop:c.trim()}).eq('id',+gh.value);
- if(u.error)return alert(u.error.message);await loadGH();
+ if(u.error)return alert(u.error.message);await loadGH();await loadFirstSteps();
 }
 async function deleteGH(){
  if(!gh.value)return alert('Δεν υπάρχει επιλεγμένο αγροτεμάχιο.');
  const id=+gh.value,n=gh.options[gh.selectedIndex].text;
  if(!confirm('Θα διαγραφεί το "'+n+'" μαζί με όλες τις συγκομιδές, πωλήσεις και έξοδά του. Συνέχεια;'))return;
  const r=await sb.from('greenhouses').delete().eq('id',id);
- if(r.error)return alert(r.error.message);await loadGH();
+ if(r.error)return alert(r.error.message);await loadGH();await loadFirstSteps();
 }
 async function openCustomerCardFromDash(id){showPage('customers');await loadCustomers();setTimeout(()=>showCustomerCard(id),80)}
 async function openSupplierCardFromDash(id){showPage('suppliers');await loadSuppliers();setTimeout(()=>showSupplierCard(id),80)}
@@ -3012,5 +3016,16 @@ addTabRefreshButtons();
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.error));
 }
+
+document.addEventListener('click',e=>{
+ const b=e.target?.closest?.('button');
+ if(!b)return;
+ const code=String(b.getAttribute('onclick')||'');
+ if(/saveProfile|addSeason|addGH|saveEntry|saveExpense|saveHarvest|saveSale/.test(code)){
+   setTimeout(()=>{try{loadFirstSteps()}catch(_){}},700);
+   setTimeout(()=>{try{loadFirstSteps()}catch(_){}},1600);
+ }
+});
+
 </script>
 </body></html>
