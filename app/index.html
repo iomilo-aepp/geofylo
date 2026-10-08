@@ -1777,7 +1777,19 @@ async function saveInventory(){
 }
 function editInventory(x){editingInventoryId=x.id;inventoryName.value=x.name||'';inventoryCategory.value=x.category||'Άλλο';inventoryQty.value=x.quantity??0;inventoryUnit.value=x.unit||'kg';inventoryCost.value=x.unit_cost??0;inventorySupplier.value=x.supplier||'';inventoryNote.value=x.note||'';saveInventoryBtn.textContent='💾 Αποθήκευση αλλαγών';cancelInventoryBtn.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
 function cancelInventoryEdit(){editingInventoryId=null;inventoryName.value='';inventoryQty.value='';inventoryCost.value='';inventorySupplier.value='';inventoryNote.value='';inventoryCategory.value='Λίπασμα';inventoryUnit.value='kg';saveInventoryBtn.textContent='💾 Αποθήκευση είδους';cancelInventoryBtn.classList.add('hidden')}
-async function deleteInventory(id){if(!confirm('Να διαγραφεί το είδος από την αποθήκη;'))return;const r=await sb.from('inventory').delete().eq('id',id);if(r.error)return alert(r.error.message);await loadInventory()}
+async function deleteInventory(id){
+ if(!confirm('Να διαγραφεί το είδος από την αποθήκη;'))return;
+ const r=await sb.from('inventory').delete().eq('id',id);
+ if(r.error){
+  const msg=String(r.error.message||'');
+  if(msg.includes('purchase_invoice_items_inventory_id_fkey')||msg.includes('foreign key constraint')){
+   return alert('⚠️ Το είδος δεν μπορεί να διαγραφεί γιατί χρησιμοποιείται σε καταχωρημένο παραστατικό αγοράς.\n\nΜπορείς να το επεξεργαστείς, αλλά πρέπει να παραμείνει στην αποθήκη ώστε να διατηρείται σωστά το ιστορικό των παραστατικών.');
+  }
+  console.error('Inventory delete:',r.error);
+  return alert('❌ Δεν ήταν δυνατή η διαγραφή του είδους. Δοκίμασε ξανά.');
+ }
+ await loadInventory();
+}
 
 const currentSeasonKey=u=>'geofylo_current_season_'+u.id;
 const currentGHKey=u=>'geofylo_current_gh_'+u.id;
