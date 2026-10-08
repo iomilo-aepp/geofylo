@@ -303,7 +303,15 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div id="myDataCredentialState" class="quickSummary" style="margin-top:10px"><small>Έλεγχος σύνδεσης...</small></div>
 <label>myDATA User ID<input id="myDataCredentialUser" autocomplete="off" placeholder="myDATA User ID"></label>
 <label>Subscription Key<input id="myDataCredentialKey" type="password" autocomplete="new-password" placeholder="Subscription Key"></label>
-<label>Περιβάλλον<select id="myDataCredentialEnv"><option value="test">Δοκιμαστικό (TEST)</option><option value="production">Παραγωγικό (PRODUCTION)</option></select></label>
+<label>Περιβάλλον<select id="myDataCredentialEnv"><option value="test">Δοκιμαστικό (TEST)</option><option value="production">Παραγωγικό (PRODUCTION)</option></select></label><div style="margin:12px 0;padding:12px 14px;border:1px solid #d9e6dc;border-radius:12px;background:#f6faf6">
+<b>❓ Πού βρίσκω αυτά τα στοιχεία;</b>
+<div style="margin-top:7px;font-size:14px;line-height:1.55">
+ΑΑΔΕ → myDATA → <b>Εγγραφή στο myDATA REST API</b> → <b>Νέα εγγραφή</b><br>
+<b>myDATA User ID</b> = Όνομα Χρήστη REST API<br>
+<b>Subscription Key</b> = Κωδικός API<br>
+<span style="display:inline-block;margin-top:5px">🔒 Δεν χρησιμοποιούνται οι κωδικοί TAXISnet.</span>
+</div>
+</div>
 <button id="saveMyDataCredentialBtn" onclick="saveMyDataCredentials()">🔗 Σύνδεση με myDATA</button>
 <button class="danger" id="deleteMyDataCredentialBtn" onclick="deleteMyDataCredentials()">🔌 Αποσύνδεση myDATA</button>
 <small id="myDataCredentialMsg" style="display:block;margin-top:7px"></small>
