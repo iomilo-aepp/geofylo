@@ -42,7 +42,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="card">
 <div id="emailAuthBox"><h2 id="authTitle">Σύνδεση</h2><div id="nameBox" class="hidden"><input id="name" placeholder="Ονοματεπώνυμο"></div>
 <input id="email" type="email" placeholder="Email"><input id="pass" type="password" placeholder="Κωδικός (6+ χαρακτήρες)">
-<button onclick="submitAuth()" id="authBtn">Σύνδεση</button><button class="soft" onclick="toggleAuth()" id="toggleBtn">Δεν έχω λογαριασμό — Εγγραφή</button></div>
+<button onclick="submitAuth()" id="authBtn">Σύνδεση</button><button id="forgotPasswordBtn" type="button" class="soft">🔑 Ξέχασα τον κωδικό μου;</button> <button class="soft" onclick="toggleAuth()" id="toggleBtn">Δεν έχω λογαριασμό — Εγγραφή</button></div>
 <div id="pinAuthBox" class="hidden" style="text-align:center"><h2>🔐 Γρήγορη είσοδος</h2><small id="pinUserLabel"></small><input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" style="text-align:center;font-size:30px;letter-spacing:12px" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onkeydown="if(event.key==='Enter')unlockWithPin()"><button onclick="unlockWithPin()">Ξεκλείδωμα</button><button class="soft" onclick="useEmailLogin()">Σύνδεση με email / άλλο λογαριασμό</button><small>Ο PIN ισχύει μόνο σε αυτή τη συσκευή.</small></div>
 <p id="msg"></p></div></div>
 
@@ -1169,6 +1169,22 @@ const pinKey=u=>'geofylo_pin_'+u.id;
 const pinFailKey=u=>'geofylo_pin_fail_'+u.id;
 const pinLockKey=u=>'geofylo_pin_lock_'+u.id;
 const pinSessionKey=u=>'geofylo_pin_unlocked_'+u.id;
+  document.getElementById('forgotPasswordBtn').onclick=async()=>{
+  const userEmail=email.value.trim();
+  if(!userEmail){
+    msg.textContent='Γράψε πρώτα το email σου.';
+    return;
+  }
+  msg.textContent='Αποστολή email επαναφοράς...';
+  const {error}=await sb.auth.resetPasswordForEmail(userEmail,{
+    redirectTo:'https://iomilo-aepp.github.io/geofylo/app/'
+  });
+  if(error){
+    msg.textContent='❌ '+error.message;
+    return;
+  }
+  msg.textContent='✅ Σου στείλαμε email για επαναφορά του κωδικού σου.';
+};
 async function pinHash(pin,u){const b=new TextEncoder().encode('GeoFylo|'+u.id+'|'+pin);const h=await crypto.subtle.digest('SHA-256',b);return Array.from(new Uint8Array(h)).map(x=>x.toString(16).padStart(2,'0')).join('')}
 async function savePin(pin,u){localStorage.setItem(pinKey(u),await pinHash(pin,u));localStorage.removeItem(pinFailKey(u));localStorage.removeItem(pinLockKey(u))}
 let pinSetupState=null;
@@ -3052,6 +3068,41 @@ function startVoice(){
  r.onerror=e=>voiceMsg.textContent=' Σφάλμα μικροφώνου: '+e.error;
  r.onend=()=>voiceBtn.disabled=false;r.start();
 }
+ sb.auth.onAuthStateChange(async (event, session) => {
+  if (event === 'PASSWORD_RECOVERY') {
+    const newPassword = prompt('🔐 Γράψε τον νέο κωδικό σου (τουλάχιστον 6 χαρακτήρες):');
+
+    if (!newPassword) {
+      alert('Η αλλαγή κωδικού ακυρώθηκε.');
+      return;
+    }
+
+    if (newPassword.length < 6) {
+      alert('❌ Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.');
+      return;
+    }
+
+    const confirmPassword = prompt('🔐 Γράψε ξανά τον νέο κωδικό:');
+
+    if (newPassword !== confirmPassword) {
+      alert('❌ Οι δύο κωδικοί δεν ταιριάζουν.');
+      return;
+    }
+
+    const { error } = await sb.auth.updateUser({
+      password: newPassword
+    });
+
+    if (error) {
+      alert('❌ Δεν έγινε αλλαγή κωδικού: ' + error.message);
+      return;
+    }
+
+    alert('✅ Ο κωδικός άλλαξε επιτυχώς. Μπορείς πλέον να συνδεθείς με τον νέο κωδικό.');
+    await sb.auth.signOut();
+    location.href = 'https://iomilo-aepp.github.io/geofylo/app/';
+  }
+}); 
 (async()=>{if(document.getElementById('calMonth'))calMonth.value=new Date().toISOString().slice(0,7);let r=await sb.auth.getSession();if(r.data.session){const u=r.data.session.user;if(localStorage.getItem(pinKey(u))){if(sessionStorage.getItem(pinSessionKey(u))==='1')await enter(u);else showPinScreen(u)}else{await setupPin(u);sessionStorage.setItem(pinSessionKey(u),'1');await enter(u)}}else showEmailScreen()})();
 </script><script>
 addTabRefreshButtons();
