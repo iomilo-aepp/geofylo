@@ -3072,31 +3072,39 @@ function startVoice(){
   if (event === 'PASSWORD_RECOVERY') {
     const newPassword = prompt('🔐 Γράψε τον νέο κωδικό σου (τουλάχιστον 6 χαρακτήρες):');
 
-    if (!newPassword) {
-      alert('Η αλλαγή κωδικού ακυρώθηκε.');
-      return;
-    }
+   if (!newPassword) {
+  alert('Η αλλαγή κωδικού ακυρώθηκε.');
+  await sb.auth.signOut();
+  location.href = 'https://iomilo-aepp.github.io/geofylo/app/';
+  return;
+}
 
     if (newPassword.length < 6) {
-      alert('❌ Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.');
-      return;
-    }
+  alert('❌ Ο κωδικός πρέπει να έχει τουλάχιστον 6 χαρακτήρες.');
+  await sb.auth.signOut();
+  location.href = 'https://iomilo-aepp.github.io/geofylo/app/';
+  return;
+}
 
     const confirmPassword = prompt('🔐 Γράψε ξανά τον νέο κωδικό:');
 
-    if (newPassword !== confirmPassword) {
-      alert('❌ Οι δύο κωδικοί δεν ταιριάζουν.');
-      return;
-    }
+   if (newPassword !== confirmPassword) {
+  alert('❌ Οι δύο κωδικοί δεν ταιριάζουν.');
+  await sb.auth.signOut();
+  location.href = 'https://iomilo-aepp.github.io/geofylo/app/';
+  return;
+}
 
     const { error } = await sb.auth.updateUser({
       password: newPassword
     });
 
-    if (error) {
-      alert('❌ Δεν έγινε αλλαγή κωδικού: ' + error.message);
-      return;
-    }
+  if (error) {
+  alert('❌ Δεν έγινε αλλαγή κωδικού: ' + error.message);
+  await sb.auth.signOut();
+  location.href = 'https://iomilo-aepp.github.io/geofylo/app/';
+  return;
+}
 
     alert('✅ Ο κωδικός άλλαξε επιτυχώς. Μπορείς πλέον να συνδεθείς με τον νέο κωδικό.');
     await sb.auth.signOut();
