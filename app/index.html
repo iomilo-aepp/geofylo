@@ -213,7 +213,9 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <label>Σημείωση<input id="paymentNote" placeholder="Σημείωση (προαιρετικά)"></label>
 <button id="savePaymentBtn" onclick="savePayment()">💾 Αποθήκευση πληρωμής</button><button class="soft hidden" id="cancelPaymentBtn" onclick="cancelPaymentEdit()">Ακύρωση επεξεργασίας</button>
 <h4>Υπόλοιπα πελατών</h4><div id="customerBalances"><small>Δεν υπάρχουν στοιχεία.</small></div>
-<h4>Ιστορικό πληρωμών</h4><div id="paymentsPager"></div><div id="paymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div></div>
+<h4>Ιστορικό πληρωμών</h4><div id="paymentsPager"></div><div id="paymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div>
+<div class="card"><h3>💳 Πληρωμή προμηθευτή</h3><label>Προμηθευτής<select id="supplierPaymentSupplier"><option value="">— Επίλεξε προμηθευτή —</option></select></label><label>Ημερομηνία<input id="supplierPaymentDate" type="date"></label><label>Ποσό €<input id="supplierPaymentAmount" type="number" step="0.01" min="0.01" placeholder="0,00"></label><label>Τρόπος πληρωμής<select id="supplierPaymentMethod"><option value="Μετρητά">Μετρητά</option><option value="Τράπεζα">Τράπεζα</option><option value="Άλλο">Άλλο</option></select></label><label>Σημείωση<input id="supplierPaymentNote" placeholder="Σημείωση"></label><button id="saveSupplierPaymentBtn" onclick="saveSupplierPayment()">💾 Αποθήκευση πληρωμής</button><button class="soft hidden" id="cancelSupplierPaymentBtn" onclick="cancelSupplierPaymentEdit()">Ακύρωση επεξεργασίας</button><h4>Ιστορικό πληρωμών</h4><div id="supplierPaymentsPager"></div><div id="supplierPaymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div>
+</div>
 
 <div id="page-mydata" class="page">
 <div class="card">
@@ -255,8 +257,6 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div>
 <small style="display:block;margin-top:8px">GeoFylo Assistant v1.9 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
-
-<div class="card"><h3>💳 Πληρωμή προμηθευτή</h3><label>Προμηθευτής<select id="supplierPaymentSupplier"><option value="">— Επίλεξε προμηθευτή —</option></select></label><label>Ημερομηνία<input id="supplierPaymentDate" type="date"></label><label>Ποσό €<input id="supplierPaymentAmount" type="number" step="0.01" min="0.01" placeholder="0,00"></label><label>Τρόπος πληρωμής<select id="supplierPaymentMethod"><option value="Μετρητά">Μετρητά</option><option value="Τράπεζα">Τράπεζα</option><option value="Άλλο">Άλλο</option></select></label><label>Σημείωση<input id="supplierPaymentNote" placeholder="Σημείωση"></label><button id="saveSupplierPaymentBtn" onclick="saveSupplierPayment()">💾 Αποθήκευση πληρωμής</button><button class="soft hidden" id="cancelSupplierPaymentBtn" onclick="cancelSupplierPaymentEdit()">Ακύρωση επεξεργασίας</button><h4>Ιστορικό πληρωμών</h4><div id="supplierPaymentsPager"></div><div id="supplierPaymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div>
 </div>
 
 <div id="page-inventory" class="page"><div class="card"><h3>📦 Αποθήκη / Εφόδια</h3><small>Καταχώρησε πρώτα εδώ τα εφόδια που χρησιμοποιείς, πριν από την αγορά τους. Η τιμή και ο προμηθευτής καταχωρούνται στη «Νέα αγορά εφοδίου» παρακάτω.</small>
