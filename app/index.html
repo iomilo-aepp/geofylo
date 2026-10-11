@@ -704,6 +704,24 @@ async function verifySubscriptionGate(){
       simpleBtn.style.color = '#216b3a';
     }
   }
+   // Κουμπιά που εμφανίζονται μόνο στην Πλήρη λειτουργία
+const fullOnlyPages = [
+  'reports',
+  'customers',
+  'payments',
+  'inventory',
+  'suppliers',
+  'cash',
+  'budget',
+  'mydata'
+];
+
+fullOnlyPages.forEach(page => {
+  const btn = document.getElementById('nav-' + page);
+  if (btn) {
+    btn.style.display = (mode === 'simple') ? 'none' : '';
+  }
+});
 }
 
 function initAppMode(){
