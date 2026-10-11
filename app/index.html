@@ -48,7 +48,10 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 
 <div id="main" class="hidden"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small id="who"></small>
 <div id="connectionStatus" style="margin:6px 0 6px;font-size:13px;font-weight:700"></div>
-<button id="weatherTopBtn" class="soft" type="button" onclick="toggleWeatherCard()" style="width:auto;margin:4px 0 10px;padding:9px 14px;font-weight:700">🌦️ Καιρός</button>
+<div style="display:flex;gap:8px;margin:4px 0 10px;flex-wrap:wrap">
+<button id="weatherTopBtn" class="soft" type="button" onclick="toggleWeatherCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700">🌦️ Καιρός</button>
+<button id="todayTopBtn" class="soft" type="button" onclick="toggleTodayCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700">☀️ Σήμερα</button>
+</div>
 <div class="card hidden" id="weatherCard" style="margin-top:0">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
     <h2 style="margin:0">🌦️ Καιρός</h2>
@@ -83,8 +86,8 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" type="button" onclick="showPage('entry')" style="text-align:left"><span id="fsEntry">⬜</span> 4. Κάνε την πρώτη σου καταχώρηση</button>
 <small id="firstStepsStatus" style="display:block;margin-top:7px"></small>
 </div></div>
-<div class="card" id="smartHomeCard">
-<div class="reportTitle"><div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div><button class="soft" type="button" style="width:auto" onclick="window.location.reload()">🔄 Ανανέωση</button></div>
+<div class="card hidden" id="smartHomeCard">
+<div class="reportTitle"><div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div><div style="display:flex;gap:6px"><button class="soft" type="button" style="width:auto" onclick="dash()">🔄 Ανανέωση</button><button class="soft" type="button" style="width:auto" onclick="toggleTodayCard(false)">✕ Κλείσιμο</button></div></div>
 <div class="dashGrid" style="margin-top:12px">
 <div class="dashBox" onclick="showPage('calendar')" style="cursor:pointer"><small>📅 Εργασίες σήμερα</small><b id="smartTodayTasks">0</b></div>
 <div class="dashBox" onclick="showPage('inventory')" style="cursor:pointer"><small>📦 Χαμηλό απόθεμα</small><b id="smartLowStock">0</b></div>
@@ -974,6 +977,14 @@ function toggleWeatherCard(forceOpen){
     weatherLoaded=true;
     loadWeather();
   }
+}
+
+function toggleTodayCard(forceOpen){
+  const card=document.getElementById('smartHomeCard');
+  if(!card)return;
+  const shouldOpen=(typeof forceOpen==='boolean') ? forceOpen : card.classList.contains('hidden');
+  card.classList.toggle('hidden',!shouldOpen);
+  if(shouldOpen) dash();
 }
 async function loadWeather(){
   const box=document.getElementById('weatherContent');
@@ -2558,7 +2569,7 @@ if(ge)ge.innerHTML=Object.keys(ghExpenseAgg).length
  ? '<b>💸 Κόστος ανά κατηγορία</b>'+Object.entries(ghExpenseAgg).sort((x,y)=>y[1]-x[1]).map(([n,v])=>`<div class="entry"><div class="entryText">${esc(n)}</div><div><b>${euro(v)}</b></div></div>`).join('')
  : '<small>Δεν υπάρχουν έξοδα για αυτό το θερμοκήπιο.</small>';
 
-kg.textContent=k+' kg';sold.textContent=sk+' kg';const byGrade={A:0,B:0,SKARTA:0};c.data.forEach(x=>{if(byGrade[x.grade]!==undefined)byGrade[x.grade]+=Number(x.kg||0)});if(document.getElementById('soldA'))soldA.textContent=byGrade.A.toLocaleString('el-GR')+' kg';if(document.getElementById('soldB'))soldB.textContent=byGrade.B.toLocaleString('el-GR')+' kg';if(document.getElementById('soldSkarta'))soldSkarta.textContent=byGrade.SKARTA.toLocaleString('el-GR')+' kg';inc.textContent=euro(i);exp.textContent=euro(e);profit.textContent=euro(i-e);costkg.textContent=k?euro(e/k):'—';
+const byGrade={A:0,B:0,SKARTA:0};c.data.forEach(x=>{if(byGrade[x.grade]!==undefined)byGrade[x.grade]+=Number(x.kg||0)});
 // v3.0 Dashboard
 if(document.getElementById('dIncome')){
  dIncome.textContent=euro(i);dExpense.textContent=euro(e);dProfit.textContent=euro(i-e);dProduction.textContent=k.toLocaleString('el-GR')+' kg';dAvgPrice.textContent=sk?euro(i/sk):'—';dCostKg.textContent=k?euro(e/k):'—';dGradeA.textContent=byGrade.A.toLocaleString('el-GR')+' kg';dGradeB.textContent=byGrade.B.toLocaleString('el-GR')+' kg';dGradeS.textContent=byGrade.SKARTA.toLocaleString('el-GR')+' kg';
