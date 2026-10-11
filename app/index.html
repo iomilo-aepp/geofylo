@@ -50,7 +50,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div id="connectionStatus" style="margin:6px 0 6px;font-size:13px;font-weight:700"></div>
 <div style="display:flex;gap:8px;margin:4px 0 10px;flex-wrap:wrap">
 <button id="weatherTopBtn" class="soft" type="button" onclick="toggleWeatherCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700">🌦️ Καιρός</button>
-<button id="todayTopBtn" class="soft" type="button" onclick="toggleTodayCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700">☀️ Σήμερα</button>
+<button id="todayTopBtn" class="soft" type="button" onclick="toggleTodayCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700">📋 Σήμερα</button>
 </div>
 <div class="card hidden" id="weatherCard" style="margin-top:0">
   <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
@@ -973,8 +973,10 @@ function offlineQueueCount(){
 let weatherLoaded=false;
 function toggleWeatherCard(forceOpen){
   const card=document.getElementById('weatherCard');
+  const todayCard=document.getElementById('smartHomeCard');
   if(!card)return;
   const shouldOpen=(typeof forceOpen==='boolean') ? forceOpen : card.classList.contains('hidden');
+  if(shouldOpen && todayCard) todayCard.classList.add('hidden');
   card.classList.toggle('hidden',!shouldOpen);
   if(shouldOpen && !weatherLoaded){
     weatherLoaded=true;
@@ -984,8 +986,10 @@ function toggleWeatherCard(forceOpen){
 
 function toggleTodayCard(forceOpen){
   const card=document.getElementById('smartHomeCard');
+  const weatherCard=document.getElementById('weatherCard');
   if(!card)return;
   const shouldOpen=(typeof forceOpen==='boolean') ? forceOpen : card.classList.contains('hidden');
+  if(shouldOpen && weatherCard) weatherCard.classList.add('hidden');
   card.classList.toggle('hidden',!shouldOpen);
   if(shouldOpen) dash();
 }
