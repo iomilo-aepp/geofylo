@@ -61,6 +61,16 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
     <small>Φόρτωση καιρού...</small>
   </div>
 </div>
+
+<div class="card hidden" id="smartHomeCard">
+<div class="reportTitle"><div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div><button class="soft" type="button" style="width:auto" onclick="toggleTodayCard(false)">✕ Κλείσιμο</button></div>
+<div class="dashGrid" style="margin-top:12px">
+<div class="dashBox" onclick="showPage('calendar')" style="cursor:pointer"><small>📅 Εργασίες σήμερα</small><b id="smartTodayTasks">0</b></div>
+<div class="dashBox" onclick="showPage('inventory')" style="cursor:pointer"><small>📦 Χαμηλό απόθεμα</small><b id="smartLowStock">0</b></div>
+<div class="dashBox" onclick="showPage('customers')" style="cursor:pointer"><small>💳 Ληξιπρόθεσμα πελατών</small><b id="smartCustomerOverdue">0,00 €</b></div>
+<div class="dashBox" onclick="showPage('suppliers')" style="cursor:pointer"><small>🏪 Ληξιπρόθεσμα προμηθευτών</small><b id="smartSupplierOverdue">0,00 €</b></div>
+</div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div></div>
+
 <div id="globalContext" class="globalContext">
   <div class="contextTop"><b>🌱 Τρέχουσα επιλογή</b><span id="globalContextStatus" class="contextLoading"></span></div>
   <div class="contextGrid">
@@ -86,14 +96,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" type="button" onclick="showPage('entry')" style="text-align:left"><span id="fsEntry">⬜</span> 4. Κάνε την πρώτη σου καταχώρηση</button>
 <small id="firstStepsStatus" style="display:block;margin-top:7px"></small>
 </div></div>
-<div class="card hidden" id="smartHomeCard">
-<div class="reportTitle"><div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div><button class="soft" type="button" style="width:auto" onclick="toggleTodayCard(false)">✕ Κλείσιμο</button></div>
-<div class="dashGrid" style="margin-top:12px">
-<div class="dashBox" onclick="showPage('calendar')" style="cursor:pointer"><small>📅 Εργασίες σήμερα</small><b id="smartTodayTasks">0</b></div>
-<div class="dashBox" onclick="showPage('inventory')" style="cursor:pointer"><small>📦 Χαμηλό απόθεμα</small><b id="smartLowStock">0</b></div>
-<div class="dashBox" onclick="showPage('customers')" style="cursor:pointer"><small>💳 Ληξιπρόθεσμα πελατών</small><b id="smartCustomerOverdue">0,00 €</b></div>
-<div class="dashBox" onclick="showPage('suppliers')" style="cursor:pointer"><small>🏪 Ληξιπρόθεσμα προμηθευτών</small><b id="smartSupplierOverdue">0,00 €</b></div>
-</div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div></div>
+
 
 <div class="card" id="producerHome">
 <h2 style="margin:0" id="tQuick">🌱 Γρήγορη καταχώρηση</h2>
