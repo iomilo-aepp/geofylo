@@ -257,12 +257,10 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div>
 </div>
 
-<div id="page-inventory" class="page"><div class="card"><h3>📦 Αποθήκη / Εφόδια</h3><small>Καταχώρησε τα διαθέσιμα εφόδια και παρακολούθησε την αξία του αποθέματος.</small>
+<div id="page-inventory" class="page"><div class="card"><h3>📦 Αποθήκη / Εφόδια</h3><small>Καταχώρησε πρώτα εδώ τα εφόδια που χρησιμοποιείς, πριν από την αγορά τους. Η τιμή και ο προμηθευτής καταχωρούνται στη «Νέα αγορά εφοδίου» παρακάτω.</small>
 <label>Όνομα προϊόντος<input id="inventoryName" placeholder="π.χ. Λίπασμα 20-20-20"></label>
 <label>Κατηγορία<select id="inventoryCategory"><option>Λίπασμα</option><option>Φυτοπροστασία</option><option>Σπόροι / Φυτά</option><option>Υλικά</option><option>Άλλο</option></select></label>
 <div class="grid"><label>Ποσότητα<input id="inventoryQty" type="number" step="0.01" min="0" placeholder="0"></label><label>Μονάδα<select id="inventoryUnit"><option value="kg">kg</option><option value="lt">lt</option><option value="τεμ.">τεμάχια</option></select></label></div>
-<label>Κόστος μονάδας €<input id="inventoryCost" type="number" step="0.0001" min="0" placeholder="0,00"></label>
-<label>Προμηθευτής<input id="inventorySupplier" placeholder="Προμηθευτής (προαιρετικά)"></label>
 <label>Σημείωση<input id="inventoryNote" placeholder="Σημείωση (προαιρετικά)"></label>
 <button id="saveInventoryBtn" onclick="saveInventory()">💾 Αποθήκευση είδους</button><button class="soft hidden" id="cancelInventoryBtn" onclick="cancelInventoryEdit()">Ακύρωση επεξεργασίας</button>
 <hr style="margin:22px 0;border:0;border-top:1px solid #dfe8df"><h4>🧾 Νέα αγορά εφοδίου</h4>
@@ -1855,7 +1853,12 @@ function addPurchaseItem(invId='',qty='',cost=''){
 function updatePurchaseTotal(){let total=0;document.querySelectorAll('.purchaseItem').forEach(r=>total+=Number(r.querySelector('.purchaseQty')?.value||0)*Number(r.querySelector('.purchaseCost')?.value||0));const el=document.getElementById('purchaseTotal');if(el)el.textContent=euro(total)}
 async function loadPurchases(items){
  const box=document.getElementById('purchaseList');if(!box)return;purchaseInventoryCache=items||[];
- const pib=document.getElementById('purchaseItems');if(pib&&!pib.children.length)addPurchaseItem();
+ const pib=document.getElementById('purchaseItems');
+ if(pib){
+   const rows=[...pib.querySelectorAll('.purchaseItem')];
+   if(!rows.length)addPurchaseItem();
+   else rows.forEach(row=>{const sel=row.querySelector('.purchaseInventory');if(sel){const keep=sel.value;sel.innerHTML=purchaseOptions(keep);if(keep)sel.value=keep;}});
+ }
  const ghSel=document.getElementById('purchaseGreenhouse');if(ghSel){const gr=await sb.from('greenhouses').select('id,name,crop').order('name');if(!gr.error){const current=String(document.getElementById('gh')?.value||ghSel.value||'');ghSel.innerHTML='<option value="">— Επίλεξε αγροτεμάχιο —</option>'+gr.data.map(x=>`<option value="${x.id}">${esc(x.name)} • ${esc(x.crop)}</option>`).join('');if(current&&gr.data.some(x=>String(x.id)===current))ghSel.value=current;}}
  const [hr,ir]=await Promise.all([sb.from('purchase_invoices').select('*').order('invoice_date',{ascending:false}).order('id',{ascending:false}),sb.from('purchase_invoice_items').select('*')]);
  if(hr.error||ir.error){box.innerHTML='<small>Δεν φορτώθηκαν τα παραστατικά: '+esc((hr.error||ir.error).message)+'</small>';return}
@@ -1877,16 +1880,16 @@ async function savePurchase(){
  document.getElementById('purchaseSupplier').value='';document.getElementById('purchaseDocument').value='';document.getElementById('purchaseNote').value='';document.getElementById('purchaseItems').innerHTML='';updatePurchaseTotal();await loadInventory();await dash();alert('✅ Το παραστατικό καταχωρήθηκε με '+lines.length+' προϊόντα, ενημερώθηκε η αποθήκη και δημιουργήθηκε ένα έξοδο '+euro(total)+'.');
 }
 async function saveInventory(){
- const name=inventoryName.value.trim(),quantity=Number(inventoryQty.value),unit_cost=Number(inventoryCost.value||0);
+ const name=inventoryName.value.trim(),quantity=Number(inventoryQty.value);
  if(!name)return alert('Συμπλήρωσε όνομα προϊόντος.');
  if(!Number.isFinite(quantity)||quantity<0)return alert('Συμπλήρωσε έγκυρη ποσότητα.');
- if(!Number.isFinite(unit_cost)||unit_cost<0)return alert('Συμπλήρωσε έγκυρο κόστος μονάδας.');
- const payload={user_id:user.id,name,category:inventoryCategory.value,unit:inventoryUnit.value,quantity,unit_cost,supplier:inventorySupplier.value.trim()||null,note:inventoryNote.value.trim()||null};
+ const payload={user_id:user.id,name,category:inventoryCategory.value,unit:inventoryUnit.value,quantity,note:inventoryNote.value.trim()||null};
+ if(!editingInventoryId){payload.unit_cost=0;payload.supplier=null;}
  const r=editingInventoryId?await sb.from('inventory').update(payload).eq('id',editingInventoryId):await sb.from('inventory').insert(payload);
  if(r.error)return alert(r.error.message);cancelInventoryEdit();await loadInventory();
 }
-function editInventory(x){editingInventoryId=x.id;inventoryName.value=x.name||'';inventoryCategory.value=x.category||'Άλλο';inventoryQty.value=x.quantity??0;inventoryUnit.value=x.unit||'kg';inventoryCost.value=x.unit_cost??0;inventorySupplier.value=x.supplier||'';inventoryNote.value=x.note||'';saveInventoryBtn.textContent='💾 Αποθήκευση αλλαγών';cancelInventoryBtn.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
-function cancelInventoryEdit(){editingInventoryId=null;inventoryName.value='';inventoryQty.value='';inventoryCost.value='';inventorySupplier.value='';inventoryNote.value='';inventoryCategory.value='Λίπασμα';inventoryUnit.value='kg';saveInventoryBtn.textContent='💾 Αποθήκευση είδους';cancelInventoryBtn.classList.add('hidden')}
+function editInventory(x){editingInventoryId=x.id;inventoryName.value=x.name||'';inventoryCategory.value=x.category||'Άλλο';inventoryQty.value=x.quantity??0;inventoryUnit.value=x.unit||'kg';inventoryCost.value=x.unit_cost??0;inventoryNote.value=x.note||'';saveInventoryBtn.textContent='💾 Αποθήκευση αλλαγών';cancelInventoryBtn.classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
+function cancelInventoryEdit(){editingInventoryId=null;inventoryName.value='';inventoryQty.value='';inventoryNote.value='';inventoryCategory.value='Λίπασμα';inventoryUnit.value='kg';saveInventoryBtn.textContent='💾 Αποθήκευση είδους';cancelInventoryBtn.classList.add('hidden')}
 async function deleteInventory(id){
  if(!confirm('Να διαγραφεί το είδος από την αποθήκη;'))return;
  const r=await sb.from('inventory').delete().eq('id',id);
