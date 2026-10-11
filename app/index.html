@@ -48,6 +48,16 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 
 <div id="main" class="hidden"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small id="who"></small>
 <div id="connectionStatus" style="margin:6px 0 6px;font-size:13px;font-weight:700"></div>
+<button id="weatherTopBtn" class="soft" type="button" onclick="toggleWeatherCard()" style="width:auto;margin:4px 0 10px;padding:9px 14px;font-weight:700">🌦️ Καιρός</button>
+<div class="card hidden" id="weatherCard" style="margin-top:0">
+  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+    <h2 style="margin:0">🌦️ Καιρός</h2>
+    <button class="soft" type="button" onclick="toggleWeatherCard(false)" style="width:auto;margin:0;padding:7px 10px">✕ Κλείσιμο</button>
+  </div>
+  <div id="weatherContent" style="margin-top:14px">
+    <small>Φόρτωση καιρού...</small>
+  </div>
+</div>
 <div id="globalContext" class="globalContext">
   <div class="contextTop"><b>🌱 Τρέχουσα επιλογή</b><span id="globalContextStatus" class="contextLoading"></span></div>
   <div class="contextGrid">
@@ -61,23 +71,6 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div>
 <nav class="bottomNav"><button id="nav-home" class="active" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-calendar" onclick="showPage('calendar')"><span class="ico">📅</span>Εργασίες</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-customers" onclick="showPage('customers')"><span class="ico">👥</span>Πελάτες</button><button id="nav-payments" onclick="showPage('payments')"><span class="ico">💳</span>Πληρωμές</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-suppliers" onclick="showPage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button id="nav-cashflow" onclick="showPage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button id="nav-budget" onclick="showPage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button id="nav-mydata" onclick="showPage('mydata')"><span class="ico">🏛️</span>ΑΑΔΕ</button><button id="nav-assistant" onclick="showPage('assistant')"><span class="ico">🤖</span>Assistant</button><button id="nav-profile" onclick="showPage('profile')"><span class="ico">👤</span>Προφίλ</button><button id="nav-admin" class="hidden" onclick="showPage('admin')"><span class="ico">👑</span>Διαχείριση</button></nav>
 <div id="page-home" class="page active">
-<div class="card" id="producerHome">
-<h2 style="margin:0" id="tQuick">🌱 Γρήγορη καταχώρηση</h2>
-<small id="tChoose">Επίλεξε τι θέλεις να καταχωρήσεις</small>
-<div class="quickGrid">
-<button onclick="quickEntry('expense')"><span id="tExpense">💶 Έξοδο</span></button>
-<button onclick="quickEntry('harvest')"><span id="tHarvest">⚖️ Συγκομιδή</span></button>
-<button onclick="quickEntry('sale')"><span id="tSale">💰 Πώληση</span></button>
-<button onclick="quickEntry('activity')"><span id="tActivity">📅 Εργασία</span></button>
-</div>
-<button class="voice quickVoice" onclick="startVoice()"><span id="tVoice">🎤 Πες το με τη φωνή</span></button>
-<div class="quickSummary">
-<small id="tCurrent">Τρέχουσα επιλογή</small><br>
-<b id="homeSelection">Επίλεξε περίοδο και αγροτεμάχιο</b>
-<div id="homeNumbers" style="margin-top:6px"><small>Τα βασικά στοιχεία θα εμφανιστούν εδώ.</small></div>
-</div>
-</div>
-
 <div class="card" id="firstStepsCard">
 <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:10px">
 <div><h2 style="margin:0">🚀 Πρώτα βήματα</h2><small>Για να ξεκινήσεις σωστά με το GeoFylo.</small></div>
@@ -98,13 +91,23 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="dashBox" onclick="showPage('customers')" style="cursor:pointer"><small>💳 Ληξιπρόθεσμα πελατών</small><b id="smartCustomerOverdue">0,00 €</b></div>
 <div class="dashBox" onclick="showPage('suppliers')" style="cursor:pointer"><small>🏪 Ληξιπρόθεσμα προμηθευτών</small><b id="smartSupplierOverdue">0,00 €</b></div>
 </div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div></div>
-<div class="card" id="weatherCard">
-  <h2>🌦️ Καιρός</h2>
 
-  <div id="weatherContent">
-    <small>Φόρτωση καιρού...</small>
-  </div>
-</div> 
+<div class="card" id="producerHome">
+<h2 style="margin:0" id="tQuick">🌱 Γρήγορη καταχώρηση</h2>
+<small id="tChoose">Επίλεξε τι θέλεις να καταχωρήσεις</small>
+<div class="quickGrid">
+<button onclick="quickEntry('expense')"><span id="tExpense">💶 Έξοδο</span></button>
+<button onclick="quickEntry('harvest')"><span id="tHarvest">⚖️ Συγκομιδή</span></button>
+<button onclick="quickEntry('sale')"><span id="tSale">💰 Πώληση</span></button>
+<button onclick="quickEntry('activity')"><span id="tActivity">📅 Εργασία</span></button>
+</div>
+<button class="voice quickVoice" onclick="startVoice()"><span id="tVoice">🎤 Πες το με τη φωνή</span></button>
+<div class="quickSummary">
+<small id="tCurrent">Τρέχουσα επιλογή</small><br>
+<b id="homeSelection">Επίλεξε περίοδο και αγροτεμάχιο</b>
+<div id="homeNumbers" style="margin-top:6px"><small>Τα βασικά στοιχεία θα εμφανιστούν εδώ.</small></div>
+</div>
+</div>
 <div class="card" id="dashboardCard"><h3 style="margin-top:0">📈 Dashboard παραγωγού</h3><small>Συνοπτική εικόνα για το επιλεγμένο αγροτεμάχιο και την εκμετάλλευση.</small>
 <div class="dashGrid">
 <div class="dashBox"><small>💰 Έσοδα</small><b id="dIncome">0,00 €</b></div>
@@ -961,6 +964,17 @@ function addToOfflineQueue(table,payload){
 function offlineQueueCount(){
   return getOfflineQueue().length;
 }
+let weatherLoaded=false;
+function toggleWeatherCard(forceOpen){
+  const card=document.getElementById('weatherCard');
+  if(!card)return;
+  const shouldOpen=(typeof forceOpen==='boolean') ? forceOpen : card.classList.contains('hidden');
+  card.classList.toggle('hidden',!shouldOpen);
+  if(shouldOpen && !weatherLoaded){
+    weatherLoaded=true;
+    loadWeather();
+  }
+}
 async function loadWeather(){
   const box=document.getElementById('weatherContent');
   if(!box)return;
@@ -1162,7 +1176,7 @@ window.addEventListener('offline',()=>{
 });
 
 setTimeout(updateConnectionStatus,500);
-setTimeout(loadWeather,700); 
+
 let signup=false,user=null;
 const euro=n=>new Intl.NumberFormat('el-GR',{style:'currency',currency:'EUR'}).format(n||0);
 function toggleAuth(){signup=!signup;authTitle.textContent=signup?'Εγγραφή':'Σύνδεση';nameBox.classList.toggle('hidden',!signup);authBtn.textContent=signup?'Δημιουργία λογαριασμού':'Σύνδεση';toggleBtn.textContent=signup?'Έχω λογαριασμό — Σύνδεση':'Δεν έχω λογαριασμό — Εγγραφή'}
