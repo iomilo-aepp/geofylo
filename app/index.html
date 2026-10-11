@@ -2858,7 +2858,17 @@ async function completeActivity(id){
  const sel=document.getElementById('completionInventory');
  sel.innerHTML='<option value="">— Χωρίς εφόδιο —</option>'+completionInventory.map(x=>`<option value="${x.id}">${esc(x.name)} — ${Number(x.quantity||0).toLocaleString('el-GR')} ${esc(x.unit||'')}</option>`).join('');
  const cq=document.getElementById('completionQty');cq.value='';cq.disabled=true;
- document.getElementById('completionAvailable').innerHTML='<small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small>';
+ const plannedMatch=String(completionActivity.note||'').match(/📦 Προγραμματισμένο εφόδιο:\s*([^\n]+)/);
+ const plannedName=plannedMatch?plannedMatch[1].trim():'';
+ const plannedItem=plannedName?completionInventory.find(x=>String(x.name||'').trim()===plannedName):null;
+ if(plannedItem){
+   sel.value=String(plannedItem.id);
+   cq.disabled=false;
+   document.getElementById('completionAvailable').innerHTML=`<small>Προγραμματισμένο εφόδιο: <b>${esc(plannedItem.name)}</b> • Διαθέσιμο: <b>${Number(plannedItem.quantity||0).toLocaleString('el-GR')} ${esc(plannedItem.unit||'')}</b><br>Γράψε μόνο την πραγματική ποσότητα που χρησιμοποίησες.</small>`;
+   setTimeout(()=>cq.focus(),80);
+ }else{
+   document.getElementById('completionAvailable').innerHTML='<small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small>';
+ }
  document.getElementById('completionModal').classList.remove('hidden');
 }
 function completionInventoryChanged(){
@@ -2999,10 +3009,12 @@ async function addEntry(){
     const invId=Number(document.getElementById('activityInventory')?.value||0);
     const invQty=Number(document.getElementById('activityInventoryQty')?.value||0);
     activityInvQty=invQty;
-    if(!editing && invId && invQty>0){
-      if(st!=='completed')return alert('Η κατανάλωση εφοδίου καταχωρείται όταν η εργασία είναι ολοκληρωμένη.');
+    if(!editing && invId){
       const ir=await sb.from('inventory').select('*').eq('id',invId).single();if(ir.error)throw ir.error;activityInvItem=ir.data;
-      if(invQty>Number(activityInvItem.quantity||0))return alert(`Δεν υπάρχει αρκετό απόθεμα. Διαθέσιμο: ${Number(activityInvItem.quantity||0).toLocaleString('el-GR')} ${activityInvItem.unit}`);
+      if(st==='completed'){
+        if(!Number.isFinite(invQty)||invQty<=0)return alert('Γράψε την ποσότητα εφοδίου που χρησιμοποιήθηκε.');
+        if(invQty>Number(activityInvItem.quantity||0))return alert(`Δεν υπάρχει αρκετό απόθεμα. Διαθέσιμο: ${Number(activityInvItem.quantity||0).toLocaleString('el-GR')} ${activityInvItem.unit}`);
+      }
     }
     let photo_path=editing?.photo_path||null;
     const pi=document.getElementById('activityPhoto');
@@ -3015,8 +3027,12 @@ async function addEntry(){
       if(up.error)throw up.error;
     }
     Object.assign(payload,{activity_date:document.getElementById('activityDate')?.value||today,activity_type:activityType.value,photo_path,status:st,scheduled:st==='pending'});
+    if(st==='pending' && activityInvItem){
+      const cleanNote=String(payload.note||'').replace(/(?:^|\n)📦 Προγραμματισμένο εφόδιο:.*$/gm,'').trim();
+      payload.note=(cleanNote?cleanNote+'\n':'')+'📦 Προγραμματισμένο εφόδιο: '+activityInvItem.name;
+    }
   }
-  if(t==='activity' && !editing && activityInvItem){
+  if(t==='activity' && !editing && activityInvItem && payload.status==='completed'){
     r=await sb.from('activities').insert(payload).select('id').single();
     if(r.error)return alert(r.error.message);
     const ur=await sb.from('inventory_usage').insert({user_id:user.id,inventory_id:activityInvItem.id,greenhouse_id:+gh.value,activity_id:r.data.id,usage_date:payload.activity_date,quantity:activityInvQty,note:payload.note||null});
