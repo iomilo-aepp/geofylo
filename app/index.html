@@ -472,7 +472,7 @@ function renderMovements(){
  const oldLimit=document.getElementById('movementLimit')?.value||'20';
  const limit=oldLimit==='all'?rows.length:Number(oldLimit||20);
  const visible=rows.slice(0,limit);
- ml.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin:8px 0 12px"><small>Εμφάνιση:</small><select id="movementLimit" style="width:auto;margin:0" onchange="renderMovements()"><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">Όλες</option></select></div>`+(visible.length?visible.map(x=>`<div class="entry"><div class="entryText"><b>${x.label}</b><br><small>${new Date(x.date+'T12:00:00').toLocaleDateString('el-GR')}${x.note?' • '+x.note:''}</small></div><div class="entryActions"><button class="soft" onclick="editEntry('${x.type}',${x.id})">✏️</button><button class="danger" onclick="deleteEntry('${x.type}',${x.id})">🗑️</button></div></div>`).join(''):'<small>Δεν βρέθηκαν κινήσεις με αυτά τα φίλτρα.</small>');
+ ml.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin:8px 0 12px"><small>Εμφάνιση:</small><select id="movementLimit" style="width:auto;margin:0" onchange="renderMovements()"><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">Όλες</option></select></div>`+(visible.length?visible.map(x=>`<div class="entry"><div class="entryText"><b>${x.label}</b><br><small>${new Date(x.date+'T12:00:00').toLocaleDateString('el-GR')}${x.note?' • '+esc(x.note):''}</small>${x.details?`<div style="margin-top:6px;padding:8px 10px;background:#f5f8f5;border-radius:9px"><small>${x.details}</small></div>`:''}</div><div class="entryActions"><button class="soft" onclick="editEntry('${x.type}',${x.id})">✏️</button><button class="danger" onclick="deleteEntry('${x.type}',${x.id})">🗑️</button></div></div>`).join(''):'<small>Δεν βρέθηκαν κινήσεις με αυτά τα φίλτρα.</small>');
  const sel=document.getElementById('movementLimit');if(sel)sel.value=oldLimit;
 }
 
@@ -2639,11 +2639,18 @@ if(document.getElementById('dIncome')){
  }
 }
 
+const activityUsageById={};
+(u.data||[]).forEach(z=>{
+ const aid=String(z.activity_id||''); if(!aid)return;
+ const it=ghInvById[String(z.inventory_id)]||{};
+ if(!activityUsageById[aid])activityUsageById[aid]=[];
+ activityUsageById[aid].push(`📦 ${esc(it.name||'Εφόδιο')}: <b>${Number(z.quantity||0).toLocaleString('el-GR')} ${esc(it.unit||'')}</b>`);
+});
 let rows=[
 ...a.data.map(x=>({type:'expense',id:x.id,date:x.expense_date,label:'💶 '+x.category+' — '+euro(x.amount),note:x.note||''})),
 ...b.data.map(x=>({type:'harvest',id:x.id,date:x.harvest_date,label:'📦 Συγκομιδή — '+x.kg+' kg',note:x.note||''})),
 ...c.data.map(x=>({type:'sale',id:x.id,date:x.sale_date,label:'💰 Πώληση'+(x.grade?' ['+(x.grade==='SKARTA'?'Σκάρτα':x.grade)+']':'')+(x.buyer?' • '+x.buyer:'')+' — '+x.kg+' kg × '+euro(x.price_per_kg),note:x.note||''})),
-...d.data.map(x=>({type:'activity',id:x.id,date:x.activity_date,label:'📅 '+x.activity_type,note:x.note||''}))
+...d.data.map(x=>({type:'activity',id:x.id,date:x.activity_date,label:'📅 '+x.activity_type+(x.status==='pending'?' — ⏳ Εκκρεμεί':' — ✅ Ολοκληρώθηκε'),note:x.note||'',details:(activityUsageById[String(x.id)]||[]).join('<br>')}))
 ].sort((x,y)=>y.date.localeCompare(x.date)||y.id-x.id);
 window.allMovementRows=rows;
 renderMovements();
@@ -2922,11 +2929,26 @@ async function loadCalendarHistory(){
  const r=await q;
  if(r.error){calendarList.innerHTML='<small>Σφάλμα: '+esc(r.error.message)+'</small>';return}
  if(!r.data.length){calendarList.innerHTML='<small>Δεν υπάρχουν εργασίες για τα φίλτρα που επέλεξες.</small>';return}
+ const activityIds=(r.data||[]).map(x=>x.id);
+ const [ur,ir]=await Promise.all([
+   sb.from('inventory_usage').select('*').in('activity_id',activityIds),
+   sb.from('inventory').select('id,name,unit')
+ ]);
+ const invById=Object.fromEntries(((ir.data)||[]).map(x=>[String(x.id),x]));
+ const usageByActivity={};
+ ((ur.data)||[]).forEach(z=>{
+   const key=String(z.activity_id||''); if(!key)return;
+   if(!usageByActivity[key])usageByActivity[key]=[];
+   const it=invById[String(z.inventory_id)]||{};
+   usageByActivity[key].push({name:it.name||'Εφόδιο',qty:Number(z.quantity||0),unit:it.unit||'',note:z.note||''});
+ });
  let last='';
  calendarList.innerHTML=r.data.map(x=>{
    const date=new Date(x.activity_date+'T12:00:00').toLocaleDateString('el-GR');
    const head=date!==last?`<div style="margin-top:14px"><b>📆 ${date}</b></div>`:'';last=date;
-   return `${head}<div class="entry"><div class="entryText"><b>🌱 ${esc(x.activity_type)}</b> ${x.status==='pending'?'<span style="font-weight:bold">⏳ Εκκρεμεί</span>':'<span>✅ Ολοκληρώθηκε</span>'}<br><small>${esc(x.note||'Χωρίς σημείωση')}</small>${x.photo_path?`<div data-photo="${x.photo_path}"><small>📸 Φόρτωση φωτογραφίας...</small></div>`:''}${x.status==='pending'?`<button class="soft" style="margin-top:8px;width:auto" onclick="completeActivity(${x.id})">✅ Ολοκληρώθηκε</button>`:''}</div><div class="entryActions"><button class="soft" onclick="editEntry('activity',${x.id})">✏️</button><button class="danger" onclick="deleteEntry('activity',${x.id})">🗑️</button></div></div>`;
+   const usages=usageByActivity[String(x.id)]||[];
+   const details=`<div style="margin-top:7px;padding:9px 10px;background:#f5f8f5;border-radius:10px"><small><b>Λεπτομέρειες εργασίας</b>${x.note?`<br>📝 ${esc(x.note)}`:''}${usages.length?usages.map(z=>`<br>📦 ${esc(z.name)}: <b>${z.qty.toLocaleString('el-GR')} ${esc(z.unit)}</b>`).join(''):'<br>📦 Χωρίς καταχωρημένη κατανάλωση εφοδίου'}</small></div>`;
+   return `${head}<div class="entry"><div class="entryText"><b>🌱 ${esc(x.activity_type)}</b> ${x.status==='pending'?'<span style="font-weight:bold">⏳ Εκκρεμεί</span>':'<span>✅ Ολοκληρώθηκε</span>'}${details}${x.photo_path?`<div data-photo="${x.photo_path}"><small>📸 Φόρτωση φωτογραφίας...</small></div>`:''}${x.status==='pending'?`<button class="soft" style="margin-top:8px;width:auto" onclick="completeActivity(${x.id})">✅ Ολοκληρώθηκε</button>`:''}</div><div class="entryActions"><button class="soft" onclick="editEntry('activity',${x.id})">✏️</button><button class="danger" onclick="deleteEntry('activity',${x.id})">🗑️</button></div></div>`;
  }).join('');
  await showCalendarPhotos();
 }
