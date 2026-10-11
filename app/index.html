@@ -1,7 +1,7 @@
-<!doctype html><html lang="el"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<!DOCTYPE html>
+<html lang="el"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>GeoFylo v4.9.2</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
-
 <style>
 body{font-family:system-ui;margin:0;background:#f4f7f2;color:#17301f}.app{max-width:700px;margin:auto;padding:20px}.card{background:white;padding:18px;border-radius:18px;margin:12px 0;border:1px solid #dfe7df}
 input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;border:1px solid #ccd8cd;font-size:16px;box-sizing:border-box}button{background:#216b3a;color:white;font-weight:bold;border:0}.soft{background:#e8f3e8;color:#216b3a}.hidden{display:none}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}.m{background:#f7faf6;padding:12px;border-radius:12px}.m b{display:block;font-size:20px}small{color:#718078}.entry{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #edf0ed}.entry:last-child{border-bottom:0}.entryText{flex:1}.entryActions{display:flex;gap:5px}.entryActions button{width:auto;padding:7px 9px;margin:0}.danger{background:#f7eaea;color:#9c2f2f}.voice{background:#365f47}h1{margin-bottom:2px}.quickGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.quickGrid button{min-height:70px;font-size:17px}.quickVoice{margin-top:10px;min-height:58px;font-size:17px}.quickSummary{margin-top:12px;padding:12px;border-radius:12px;background:#f5f8f5}.quickSummary b{font-size:18px}.barrow{margin:10px 0}.barlabel{display:flex;justify-content:space-between;font-size:13px}.bar{height:10px;background:#edf2ed;border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;background:#216b3a;border-radius:99px}.reportTitle{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -20,72 +20,70 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 .contextLoading{font-size:12px;color:#718078}
 @media(max-width:560px){.globalContext .contextGrid{grid-template-columns:1fr}}
 
-</style><meta name="theme-color" content="#216b3a">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="apple-mobile-web-app-status-bar-style" content="default">
-<meta name="apple-mobile-web-app-title" content="GeoFylo">
-<link rel="manifest" href="./manifest.webmanifest">
-<link rel="apple-touch-icon" href="./icon-192.png">
-</head><body><div id="completionModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;padding:18px;overflow:auto"><div class="card" style="max-width:520px;margin:8vh auto;background:#fff"><h3>✅ Ολοκλήρωση εργασίας</h3><small>Δήλωσε το εφόδιο και την πραγματική ποσότητα που χρησιμοποιήθηκε. Αν δεν χρησιμοποιήθηκε εφόδιο, επίλεξε «Χωρίς εφόδιο».</small><label style="margin-top:14px">📦 Εφόδιο<select id="completionInventory" onchange="completionInventoryChanged()"><option value="">— Χωρίς εφόδιο —</option></select></label><div id="completionAvailable"><small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small></div><label>Ποσότητα που χρησιμοποιήθηκε<input id="completionQty" type="number" inputmode="decimal" step="0.01" min="0.01" placeholder="π.χ. 2,5" disabled></label><div class="grid"><button class="soft" onclick="closeCompletionModal()">Ακύρωση</button><button id="confirmCompletionBtn" onclick="confirmActivityCompletion()">✅ Ολοκλήρωση εργασίας</button></div></div></div><div id="pinSetupModal" class="hidden" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;padding:18px;overflow:auto">
+</style><meta content="#216b3a" name="theme-color"/>
+<meta content="yes" name="apple-mobile-web-app-capable"/>
+<meta content="default" name="apple-mobile-web-app-status-bar-style"/>
+<meta content="GeoFylo" name="apple-mobile-web-app-title"/>
+<link href="./manifest.webmanifest" rel="manifest"/>
+<link href="./icon-192.png" rel="apple-touch-icon"/>
+</head><body><div class="hidden" id="completionModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:9999;padding:18px;overflow:auto"><div class="card" style="max-width:520px;margin:8vh auto;background:#fff"><h3>✅ Ολοκλήρωση εργασίας</h3><small>Δήλωσε το εφόδιο και την πραγματική ποσότητα που χρησιμοποιήθηκε. Αν δεν χρησιμοποιήθηκε εφόδιο, επίλεξε «Χωρίς εφόδιο».</small><label style="margin-top:14px">📦 Εφόδιο<select id="completionInventory" onchange="completionInventoryChanged()"><option value="">— Χωρίς εφόδιο —</option></select></label><div id="completionAvailable"><small>Επίλεξε εφόδιο για να δεις το διαθέσιμο απόθεμα.</small></div><label>Ποσότητα που χρησιμοποιήθηκε<input disabled="" id="completionQty" inputmode="decimal" min="0.01" placeholder="π.χ. 2,5" step="0.01" type="number"/></label><div class="grid"><button class="soft" onclick="closeCompletionModal()">Ακύρωση</button><button id="confirmCompletionBtn" onclick="confirmActivityCompletion()">✅ Ολοκλήρωση εργασίας</button></div></div></div><div class="hidden" id="pinSetupModal" style="position:fixed;inset:0;background:rgba(0,0,0,.45);z-index:10000;padding:18px;overflow:auto">
 <div class="card" style="max-width:420px;margin:12vh auto;background:#fff">
 <h3 id="pinSetupTitle">🔐 Ορισμός PIN</h3>
 <small id="pinSetupHint">Πληκτρολόγησε έναν 4ψήφιο PIN.</small>
-<input id="pinSetupInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="new-password" placeholder="••••" style="text-align:center;font-size:30px;letter-spacing:12px" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onkeydown="if(event.key==='Enter')submitPinSetupStep()">
-<div class="grid"><button class="soft" type="button" onclick="cancelPinSetup()">Ακύρωση</button><button type="button" onclick="submitPinSetupStep()">Συνέχεια</button></div>
+<input autocomplete="new-password" id="pinSetupInput" inputmode="numeric" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onkeydown="if(event.key==='Enter')submitPinSetupStep()" pattern="[0-9]*" placeholder="••••" style="text-align:center;font-size:30px;letter-spacing:12px" type="password"/>
+<div class="grid"><button class="soft" onclick="cancelPinSetup()" type="button">Ακύρωση</button><button onclick="submitPinSetupStep()" type="button">Συνέχεια</button></div>
 <small id="pinSetupMsg" style="display:block;margin-top:7px"></small>
 </div></div><div class="app">
-<div id="auth"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small></small>
-<div id="installBar" class="installBar hidden">
-  <button id="installAppBtn" class="installBtn" type="button" onclick="installGeoFylo()">📲 Εγκατάσταση GeoFylo</button>
-  <small id="installHint">Εγκατάστησέ το στο κινητό ή στον υπολογιστή σου.</small>
+<div id="auth"><h1 class="brand"><img alt="" src="./icon-192.png"/>GeoFylo</h1><small></small>
+<div class="installBar hidden" id="installBar">
+<button class="installBtn" id="installAppBtn" onclick="installGeoFylo()" type="button">📲 Εγκατάσταση GeoFylo</button>
+<small id="installHint">Εγκατάστησέ το στο κινητό ή στον υπολογιστή σου.</small>
 </div>
 <div class="card">
-<div id="emailAuthBox"><h2 id="authTitle">Σύνδεση</h2><div id="nameBox" class="hidden"><input id="name" placeholder="Ονοματεπώνυμο"></div>
-<input id="email" type="email" placeholder="Email"><input id="pass" type="password" placeholder="Κωδικός (6+ χαρακτήρες)">
-<button onclick="submitAuth()" id="authBtn">Σύνδεση</button><button id="forgotPasswordBtn" type="button" class="soft">🔑 Ξέχασα τον κωδικό μου;</button> <button class="soft" onclick="toggleAuth()" id="toggleBtn">Δεν έχω λογαριασμό — Εγγραφή</button></div>
-<div id="pinAuthBox" class="hidden" style="text-align:center"><h2>🔐 Γρήγορη είσοδος</h2><small id="pinUserLabel"></small><input id="pinInput" type="password" inputmode="numeric" pattern="[0-9]*" maxlength="4" autocomplete="off" placeholder="••••" style="text-align:center;font-size:30px;letter-spacing:12px" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onkeydown="if(event.key==='Enter')unlockWithPin()"><button onclick="unlockWithPin()">Ξεκλείδωμα</button><button class="soft" onclick="useEmailLogin()">Σύνδεση με email / άλλο λογαριασμό</button><small>Ο PIN ισχύει μόνο σε αυτή τη συσκευή.</small></div>
+<div id="emailAuthBox"><h2 id="authTitle">Σύνδεση</h2><div class="hidden" id="nameBox"><input id="name" placeholder="Ονοματεπώνυμο"/></div>
+<input id="email" placeholder="Email" type="email"/><input id="pass" placeholder="Κωδικός (6+ χαρακτήρες)" type="password"/>
+<button id="authBtn" onclick="submitAuth()">Σύνδεση</button><button class="soft" id="forgotPasswordBtn" type="button">🔑 Ξέχασα τον κωδικό μου;</button> <button class="soft" id="toggleBtn" onclick="toggleAuth()">Δεν έχω λογαριασμό — Εγγραφή</button></div>
+<div class="hidden" id="pinAuthBox" style="text-align:center"><h2>🔐 Γρήγορη είσοδος</h2><small id="pinUserLabel"></small><input autocomplete="off" id="pinInput" inputmode="numeric" maxlength="4" oninput="this.value=this.value.replace(/\D/g,'').slice(0,4)" onkeydown="if(event.key==='Enter')unlockWithPin()" pattern="[0-9]*" placeholder="••••" style="text-align:center;font-size:30px;letter-spacing:12px" type="password"/><button onclick="unlockWithPin()">Ξεκλείδωμα</button><button class="soft" onclick="useEmailLogin()">Σύνδεση με email / άλλο λογαριασμό</button><small>Ο PIN ισχύει μόνο σε αυτή τη συσκευή.</small></div>
 <p id="msg"></p></div></div>
-
-<div id="main" class="hidden"><h1 class="brand"><img src="./icon-192.png" alt="">GeoFylo</h1><small id="who"></small>
+<div class="hidden" id="main"><h1 class="brand"><img alt="" src="./icon-192.png"/>GeoFylo</h1><small id="who"></small>
 <div id="connectionStatus" style="margin:6px 0 6px;font-size:13px;font-weight:700"></div>
 <div style="display:flex;gap:8px;margin:4px 0 10px;flex-wrap:wrap">
-<button id="weatherTopBtn" class="soft" type="button" onclick="toggleWeatherCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700">🌦️ Καιρός</button>
-<button id="todayTopBtn" class="soft" type="button" onclick="toggleTodayCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700">📋 Σήμερα</button>
+<button id="globalRefreshBtn" class="soft" type="button" onclick="window.location.reload()" style="width:auto;margin:0;padding:9px 14px;font-weight:700">🔄 Ανανέωση</button>
+<button class="soft" id="weatherTopBtn" onclick="toggleWeatherCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700" type="button">🌦️ Καιρός</button>
+<button class="soft" id="todayTopBtn" onclick="toggleTodayCard()" style="width:auto;margin:0;padding:9px 14px;font-weight:700" type="button">📋 Σήμερα</button>
 </div>
 <div class="card hidden" id="weatherCard" style="margin-top:0">
-  <div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
-    <h2 style="margin:0">🌦️ Καιρός</h2>
-    <button class="soft" type="button" onclick="toggleWeatherCard(false)" style="width:auto;margin:0;padding:7px 10px">✕ Κλείσιμο</button>
-  </div>
-  <div id="weatherContent" style="margin-top:14px">
-    <small>Φόρτωση καιρού...</small>
-  </div>
+<div style="display:flex;justify-content:space-between;align-items:center;gap:10px">
+<h2 style="margin:0">🌦️ Καιρός</h2>
+<button class="soft" onclick="toggleWeatherCard(false)" style="width:auto;margin:0;padding:7px 10px" type="button">✕ Κλείσιμο</button>
 </div>
-
+<div id="weatherContent" style="margin-top:14px">
+<small>Φόρτωση καιρού...</small>
+</div>
+</div>
 <div class="card hidden" id="smartHomeCard">
-<div class="reportTitle"><div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div><button class="soft" type="button" style="width:auto" onclick="toggleTodayCard(false)">✕ Κλείσιμο</button></div>
+<div class="reportTitle"><div><h2 style="margin:0">☀️ Σήμερα στο GeoFylo</h2><small>Ό,τι χρειάζεται την προσοχή σου με μια ματιά.</small></div><button class="soft" onclick="toggleTodayCard(false)" style="width:auto" type="button">✕ Κλείσιμο</button></div>
 <div class="dashGrid" style="margin-top:12px">
 <div class="dashBox" onclick="showPage('calendar')" style="cursor:pointer"><small>📅 Εργασίες σήμερα</small><b id="smartTodayTasks">0</b></div>
 <div class="dashBox" onclick="showPage('inventory')" style="cursor:pointer"><small>📦 Χαμηλό απόθεμα</small><b id="smartLowStock">0</b></div>
 <div class="dashBox" onclick="showPage('customers')" style="cursor:pointer"><small>💳 Ληξιπρόθεσμα πελατών</small><b id="smartCustomerOverdue">0,00 €</b></div>
 <div class="dashBox" onclick="showPage('suppliers')" style="cursor:pointer"><small>🏪 Ληξιπρόθεσμα προμηθευτών</small><b id="smartSupplierOverdue">0,00 €</b></div>
 </div><div id="smartHomeStatus" style="margin-top:10px"><small>Τα στοιχεία ενημερώνονται από το Dashboard.</small></div></div>
-
-<div id="globalContext" class="globalContext">
-  <div class="contextTop"><b>🌱 Τρέχουσα επιλογή</b><span id="globalContextStatus" class="contextLoading"></span></div>
-  <div class="contextGrid">
-    <label>Καλλιεργητική περίοδος
+<div class="globalContext" id="globalContext">
+<div class="contextTop"><b>🌱 Τρέχουσα επιλογή</b><span class="contextLoading" id="globalContextStatus"></span></div>
+<div class="contextGrid">
+<label>Καλλιεργητική περίοδος
       <select id="globalSeason" onchange="changeGlobalSeason(this.value)"></select>
-    </label>
-    <label>Αγροτεμάχιο / Θερμοκήπιο
+</label>
+<label>Αγροτεμάχιο / Θερμοκήπιο
       <select id="globalGH" onchange="changeGlobalGH(this.value)"></select>
-    </label>
-  </div>
+</label>
 </div>
-<nav class="bottomNav"><button id="nav-home" class="active" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-calendar" onclick="showPage('calendar')"><span class="ico">📅</span>Εργασίες</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-customers" onclick="showPage('customers')"><span class="ico">👥</span>Πελάτες</button><button id="nav-payments" onclick="showPage('payments')"><span class="ico">💳</span>Πληρωμές</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-suppliers" onclick="showPage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button id="nav-cashflow" onclick="showPage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button id="nav-budget" onclick="showPage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button id="nav-mydata" onclick="showPage('mydata')"><span class="ico">🏛️</span>ΑΑΔΕ</button><button id="nav-assistant" onclick="showPage('assistant')"><span class="ico">🤖</span>Assistant</button><button id="nav-profile" onclick="showPage('profile')"><span class="ico">👤</span>Προφίλ</button><button id="nav-admin" class="hidden" onclick="showPage('admin')"><span class="ico">👑</span>Διαχείριση</button></nav>
-<div id="page-home" class="page active">
+</div>
+<nav class="bottomNav"><button class="active" id="nav-home" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-calendar" onclick="showPage('calendar')"><span class="ico">📅</span>Εργασίες</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-customers" onclick="showPage('customers')"><span class="ico">👥</span>Πελάτες</button><button id="nav-payments" onclick="showPage('payments')"><span class="ico">💳</span>Πληρωμές</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-suppliers" onclick="showPage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button id="nav-cashflow" onclick="showPage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button id="nav-budget" onclick="showPage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button id="nav-mydata" onclick="showPage('mydata')"><span class="ico">🏛️</span>ΑΑΔΕ</button><button id="nav-assistant" onclick="showPage('assistant')"><span class="ico">🤖</span>Assistant</button><button id="nav-profile" onclick="showPage('profile')"><span class="ico">👤</span>Προφίλ</button><button class="hidden" id="nav-admin" onclick="showPage('admin')"><span class="ico">👑</span>Διαχείριση</button></nav>
+<div class="page active" id="page-home">
 <div class="card" id="producerHome">
-<h2 style="margin:0" id="tQuick">🌱 Γρήγορη καταχώρηση</h2>
+<h2 id="tQuick" style="margin:0">🌱 Γρήγορη καταχώρηση</h2>
 <small id="tChoose">Επίλεξε τι θέλεις να καταχωρήσεις</small>
 <div class="quickGrid">
 <button onclick="quickEntry('expense')"><span id="tExpense">💶 Έξοδο</span></button>
@@ -95,7 +93,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div>
 <button class="voice quickVoice" onclick="startVoice()"><span id="tVoice">🎤 Πες το με τη φωνή</span></button>
 <div class="quickSummary">
-<small id="tCurrent">Τρέχουσα επιλογή</small><br>
+<small id="tCurrent">Τρέχουσα επιλογή</small><br/>
 <b id="homeSelection">Επίλεξε περίοδο και αγροτεμάχιο</b>
 <div id="homeNumbers" style="margin-top:6px"><small>Τα βασικά στοιχεία θα εμφανιστούν εδώ.</small></div>
 </div>
@@ -116,17 +114,16 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="dashBox"><small>⏳ Εκκρεμείς εργασίες</small><b id="dPending">0</b></div>
 </div>
 <h4>🔔 Ειδοποιήσεις</h4><div id="dashboardAlerts"><small>Φόρτωση...</small></div></div>
-
-</div><div id="page-entry" class="page"><div class="card" id="entryCard"><h3 id="tNewEntry">Νέα καταχώρηση</h3>
+</div><div class="page" id="page-entry"><div class="card" id="entryCard"><h3 id="tNewEntry">Νέα καταχώρηση</h3>
 <button class="voice" id="voiceBtn" onclick="startVoice()">🎙️ Φωνητική καταχώρηση</button>
 <small id="voiceMsg"></small>
 <select id="etype" onchange="entryFields()"><option value="expense">Έξοδο</option><option value="harvest">Συγκομιδή</option><option value="sale">Πώληση</option><option value="activity">📅 Εργασία / Ημερολόγιο</option></select>
-<div id="fields"></div><input id="note" placeholder="Σημείωση"><button id="saveEntryBtn" onclick="addEntry()">Αποθήκευση</button></div>
-<div class="card"><h3>Καλλιεργητική περίοδος</h3><select id="season" onchange="if(user&&this.value)localStorage.setItem(currentSeasonKey(user),this.value);if(user)localStorage.removeItem(currentGHKey(user));loadGH()"></select><input id="newSeason" placeholder="π.χ. 2026–27"><button onclick="addSeason()">+ Περίοδος</button>
+<div id="fields"></div><input id="note" placeholder="Σημείωση"/><button id="saveEntryBtn" onclick="addEntry()">Αποθήκευση</button></div>
+<div class="card"><h3>Καλλιεργητική περίοδος</h3><select id="season" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentSeasonKey(user),this.value);if(user)localStorage.removeItem(currentGHKey(user));loadGH()"></select><input id="newSeason" placeholder="π.χ. 2026–27"/><button onclick="addSeason()">+ Περίοδος</button>
 <div class="grid"><button class="soft" onclick="renameSeason()">✏️ Μετονομασία περιόδου</button><button class="danger" onclick="deleteSeason()">🗑️ Διαγραφή περιόδου</button></div></div>
-<div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="if(user&&this.value)localStorage.setItem(currentGHKey(user),this.value);syncGlobalContext();dash()"></select><input id="ghName" placeholder="Όνομα"><div class="grid"><input id="area" type="number" step=".1" placeholder="Στρέμματα"><select id="crop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option></select></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
+<div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentGHKey(user),this.value);syncGlobalContext();dash()"></select><input id="ghName" placeholder="Όνομα"/><div class="grid"><input id="area" placeholder="Στρέμματα" step=".1" type="number"/><select id="crop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option></select></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
 <div class="grid"><button class="soft" onclick="editGH()">✏️ Επεξεργασία</button><button class="danger" onclick="deleteGH()">🗑️ Διαγραφή</button></div></div>
-</div><div id="page-movements" class="page"><div class="card" id="movementsCard">
+</div><div class="page" id="page-movements"><div class="card" id="movementsCard">
 <h3>🧾 Κινήσεις</h3>
 <small>Βρες γρήγορα οποιαδήποτε καταχώρηση και διόρθωσέ την.</small>
 <div style="display:flex;gap:6px;overflow-x:auto;margin:12px 0 8px;padding-bottom:3px">
@@ -137,16 +134,16 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft movementFilter" data-type="activity" onclick="setMovementFilter('activity',this)">🌱 Εργασίες</button>
 </div>
 <div class="grid2">
-<label>Από<input id="movementFrom" type="date" onchange="renderMovements()"></label>
-<label>Έως<input id="movementTo" type="date" onchange="renderMovements()"></label>
+<label>Από<input id="movementFrom" onchange="renderMovements()" type="date"/></label>
+<label>Έως<input id="movementTo" onchange="renderMovements()" type="date"/></label>
 </div>
-<label>🔍 Αναζήτηση<input id="movementSearch" placeholder="π.χ. λίπασμα, πώληση, 200..." oninput="renderMovements()"></label>
+<label>🔍 Αναζήτηση<input id="movementSearch" oninput="renderMovements()" placeholder="π.χ. λίπασμα, πώληση, 200..."/></label>
 <button class="soft" onclick="clearMovementFilters()">Καθαρισμός φίλτρων</button>
 <div id="movementCount" style="margin-top:10px"><small></small></div>
 <div id="movementsList" style="margin-top:6px"><small>Δεν υπάρχουν κινήσεις.</small></div>
 </div>
-</div><div id="page-calendar" class="page">
-<div class="card"><div class="reportTitle"><h3 id="tCalendar">📅 Κέντρο Εργασιών & Υπενθυμίσεων</h3><button class="soft" style="width:auto" onclick="loadCalendar()">🔄</button></div>
+</div><div class="page" id="page-calendar">
+<div class="card"><div class="reportTitle"><h3 id="tCalendar">📅 Κέντρο Εργασιών &amp; Υπενθυμίσεων</h3><button class="soft" onclick="loadCalendar()" style="width:auto">🔄</button></div>
 <small>Οι εκκρεμείς εργασίες του επιλεγμένου αγροτεμαχίου, οργανωμένες ανά προτεραιότητα.</small>
 <div class="metrics" style="margin-top:12px">
 <div class="m">⚠️ Εκπρόθεσμες<b id="taskOverdueCount">0</b></div>
@@ -159,12 +156,12 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="card"><h3>📌 Σήμερα</h3><div id="taskTodayList"><small>Δεν υπάρχουν εργασίες για σήμερα.</small></div></div>
 <div class="card"><h3>⏳ Επόμενες</h3><div id="taskUpcomingList"><small>Δεν υπάρχουν επόμενες εργασίες.</small></div></div>
 <div class="card"><h3>🗓️ Ιστορικό / Ημερολόγιο</h3>
-<div class="grid"><div><small>Μήνας</small><input id="calMonth" type="month" onchange="loadCalendarHistory()"></div>
+<div class="grid"><div><small>Μήνας</small><input id="calMonth" onchange="loadCalendarHistory()" type="month"/></div>
 <div><small>Τύπος εργασίας</small><select id="calType" onchange="loadCalendarHistory()"><option value="">Όλες οι εργασίες</option><option>Λίπανση</option><option>Ψεκασμός / Φυτοπροστασία</option><option>Πότισμα</option><option>Φύτευση</option><option>Κλάδεμα</option><option>Εργασία προσωπικού</option><option>Καθαρισμός</option><option>Συντήρηση</option><option>Άλλη εργασία</option></select></div></div>
-<button class="soft" onclick="loadCalendarHistory()">🔄 Ανανέωση ιστορικού</button>
+
 <div id="calendarList"><small>Δεν υπάρχουν εργασίες.</small></div>
 </div>
-</div><div id="page-reports" class="page"><div class="card"><div class="reportTitle"><h3 id="tReports">📊 Αναφορές & Στατιστικά</h3><button class="soft" style="width:auto" onclick="exportExcel()">📊 Εξαγωγή Excel</button><button class="soft" style="width:auto" onclick="exportPDF()">📄 Εξαγωγή PDF</button><button class="soft" style="width:auto" onclick="loadReports()">🔄</button></div>
+</div><div class="page" id="page-reports"><div class="card"><div class="reportTitle"><h3 id="tReports">📊 Αναφορές &amp; Στατιστικά</h3><button class="soft" onclick="exportExcel()" style="width:auto">📊 Εξαγωγή Excel</button><button class="soft" onclick="exportPDF()" style="width:auto">📄 Εξαγωγή PDF</button><button class="soft" onclick="loadReports()" style="width:auto">🔄</button></div>
 <small id="reportFor">Για το επιλεγμένο αγροτεμάχιο</small>
 <div class="metrics" style="margin-top:10px">
 <div class="m">Παραγωγή<b id="rProduction">0 kg</b></div>
@@ -182,43 +179,40 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="grid" style="margin-top:8px"><label>Περίοδος Α<select id="compareSeasonA"></select></label><label>Περίοδος Β<select id="compareSeasonB"></select></label></div>
 <button class="soft" onclick="compareSeasons()">📈 Σύγκριση περιόδων</button>
 <div id="seasonComparison"><small>Επίλεξε δύο περιόδους.</small></div>
-<h4>Διαλογή πωλήσεων</h4><div id="gradeBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><h4>👥 Πωλήσεις ανά πελάτη / έμπορο</h4><div id="customerBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><h4>💳 Υπόλοιπα πελατών (συνολικά)</h4><div id="paymentBreakdown"><small>Δεν υπάρχουν στοιχεία.</small></div><h4>🏡 Ανάλυση Κατανάλωσης & Κόστους</h4>
+<h4>Διαλογή πωλήσεων</h4><div id="gradeBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><h4>👥 Πωλήσεις ανά πελάτη / έμπορο</h4><div id="customerBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><h4>💳 Υπόλοιπα πελατών (συνολικά)</h4><div id="paymentBreakdown"><small>Δεν υπάρχουν στοιχεία.</small></div><h4>🏡 Ανάλυση Κατανάλωσης &amp; Κόστους</h4>
 <small>Αναλυτικά στοιχεία μόνο για το επιλεγμένο αγροτεμάχιο / θερμοκήπιο. Τα συνολικά οικονομικά στοιχεία εμφανίζονται ήδη στα Στατιστικά.</small>
 <h4>📦 Κατανάλωση εφοδίων</h4><div id="inventoryUsageSummary"><small>Δεν υπάρχουν καταναλώσεις εφοδίων.</small></div>
 <h4>💸 Κόστος ανά κατηγορία</h4><div id="expenseBreakdown"><small>Δεν υπάρχουν έξοδα.</small></div>
 <h4>Ανά μήνα</h4><div id="monthlyReport"><small>Δεν υπάρχουν δεδομένα.</small></div>
 </div>
 </div>
-<div id="page-customers" class="page"><div class="card"><h3>👥 Πελάτες / Έμποροι</h3><small>Αποθήκευσε τους αγοραστές σου για γρήγορη επιλογή στις πωλήσεις.</small><label>Όνομα / Επωνυμία<input id="customerName" placeholder="π.χ. Έμπορος Α"></label><label>Τηλέφωνο<input id="customerPhone" type="tel" placeholder="Τηλέφωνο (προαιρετικά)"></label><label>Σημείωση<input id="customerNote" placeholder="Σημείωση (προαιρετικά)"></label><button id="saveCustomerBtn" onclick="saveCustomer()">➕ Αποθήκευση πελάτη</button><button class="soft hidden" id="cancelCustomerBtn" onclick="cancelCustomerEdit()">Ακύρωση επεξεργασίας</button><div id="customersList" style="margin-top:12px"><small>Δεν υπάρχουν πελάτες.</small></div><div id="customerCard" class="card hidden"></div></div></div>
-
-<div id="page-payments" class="page"><div class="card"><h3>💳 Πληρωμές & Υπόλοιπα</h3><small>Καταχώρησε τις εισπράξεις από πελάτες και δες τι υπόλοιπο απομένει.</small>
+<div class="page" id="page-customers"><div class="card"><h3>👥 Πελάτες / Έμποροι</h3><small>Αποθήκευσε τους αγοραστές σου για γρήγορη επιλογή στις πωλήσεις.</small><label>Όνομα / Επωνυμία<input id="customerName" placeholder="π.χ. Έμπορος Α"/></label><label>Τηλέφωνο<input id="customerPhone" placeholder="Τηλέφωνο (προαιρετικά)" type="tel"/></label><label>Σημείωση<input id="customerNote" placeholder="Σημείωση (προαιρετικά)"/></label><button id="saveCustomerBtn" onclick="saveCustomer()">➕ Αποθήκευση πελάτη</button><button class="soft hidden" id="cancelCustomerBtn" onclick="cancelCustomerEdit()">Ακύρωση επεξεργασίας</button><div id="customersList" style="margin-top:12px"><small>Δεν υπάρχουν πελάτες.</small></div><div class="card hidden" id="customerCard"></div></div></div>
+<div class="page" id="page-payments"><div class="card"><h3>💳 Πληρωμές &amp; Υπόλοιπα</h3><small>Καταχώρησε τις εισπράξεις από πελάτες και δες τι υπόλοιπο απομένει.</small>
 <label>Πελάτης / Έμπορος<select id="paymentCustomer"><option value="">— Επίλεξε πελάτη —</option></select></label>
-<label>Ημερομηνία<input id="paymentDate" type="date"></label>
-<label>Ποσό €<input id="paymentAmount" type="number" step="0.01" min="0.01" placeholder="0,00"></label>
+<label>Ημερομηνία<input id="paymentDate" type="date"/></label>
+<label>Ποσό €<input id="paymentAmount" min="0.01" placeholder="0,00" step="0.01" type="number"/></label>
 <label>Τρόπος πληρωμής<select id="paymentMethod"><option value="Μετρητά">Μετρητά</option><option value="Τράπεζα">Τράπεζα</option><option value="Άλλο">Άλλο</option></select></label>
-<label>Σημείωση<input id="paymentNote" placeholder="Σημείωση (προαιρετικά)"></label>
+<label>Σημείωση<input id="paymentNote" placeholder="Σημείωση (προαιρετικά)"/></label>
 <button id="savePaymentBtn" onclick="savePayment()">💾 Αποθήκευση πληρωμής</button><button class="soft hidden" id="cancelPaymentBtn" onclick="cancelPaymentEdit()">Ακύρωση επεξεργασίας</button>
 <h4>Υπόλοιπα πελατών</h4><div id="customerBalances"><small>Δεν υπάρχουν στοιχεία.</small></div>
 <h4>Ιστορικό πληρωμών</h4><div id="paymentsPager"></div><div id="paymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div>
-<div class="card"><h3>💳 Πληρωμή προμηθευτή</h3><label>Προμηθευτής<select id="supplierPaymentSupplier"><option value="">— Επίλεξε προμηθευτή —</option></select></label><label>Ημερομηνία<input id="supplierPaymentDate" type="date"></label><label>Ποσό €<input id="supplierPaymentAmount" type="number" step="0.01" min="0.01" placeholder="0,00"></label><label>Τρόπος πληρωμής<select id="supplierPaymentMethod"><option value="Μετρητά">Μετρητά</option><option value="Τράπεζα">Τράπεζα</option><option value="Άλλο">Άλλο</option></select></label><label>Σημείωση<input id="supplierPaymentNote" placeholder="Σημείωση"></label><button id="saveSupplierPaymentBtn" onclick="saveSupplierPayment()">💾 Αποθήκευση πληρωμής</button><button class="soft hidden" id="cancelSupplierPaymentBtn" onclick="cancelSupplierPaymentEdit()">Ακύρωση επεξεργασίας</button><h4>Ιστορικό πληρωμών</h4><div id="supplierPaymentsPager"></div><div id="supplierPaymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div>
+<div class="card"><h3>💳 Πληρωμή προμηθευτή</h3><label>Προμηθευτής<select id="supplierPaymentSupplier"><option value="">— Επίλεξε προμηθευτή —</option></select></label><label>Ημερομηνία<input id="supplierPaymentDate" type="date"/></label><label>Ποσό €<input id="supplierPaymentAmount" min="0.01" placeholder="0,00" step="0.01" type="number"/></label><label>Τρόπος πληρωμής<select id="supplierPaymentMethod"><option value="Μετρητά">Μετρητά</option><option value="Τράπεζα">Τράπεζα</option><option value="Άλλο">Άλλο</option></select></label><label>Σημείωση<input id="supplierPaymentNote" placeholder="Σημείωση"/></label><button id="saveSupplierPaymentBtn" onclick="saveSupplierPayment()">💾 Αποθήκευση πληρωμής</button><button class="soft hidden" id="cancelSupplierPaymentBtn" onclick="cancelSupplierPaymentEdit()">Ακύρωση επεξεργασίας</button><h4>Ιστορικό πληρωμών</h4><div id="supplierPaymentsPager"></div><div id="supplierPaymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div>
 </div>
-
-<div id="page-mydata" class="page">
+<div class="page" id="page-mydata">
 <div class="card">
-<div class="reportTitle"><h2 style="margin:0">🏛️ ΑΑΔΕ / myDATA</h2><button class="soft" style="width:auto" onclick="loadMyData()">🔄 Ανανέωση</button></div>
+<div class="reportTitle"><h2 style="margin:0">🏛️ ΑΑΔΕ / myDATA</h2></div>
 <small>Ανάγνωση στοιχείων από το δοκιμαστικό περιβάλλον myDATA της ΑΑΔΕ. Δεν αποστέλλονται ή τροποποιούνται παραστατικά.</small>
-<div class="grid" style="margin-top:12px"><label>Από<input id="myDataFrom" type="date" value="2026-01-01"></label><label>Έως<input id="myDataTo" type="date" value="2026-12-31"></label></div>
+<div class="grid" style="margin-top:12px"><label>Από<input id="myDataFrom" type="date" value="2026-01-01"/></label><label>Έως<input id="myDataTo" type="date" value="2026-12-31"/></label></div>
 <button onclick="loadMyData()">📥 Ανάκτηση από ΑΑΔΕ</button>
-<div id="myDataStatus" class="quickSummary"><small>Πάτησε «Ανάκτηση από ΑΑΔΕ» για έλεγχο σύνδεσης.</small></div>
+<div class="quickSummary" id="myDataStatus"><small>Πάτησε «Ανάκτηση από ΑΑΔΕ» για έλεγχο σύνδεσης.</small></div>
 </div>
 <div class="card"><h3>📊 Κατάσταση myDATA</h3><div class="dashGrid"><div class="dashBox"><small>💰 Έσοδα</small><b id="myDataIncomeStatus">—</b></div><div class="dashBox"><small>💸 Έξοδα</small><b id="myDataExpenseStatus">—</b></div></div></div>
 <div class="card"><h3>ℹ️ Πληροφορίες</h3><div id="myDataInfo"><small>Τα οικονομικά σύνολα θα εμφανιστούν όταν ολοκληρωθεί η ανάγνωση και ανάλυση των XML δεδομένων της ΑΑΔΕ.</small></div></div>
 </div>
-<div id="page-assistant" class="page">
+<div class="page" id="page-assistant">
 <div class="card">
 <h2 style="margin-top:0">🌱 GeoFylo Assistant</h2>
 <small>Ρώτησε για τα δεδομένα του επιλεγμένου αγροτεμαχίου / θερμοκηπίου.</small>
-
 <div class="quickGrid" style="margin-top:14px">
 <button class="soft" onclick="askGeoFylo('Πώς πάει η καλλιέργειά μου;')">📊 Πώς πάει η καλλιέργεια;</button>
 <button class="soft" onclick="askGeoFylo('Δώσε μου οικονομική εικόνα')">💰 Οικονομική εικόνα</button>
@@ -232,94 +226,89 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft" onclick="askGeoFylo('Σύγκρινε την τωρινή περίοδο με την προηγούμενη')">📊 Σύγκριση περιόδων</button>
 <button class="soft" onclick="askGeoFylo('Έχω καθυστερημένες εργασίες;')">🔴 Καθυστερημένες εργασίες</button>
 </div>
-
 <div id="assistantChat" style="margin-top:14px">
-<div class="quickSummary"><b>🤖 GeoFylo</b><br><small>Γεια σου! Μπορείς να με ρωτήσεις για παραγωγή, έσοδα, έξοδα, αποθήκη και εργασίες.</small></div>
+<div class="quickSummary"><b>🤖 GeoFylo</b><br/><small>Γεια σου! Μπορείς να με ρωτήσεις για παραγωγή, έσοδα, έξοδα, αποθήκη και εργασίες.</small></div>
 </div>
-
 <div style="display:flex;gap:8px;align-items:center;margin-top:12px">
-<input id="assistantInput" placeholder="π.χ. Πόσα είναι τα έξοδά μου;" style="margin:0" onkeydown="if(event.key==='Enter')askGeoFylo()">
-<button style="width:auto;margin:0;white-space:nowrap" onclick="askGeoFylo()">Αποστολή</button>
+<input id="assistantInput" onkeydown="if(event.key==='Enter')askGeoFylo()" placeholder="π.χ. Πόσα είναι τα έξοδά μου;" style="margin:0"/>
+<button onclick="askGeoFylo()" style="width:auto;margin:0;white-space:nowrap">Αποστολή</button>
 </div>
 <small style="display:block;margin-top:8px">GeoFylo Assistant v1.9 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
 </div>
-
-<div id="page-inventory" class="page"><div class="card"><h3>📦 Αποθήκη / Εφόδια</h3><small>Καταχώρησε πρώτα εδώ τα εφόδια που χρησιμοποιείς, πριν από την αγορά τους. Η τιμή και ο προμηθευτής καταχωρούνται στη «Νέα αγορά εφοδίου» παρακάτω.</small>
-<label>Όνομα προϊόντος<input id="inventoryName" placeholder="π.χ. Λίπασμα 20-20-20"></label>
+<div class="page" id="page-inventory"><div class="card"><h3>📦 Αποθήκη / Εφόδια</h3><small>Καταχώρησε πρώτα εδώ τα εφόδια που χρησιμοποιείς, πριν από την αγορά τους. Η τιμή και ο προμηθευτής καταχωρούνται στη «Νέα αγορά εφοδίου» παρακάτω.</small>
+<label>Όνομα προϊόντος<input id="inventoryName" placeholder="π.χ. Λίπασμα 20-20-20"/></label>
 <label>Κατηγορία<select id="inventoryCategory"><option>Λίπασμα</option><option>Φυτοπροστασία</option><option>Σπόροι / Φυτά</option><option>Υλικά</option><option>Άλλο</option></select></label>
-<div class="grid"><label>Ποσότητα<input id="inventoryQty" type="number" step="0.01" min="0" placeholder="0"></label><label>Μονάδα<select id="inventoryUnit"><option value="kg">kg</option><option value="lt">lt</option><option value="τεμ.">τεμάχια</option></select></label></div>
-<label>Σημείωση<input id="inventoryNote" placeholder="Σημείωση (προαιρετικά)"></label>
+<div class="grid"><label>Ποσότητα<input id="inventoryQty" min="0" placeholder="0" step="0.01" type="number"/></label><label>Μονάδα<select id="inventoryUnit"><option value="kg">kg</option><option value="lt">lt</option><option value="τεμ.">τεμάχια</option></select></label></div>
+<label>Σημείωση<input id="inventoryNote" placeholder="Σημείωση (προαιρετικά)"/></label>
 <button id="saveInventoryBtn" onclick="saveInventory()">💾 Αποθήκευση είδους</button><button class="soft hidden" id="cancelInventoryBtn" onclick="cancelInventoryEdit()">Ακύρωση επεξεργασίας</button>
-<hr style="margin:22px 0;border:0;border-top:1px solid #dfe8df"><h4>🧾 Νέα αγορά εφοδίου</h4>
-<label>Ημερομηνία αγοράς<input id="purchaseDate" type="date"></label>
+<hr style="margin:22px 0;border:0;border-top:1px solid #dfe8df"/><h4>🧾 Νέα αγορά εφοδίου</h4>
+<label>Ημερομηνία αγοράς<input id="purchaseDate" type="date"/></label>
 <label>Προμηθευτής<select id="purchaseSupplier"><option value="">— Επίλεξε προμηθευτή —</option></select></label>
-<label>Αριθμός παραστατικού<input id="purchaseDocument" placeholder="π.χ. ΤΙΜ-125"></label>
-<label>Σημείωση<input id="purchaseNote" placeholder="Σημείωση (προαιρετικά)"></label>
+<label>Αριθμός παραστατικού<input id="purchaseDocument" placeholder="π.χ. ΤΙΜ-125"/></label>
+<label>Σημείωση<input id="purchaseNote" placeholder="Σημείωση (προαιρετικά)"/></label>
 <h4 style="margin-bottom:6px">Προϊόντα παραστατικού</h4>
 <div id="purchaseItems"></div>
-<button type="button" class="soft" onclick="addPurchaseItem()">➕ Προσθήκη προϊόντος</button>
-<div class="quickSummary"><small>Σύνολο παραστατικού</small><br><b id="purchaseTotal">0,00 €</b></div>
+<button class="soft" onclick="addPurchaseItem()" type="button">➕ Προσθήκη προϊόντος</button>
+<div class="quickSummary"><small>Σύνολο παραστατικού</small><br/><b id="purchaseTotal">0,00 €</b></div>
 <button id="savePurchaseBtn" onclick="savePurchase()">🧾 Καταχώρηση παραστατικού</button>
 <h4>Ιστορικό αγορών</h4><div id="purchasePager"></div><div id="purchaseList"><small>Δεν υπάρχουν αγορές.</small></div>
-<div class="quickSummary"><small>Συνολική αξία αποθέματος</small><br><b id="inventoryValue">0,00 €</b></div>
+<div class="quickSummary"><small>Συνολική αξία αποθέματος</small><br/><b id="inventoryValue">0,00 €</b></div>
 <div id="inventoryList" style="margin-top:12px"><small>Δεν υπάρχουν είδη.</small></div></div></div>
-
-<div id="page-suppliers" class="page"><div class="card"><h3>🏪 Προμηθευτές</h3><small>Καρτέλα προμηθευτών, αγορές, πληρωμές και υπόλοιπα.</small>
-<label>Επωνυμία<input id="supplierName" placeholder="π.χ. Γεωπονικό κατάστημα"></label>
-<div class="grid"><label>ΑΦΜ<input id="supplierVat" placeholder="ΑΦΜ"></label><label>Τηλέφωνο<input id="supplierPhone" type="tel" placeholder="Τηλέφωνο"></label></div>
-<label>Email<input id="supplierEmail" type="email" placeholder="Email"></label><label>Περιοχή / Διεύθυνση<input id="supplierAddress" placeholder="Διεύθυνση"></label><label>Σημείωση<input id="supplierNote" placeholder="Σημείωση"></label>
+<div class="page" id="page-suppliers"><div class="card"><h3>🏪 Προμηθευτές</h3><small>Καρτέλα προμηθευτών, αγορές, πληρωμές και υπόλοιπα.</small>
+<label>Επωνυμία<input id="supplierName" placeholder="π.χ. Γεωπονικό κατάστημα"/></label>
+<div class="grid"><label>ΑΦΜ<input id="supplierVat" placeholder="ΑΦΜ"/></label><label>Τηλέφωνο<input id="supplierPhone" placeholder="Τηλέφωνο" type="tel"/></label></div>
+<label>Email<input id="supplierEmail" placeholder="Email" type="email"/></label><label>Περιοχή / Διεύθυνση<input id="supplierAddress" placeholder="Διεύθυνση"/></label><label>Σημείωση<input id="supplierNote" placeholder="Σημείωση"/></label>
 <button id="saveSupplierBtn" onclick="saveSupplier()">➕ Αποθήκευση προμηθευτή</button><button class="soft hidden" id="cancelSupplierBtn" onclick="cancelSupplierEdit()">Ακύρωση επεξεργασίας</button>
-<div id="suppliersList" style="margin-top:12px"><small>Δεν υπάρχουν προμηθευτές.</small></div><div id="supplierCard" class="card hidden"></div></div>
+<div id="suppliersList" style="margin-top:12px"><small>Δεν υπάρχουν προμηθευτές.</small></div><div class="card hidden" id="supplierCard"></div></div>
 </div>
-<div id="page-cashflow" class="page"><div class="card"><h3>💰 Ταμείο / Ταμειακές Ροές</h3><small>Πραγματικές εισπράξεις πελατών και πληρωμές προμηθευτών.</small><div class="dashGrid"><div class="dashBox"><small>💵 Εισπράξεις πελατών</small><b id="cashIn">0,00 €</b></div><div class="dashBox"><small>🏪 Πληρωμές προμηθευτών</small><b id="cashOut">0,00 €</b></div><div class="dashBox"><small>📈 Καθαρή ταμειακή ροή</small><b id="cashNet">0,00 €</b></div></div></div><div class="card"><h3>📅 Ανάλυση ανά μήνα</h3><div id="cashMonthly"><small>Δεν υπάρχουν ταμειακές κινήσεις.</small></div></div><div class="card"><h3>🧾 Πρόσφατες ταμειακές κινήσεις</h3><div id="cashPager"></div><div id="cashMovements"><small>Δεν υπάρχουν ταμειακές κινήσεις.</small></div></div></div>
-
-<div id="page-budget" class="page">
- <div class="card">
-  <div class="reportTitle"><h3>🎯 Προϋπολογισμός Καλλιέργειας</h3><button class="soft" style="width:auto" onclick="refreshBudget(this)">🔄 Ανανέωση</button></div>
-  <small>Όρισε στόχους για κάθε αγροτεμάχιο / θερμοκήπιο και παρακολούθησε την πορεία τους.</small>
-  <label>Καλλιεργητική περίοδος<select id="budgetSeason" onchange="loadBudgetGreenhouses()"></select></label>
-  <label>Αγροτεμάχιο / Θερμοκήπιο<select id="budgetGH" onchange="loadBudgetValues()"></select></label>
- </div>
- <div class="card">
-  <h3>🎯 Στόχοι</h3>
-  <div class="grid"><label>Προϋπολογισμός εξόδων €<input id="budgetExpenseTarget" type="number" min="0" step="0.01" placeholder="π.χ. 10000"></label><label>Στόχος παραγωγής kg<input id="budgetProductionTarget" type="number" min="0" step="0.01" placeholder="π.χ. 20000"></label></div>
-  <label>Στόχος εσόδων €<input id="budgetIncomeTarget" type="number" min="0" step="0.01" placeholder="π.χ. 18000"></label>
-  <button onclick="saveBudget()">💾 Αποθήκευση στόχων</button>
- </div>
- <div class="card">
-  <h3>📊 Στόχος vs Πραγματικό</h3>
-  <div id="budgetSummary"><small>Επίλεξε αγροτεμάχιο.</small></div>
- </div>
- <div class="card">
-  <h3>🔮 Πρόβλεψη Καλλιέργειας</h3>
-  <small>Εκτίμηση με βάση τον στόχο παραγωγής και τη μέχρι σήμερα μέση τιμή πώλησης.</small>
-  <div id="budgetForecast" style="margin-top:10px"><small>Επίλεξε αγροτεμάχιο.</small></div>
- </div>
+<div class="page" id="page-cashflow"><div class="card"><h3>💰 Ταμείο / Ταμειακές Ροές</h3><small>Πραγματικές εισπράξεις πελατών και πληρωμές προμηθευτών.</small><div class="dashGrid"><div class="dashBox"><small>💵 Εισπράξεις πελατών</small><b id="cashIn">0,00 €</b></div><div class="dashBox"><small>🏪 Πληρωμές προμηθευτών</small><b id="cashOut">0,00 €</b></div><div class="dashBox"><small>📈 Καθαρή ταμειακή ροή</small><b id="cashNet">0,00 €</b></div></div></div><div class="card"><h3>📅 Ανάλυση ανά μήνα</h3><div id="cashMonthly"><small>Δεν υπάρχουν ταμειακές κινήσεις.</small></div></div><div class="card"><h3>🧾 Πρόσφατες ταμειακές κινήσεις</h3><div id="cashPager"></div><div id="cashMovements"><small>Δεν υπάρχουν ταμειακές κινήσεις.</small></div></div></div>
+<div class="page" id="page-budget">
+<div class="card">
+<div class="reportTitle"><h3>🎯 Προϋπολογισμός Καλλιέργειας</h3></div>
+<small>Όρισε στόχους για κάθε αγροτεμάχιο / θερμοκήπιο και παρακολούθησε την πορεία τους.</small>
+<label>Καλλιεργητική περίοδος<select id="budgetSeason" onchange="loadBudgetGreenhouses()"></select></label>
+<label>Αγροτεμάχιο / Θερμοκήπιο<select id="budgetGH" onchange="loadBudgetValues()"></select></label>
 </div>
-<div id="page-admin" class="page"><div class="card"><h2 style="margin-top:0">👑 Διαχείριση Συνδρομών</h2><small>Μόνο για διαχειριστές GeoFylo. Καταχώρησε πληρωμή και επέκτεινε τη συνδρομή του πελάτη.</small><div style="margin-top:12px"><button onclick="loadAdminSubscriptions()">🔄 Ανανέωση</button></div><div id="adminSubMsg" style="margin-top:10px"></div><div id="adminStats" style="margin-top:12px"></div><div id="adminSubList" style="margin-top:12px"></div></div><div class="card"><h3>💶 Τιμοκατάλογος</h3><small>Οι τιμές χρησιμοποιούνται αυτόματα όταν ενεργοποιείς ή ανανεώνεις συνδρομή.</small><div id="adminPlanList" style="margin-top:12px"><small>Φόρτωση...</small></div></div><div class="card"><h3>💶 Ιστορικό πληρωμών συνδρομών</h3><div id="adminPaymentHistory"><small>Φόρτωση...</small></div></div></div>
-<div id="page-profile" class="page"><div class="card">
+<div class="card">
+<h3>🎯 Στόχοι</h3>
+<div class="grid"><label>Προϋπολογισμός εξόδων €<input id="budgetExpenseTarget" min="0" placeholder="π.χ. 10000" step="0.01" type="number"/></label><label>Στόχος παραγωγής kg<input id="budgetProductionTarget" min="0" placeholder="π.χ. 20000" step="0.01" type="number"/></label></div>
+<label>Στόχος εσόδων €<input id="budgetIncomeTarget" min="0" placeholder="π.χ. 18000" step="0.01" type="number"/></label>
+<button onclick="saveBudget()">💾 Αποθήκευση στόχων</button>
+</div>
+<div class="card">
+<h3>📊 Στόχος vs Πραγματικό</h3>
+<div id="budgetSummary"><small>Επίλεξε αγροτεμάχιο.</small></div>
+</div>
+<div class="card">
+<h3>🔮 Πρόβλεψη Καλλιέργειας</h3>
+<small>Εκτίμηση με βάση τον στόχο παραγωγής και τη μέχρι σήμερα μέση τιμή πώλησης.</small>
+<div id="budgetForecast" style="margin-top:10px"><small>Επίλεξε αγροτεμάχιο.</small></div>
+</div>
+</div>
+<div class="page" id="page-admin"><div class="card"><h2 style="margin-top:0">👑 Διαχείριση Συνδρομών</h2><small>Μόνο για διαχειριστές GeoFylo. Καταχώρησε πληρωμή και επέκτεινε τη συνδρομή του πελάτη.</small><div style="margin-top:12px"></div><div id="adminSubMsg" style="margin-top:10px"></div><div id="adminStats" style="margin-top:12px"></div><div id="adminSubList" style="margin-top:12px"></div></div><div class="card"><h3>💶 Τιμοκατάλογος</h3><small>Οι τιμές χρησιμοποιούνται αυτόματα όταν ενεργοποιείς ή ανανεώνεις συνδρομή.</small><div id="adminPlanList" style="margin-top:12px"><small>Φόρτωση...</small></div></div><div class="card"><h3>💶 Ιστορικό πληρωμών συνδρομών</h3><div id="adminPaymentHistory"><small>Φόρτωση...</small></div></div></div>
+<div class="page" id="page-profile"><div class="card">
 <h3>👤 Προφίλ Παραγωγού</h3>
 <small style="display:block;margin-bottom:12px">Τα στοιχεία αποθηκεύονται στον προσωπικό σου λογαριασμό.</small>
-<label>Ονοματεπώνυμο<input id="profileName" placeholder="Ονοματεπώνυμο"></label>
-<label>Τηλέφωνο<input id="profilePhone" type="tel" placeholder="Τηλέφωνο"></label>
-<label>🏢 Επωνυμία εκμετάλλευσης<input id="profileFarm" placeholder="π.χ. Αγροτική Εκμετάλλευση"></label>
-<label>📍 Περιοχή<input id="profileArea" placeholder="π.χ. Τυμπάκι, Ηράκλειο"></label>
+<label>Ονοματεπώνυμο<input id="profileName" placeholder="Ονοματεπώνυμο"/></label>
+<label>Τηλέφωνο<input id="profilePhone" placeholder="Τηλέφωνο" type="tel"/></label>
+<label>🏢 Επωνυμία εκμετάλλευσης<input id="profileFarm" placeholder="π.χ. Αγροτική Εκμετάλλευση"/></label>
+<label>📍 Περιοχή<input id="profileArea" placeholder="π.χ. Τυμπάκι, Ηράκλειο"/></label>
 <button id="saveProfileBtn" onclick="saveProfile()">💾 Αποθήκευση</button>
 <small id="profileMsg"></small>
 </div>
 <div class="card">
 <h3>🏛️ Σύνδεση ΑΑΔΕ / myDATA</h3>
 <small>Σύνδεσε τα δικά σου στοιχεία myDATA API. Δεν χρησιμοποιούνται οι κωδικοί TAXISnet.</small>
-<div id="myDataCredentialState" class="quickSummary" style="margin-top:10px"><small>Έλεγχος σύνδεσης...</small></div>
-<label>myDATA User ID<input id="myDataCredentialUser" autocomplete="off" placeholder="myDATA User ID"></label>
-<label>Subscription Key<input id="myDataCredentialKey" type="password" autocomplete="new-password" placeholder="Subscription Key"></label>
+<div class="quickSummary" id="myDataCredentialState" style="margin-top:10px"><small>Έλεγχος σύνδεσης...</small></div>
+<label>myDATA User ID<input autocomplete="off" id="myDataCredentialUser" placeholder="myDATA User ID"/></label>
+<label>Subscription Key<input autocomplete="new-password" id="myDataCredentialKey" placeholder="Subscription Key" type="password"/></label>
 <label>Περιβάλλον<select id="myDataCredentialEnv"><option value="test">Δοκιμαστικό (TEST)</option><option value="production">Παραγωγικό (PRODUCTION)</option></select></label><div style="margin:12px 0;padding:12px 14px;border:1px solid #d9e6dc;border-radius:12px;background:#f6faf6">
 <b>❓ Πού βρίσκω αυτά τα στοιχεία;</b>
 <div style="margin-top:7px;font-size:14px;line-height:1.55">
-ΑΑΔΕ → myDATA → <b>Εγγραφή στο myDATA REST API</b> → <b>Νέα εγγραφή</b><br>
-<b>myDATA User ID</b> = Όνομα Χρήστη REST API<br>
-<b>Subscription Key</b> = Κωδικός API<br>
+ΑΑΔΕ → myDATA → <b>Εγγραφή στο myDATA REST API</b> → <b>Νέα εγγραφή</b><br/>
+<b>myDATA User ID</b> = Όνομα Χρήστη REST API<br/>
+<b>Subscription Key</b> = Κωδικός API<br/>
 <span style="display:inline-block;margin-top:5px">🔒 Δεν χρησιμοποιούνται οι κωδικοί TAXISnet.</span>
 </div>
 </div>
@@ -334,7 +323,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="card">
 <h3>⏰ Ληξιπρόθεσμες οφειλές</h3>
 <small>Μια ανεξόφλητη κίνηση θεωρείται ληξιπρόθεσμη μετά από:</small>
-<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><input id="overdueDays" type="number" min="1" max="365" value="30" style="margin:0;max-width:100px"><span>ημέρες</span><button class="soft" style="width:auto;margin:0" onclick="saveOverdueDays()">Αποθήκευση</button></div>
+<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><input id="overdueDays" max="365" min="1" style="margin:0;max-width:100px" type="number" value="30"/><span>ημέρες</span><button class="soft" onclick="saveOverdueDays()" style="width:auto;margin:0">Αποθήκευση</button></div>
 <small id="overdueSaveStatus" style="display:block;margin-top:6px"></small>
 </div>
 <div class="card">
@@ -342,7 +331,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <small id="pinSettingsStatus">Έλεγχος PIN...</small>
 <div style="margin-top:10px">
 <button id="pinSetBtn" onclick="changePinFromProfile()">🔢 Ορισμός / Αλλαγή PIN</button>
-<button id="pinDisableBtn" class="soft" onclick="disablePinFromProfile()">🚫 Απενεργοποίηση PIN</button>
+<button class="soft" id="pinDisableBtn" onclick="disablePinFromProfile()">🚫 Απενεργοποίηση PIN</button>
 </div>
 <small>Ο 4ψήφιος PIN ισχύει μόνο σε αυτή τη συσκευή. Το email και ο κωδικός λογαριασμού παραμένουν τα στοιχεία ασφαλούς σύνδεσης.</small>
 </div>
@@ -351,8 +340,8 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <small>Πάρε αντίγραφο των δεδομένων σου πριν από μαζική διαγραφή.</small>
 <button class="soft" onclick="downloadFullBackup()">📦 Λήψη Backup</button>
 <button class="soft" onclick="document.getElementById('restoreBackupFile').click()">♻️ Επαναφορά Backup</button>
-<input id="restoreBackupFile" type="file" accept="application/json,.json" class="hidden" onchange="previewRestoreBackup(this.files[0]);this.value=''">
-<div id="restoreBackupPreview" class="hidden" style="margin-top:10px"></div>
+<input accept="application/json,.json" class="hidden" id="restoreBackupFile" onchange="previewRestoreBackup(this.files[0]);this.value=''" type="file"/>
+<div class="hidden" id="restoreBackupPreview" style="margin-top:10px"></div>
 <button class="danger" onclick="deleteAllGeoFyloData()">🗑️ Διαγραφή όλων των δεδομένων</button>
 <small id="dataManageMsg"></small>
 </div></div>
@@ -3193,7 +3182,7 @@ function startVoice(){
 }); 
 (async()=>{if(document.getElementById('calMonth'))calMonth.value=new Date().toISOString().slice(0,7);let r=await sb.auth.getSession();if(r.data.session){const u=r.data.session.user;if(localStorage.getItem(pinKey(u))){if(sessionStorage.getItem(pinSessionKey(u))==='1')await enter(u);else showPinScreen(u)}else{await setupPin(u);sessionStorage.setItem(pinSessionKey(u),'1');await enter(u)}}else showEmailScreen()})();
 </script><script>
-addTabRefreshButtons();
+
 
 if ('serviceWorker' in navigator) {
   window.addEventListener('load', () => navigator.serviceWorker.register('./sw.js').catch(console.error));
