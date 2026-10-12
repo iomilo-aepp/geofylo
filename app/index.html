@@ -236,7 +236,21 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <small style="display:block;margin-top:8px">GeoFylo Assistant v1.9 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
 </div>
-<div class="page" id="page-inventory"><div class="card"><h3>📦 Αποθήκη / Εφόδια</h3><small>Καταχώρησε πρώτα εδώ τα εφόδια που χρησιμοποιείς, πριν από την αγορά τους. Η τιμή και ο προμηθευτής καταχωρούνται στη «Νέα αγορά εφοδίου» παρακάτω.</small>
+<div class="page" id="page-inventory"><div class="card">
+<div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
+  <h3 style="margin:0">📦 Αποθήκη / Εφόδια</h3>
+  <button type="button" class="soft" onclick="toggleInventoryStock()" style="width:auto;margin:0;padding:8px 13px;font-weight:800">📊 Απόθεμα</button>
+</div>
+<div id="inventoryStockPanel" style="display:none;margin-top:12px">
+  <div class="quickSummary">
+    <small>Συνολική αξία αποθέματος</small><br/>
+    <b id="inventoryValue">0,00 €</b><br/>
+    <small>Είδη αποθήκης: <b id="inventoryItemCount">0</b></small>
+  </div>
+  <div id="inventoryList" style="margin-top:12px"><small>Δεν υπάρχουν είδη.</small></div>
+</div>
+<small style="display:block;margin-top:10px">Καταχώρησε πρώτα εδώ τα εφόδια που χρησιμοποιείς, πριν από την αγορά τους. Η τιμή και ο προμηθευτής καταχωρούνται στη «Νέα αγορά εφοδίου» παρακάτω.</small>
+<hr style="margin:22px 0;border:0;border-top:1px solid #dfe8df"/>
 <label>Όνομα προϊόντος<input id="inventoryName" placeholder="π.χ. Λίπασμα 20-20-20"/></label>
 <label>Κατηγορία<select id="inventoryCategory"><option>Λίπασμα</option><option>Φυτοπροστασία</option><option>Σπόροι / Φυτά</option><option>Υλικά</option><option>Άλλο</option></select></label>
 <div class="grid"><label>Ποσότητα<input id="inventoryQty" min="0" placeholder="0" step="0.01" type="number"/></label><label>Μονάδα<select id="inventoryUnit"><option value="kg">kg</option><option value="lt">lt</option><option value="τεμ.">τεμάχια</option></select></label></div>
@@ -253,8 +267,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="quickSummary"><small>Σύνολο παραστατικού</small><br/><b id="purchaseTotal">0,00 €</b></div>
 <button id="savePurchaseBtn" onclick="savePurchase()">🧾 Καταχώρηση παραστατικού</button>
 <h4>Ιστορικό αγορών</h4><div id="purchasePager"></div><div id="purchaseList"><small>Δεν υπάρχουν αγορές.</small></div>
-<div class="quickSummary"><small>Συνολική αξία αποθέματος</small><br/><b id="inventoryValue">0,00 €</b></div>
-<div id="inventoryList" style="margin-top:12px"><small>Δεν υπάρχουν είδη.</small></div></div></div>
+</div></div>
 <div class="page" id="page-suppliers"><div class="card"><h3>🏪 Προμηθευτές</h3><small>Καρτέλα προμηθευτών, αγορές, πληρωμές και υπόλοιπα.</small>
 <label>Επωνυμία<input id="supplierName" placeholder="π.χ. Γεωπονικό κατάστημα"/></label>
 <div class="grid"><label>ΑΦΜ<input id="supplierVat" placeholder="ΑΦΜ"/></label><label>Τηλέφωνο<input id="supplierPhone" placeholder="Τηλέφωνο" type="tel"/></label></div>
@@ -1849,6 +1862,12 @@ async function loadCashflow(){
 }
 
 let editingInventoryId=null;
+function toggleInventoryStock(){
+ const box=document.getElementById('inventoryStockPanel');
+ if(!box)return;
+ box.style.display=(box.style.display==='none'||!box.style.display)?'block':'none';
+}
+
 async function loadInventory(){
  if(!user)return;
  const sr=await sb.from('suppliers').select('name').order('name');const ps=document.getElementById('purchaseSupplier');if(ps&&!sr.error){const keep=ps.value;ps.innerHTML='<option value="">— Επίλεξε προμηθευτή —</option>'+sr.data.map(x=>`<option value="${esc(x.name)}">${esc(x.name)}</option>`).join('');if(keep)ps.value=keep;}
@@ -1856,6 +1875,7 @@ async function loadInventory(){
  if(r.error){alert(r.error.message);return}
  const total=r.data.reduce((a,x)=>a+Number(x.quantity||0)*Number(x.unit_cost||0),0);
  const v=document.getElementById('inventoryValue');if(v)v.textContent=euro(total);
+ const c=document.getElementById('inventoryItemCount');if(c)c.textContent=(r.data||[]).length.toLocaleString('el-GR');
  const box=document.getElementById('inventoryList');if(!box)return;
  box.innerHTML=r.data.length?r.data.map(x=>`<div class="entry"><div class="entryText"><b>${esc(x.name)}</b><br><small>${esc(x.category)} • ${Number(x.quantity||0).toLocaleString('el-GR')} ${esc(x.unit)} • ${euro(x.unit_cost)}/${esc(x.unit)}${x.supplier?' • '+esc(x.supplier):''}</small><br><small>Αξία: ${euro(Number(x.quantity||0)*Number(x.unit_cost||0))}${x.note?' • '+esc(x.note):''}</small></div><div class="entryActions"><button class="soft" onclick='editInventory(${JSON.stringify(x)})'>✏️</button><button class="danger" onclick="deleteInventory(${x.id})">🗑️</button></div></div>`).join(''):'<small>Δεν υπάρχουν είδη.</small>';
  await loadPurchases(r.data);
