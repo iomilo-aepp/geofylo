@@ -173,18 +173,16 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="m">Καθαρό αποτέλεσμα<b id="rProfit">0 €</b></div>
 <div class="m">Περιθώριο<b id="rMargin">—</b></div>
 <div class="m">Κέρδος / στρέμμα<b id="rProfitArea">—</b></div>
-</div>
-<h4>🌱 Σύγκριση κερδοφορίας περιόδου</h4><small>Σύγκριση όλων των αγροτεμαχίων / θερμοκηπίων της επιλεγμένης καλλιεργητικής περιόδου.</small><div id="profitabilityComparison"><small>Φόρτωση...</small></div>
-<h4>📊 Σύγκριση καλλιεργητικών περιόδων</h4><small>Επίλεξε δύο περιόδους για να δεις πώς μεταβάλλονται παραγωγή, έσοδα, έξοδα, κόστος/kg και καθαρό αποτέλεσμα.</small>
+</div><h4>Διαλογή πωλήσεων</h4><div id="gradeBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><div id="reportCategoryButtons" style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 8px"><button class="soft" onclick="showReportGroup('profit',this)" style="width:auto;margin:0" type="button">🌱 Κερδοφορία</button><button class="soft" onclick="showReportGroup('periods',this)" style="width:auto;margin:0" type="button">📊 Σύγκριση περιόδων</button><button class="soft" onclick="showReportGroup('sales',this)" style="width:auto;margin:0" type="button">👥 Πωλήσεις</button><button class="soft" onclick="showReportGroup('supplies',this)" style="width:auto;margin:0" type="button">📦 Κατανάλωση εφοδίων</button><button class="soft" onclick="showReportGroup('cost',this)" style="width:auto;margin:0" type="button">💸 Κόστος</button></div>
+<div class="reportPanel" data-report-panel="profit" style="display:none;margin-top:14px"><h4>🌱 Σύγκριση κερδοφορίας περιόδου</h4><small>Σύγκριση όλων των αγροτεμαχίων / θερμοκηπίων της επιλεγμένης καλλιεργητικής περιόδου.</small><div id="profitabilityComparison"><small>Φόρτωση...</small></div>
+</div><div class="reportPanel" data-report-panel="periods" style="display:none;margin-top:14px"><h4>📊 Σύγκριση καλλιεργητικών περιόδων</h4><small>Επίλεξε δύο περιόδους για να δεις πώς μεταβάλλονται παραγωγή, έσοδα, έξοδα, κόστος/kg και καθαρό αποτέλεσμα.</small>
 <div class="grid" style="margin-top:8px"><label>Περίοδος Α<select id="compareSeasonA"></select></label><label>Περίοδος Β<select id="compareSeasonB"></select></label></div>
 <button class="soft" onclick="compareSeasons()">📈 Σύγκριση περιόδων</button>
 <div id="seasonComparison"><small>Επίλεξε δύο περιόδους.</small></div>
-<h4>Διαλογή πωλήσεων</h4><div id="gradeBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><h4>👥 Πωλήσεις ανά πελάτη / έμπορο</h4><div id="customerBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><h4>💳 Υπόλοιπα πελατών (συνολικά)</h4><div id="paymentBreakdown"><small>Δεν υπάρχουν στοιχεία.</small></div><h4>🏡 Ανάλυση Κατανάλωσης &amp; Κόστους</h4>
-<small>Αναλυτικά στοιχεία μόνο για το επιλεγμένο αγροτεμάχιο / θερμοκήπιο. Τα συνολικά οικονομικά στοιχεία εμφανίζονται ήδη στα Στατιστικά.</small>
-<h4>📦 Κατανάλωση εφοδίων</h4><div id="inventoryUsageSummary"><small>Δεν υπάρχουν καταναλώσεις εφοδίων.</small></div>
-<h4>💸 Κόστος ανά κατηγορία</h4><div id="expenseBreakdown"><small>Δεν υπάρχουν έξοδα.</small></div>
+</div><div class="reportPanel" data-report-panel="sales" style="display:none;margin-top:14px"><h4>👥 Πωλήσεις ανά πελάτη / έμπορο</h4><div id="customerBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div></div><div class="reportPanel" data-report-panel="supplies" style="display:none;margin-top:14px"><h4>📦 Κατανάλωση εφοδίων</h4><div id="inventoryUsageSummary"><small>Δεν υπάρχουν καταναλώσεις εφοδίων.</small></div>
+</div><div class="reportPanel" data-report-panel="cost" style="display:none;margin-top:14px"><h4>💸 Κόστος ανά κατηγορία</h4><div id="expenseBreakdown"><small>Δεν υπάρχουν έξοδα.</small></div>
 <h4>Ανά μήνα</h4><div id="monthlyReport"><small>Δεν υπάρχουν δεδομένα.</small></div>
-</div>
+</div></div>
 </div>
 <div class="page" id="page-customers"><div class="card"><h3>👥 Πελάτες / Έμποροι</h3><small>Αποθήκευσε τους αγοραστές σου για γρήγορη επιλογή στις πωλήσεις.</small><label>Όνομα / Επωνυμία<input id="customerName" placeholder="π.χ. Έμπορος Α"/></label><label>Τηλέφωνο<input id="customerPhone" placeholder="Τηλέφωνο (προαιρετικά)" type="tel"/></label><label>Σημείωση<input id="customerNote" placeholder="Σημείωση (προαιρετικά)"/></label><button id="saveCustomerBtn" onclick="saveCustomer()">➕ Αποθήκευση πελάτη</button><button class="soft hidden" id="cancelCustomerBtn" onclick="cancelCustomerEdit()">Ακύρωση επεξεργασίας</button><div id="customersList" style="margin-top:12px"><small>Δεν υπάρχουν πελάτες.</small></div><div class="card hidden" id="customerCard"></div></div></div>
 <div class="page" id="page-payments"><div class="card"><h3>💳 Πληρωμές &amp; Υπόλοιπα</h3><small>Καταχώρησε τις εισπράξεις από πελάτες και δες τι υπόλοιπο απομένει.</small>
@@ -238,16 +236,16 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div>
 <div class="page" id="page-inventory"><div class="card">
 <div style="display:flex;align-items:center;justify-content:space-between;gap:10px;flex-wrap:wrap">
-  <h3 style="margin:0">📦 Αποθήκη / Εφόδια</h3>
-  <button type="button" class="soft" onclick="toggleInventoryStock()" style="width:auto;margin:0;padding:8px 13px;font-weight:800">📊 Απόθεμα</button>
+<h3 style="margin:0">📦 Αποθήκη / Εφόδια</h3>
+<button class="soft" onclick="toggleInventoryStock()" style="width:auto;margin:0;padding:8px 13px;font-weight:800" type="button">📊 Απόθεμα</button>
 </div>
 <div id="inventoryStockPanel" style="display:none;margin-top:12px">
-  <div class="quickSummary">
-    <small>Συνολική αξία αποθέματος</small><br/>
-    <b id="inventoryValue">0,00 €</b><br/>
-    <small>Είδη αποθήκης: <b id="inventoryItemCount">0</b></small>
-  </div>
-  <div id="inventoryList" style="margin-top:12px"><small>Δεν υπάρχουν είδη.</small></div>
+<div class="quickSummary">
+<small>Συνολική αξία αποθέματος</small><br/>
+<b id="inventoryValue">0,00 €</b><br/>
+<small>Είδη αποθήκης: <b id="inventoryItemCount">0</b></small>
+</div>
+<div id="inventoryList" style="margin-top:12px"><small>Δεν υπάρχουν είδη.</small></div>
 </div>
 <small style="display:block;margin-top:10px">Καταχώρησε πρώτα εδώ τα εφόδια που χρησιμοποιείς, πριν από την αγορά τους. Η τιμή και ο προμηθευτής καταχωρούνται στη «Νέα αγορά εφοδίου» παρακάτω.</small>
 <hr style="margin:22px 0;border:0;border-top:1px solid #dfe8df"/>
@@ -3303,4 +3301,27 @@ document.addEventListener('click',e=>{
 });
 
 </script>
-</body></html>
+<script>
+function showReportGroup(group, btn){
+  document.querySelectorAll('#page-reports .reportPanel').forEach(function(panel){
+    panel.style.display = panel.dataset.reportPanel === group ? 'block' : 'none';
+  });
+  document.querySelectorAll('#reportCategoryButtons button').forEach(function(b){
+    b.style.outline=''; b.style.fontWeight='700';
+  });
+  if(btn){ btn.style.outline='2px solid currentColor'; btn.style.fontWeight='900'; }
+  if(group==='suppliers') loadReportSuppliers();
+}
+async function loadReportSuppliers(){
+  const box=document.getElementById('reportSuppliers'); if(!box||!user)return;
+  box.innerHTML='<small>Φόρτωση...</small>';
+  try{
+    const sr=await sb.from('suppliers').select('*').order('name');
+    if(sr.error) throw sr.error;
+    const rows=sr.data||[];
+    box.innerHTML=rows.length ? rows.map(function(x){
+      return '<div style="padding:10px 0;border-bottom:1px solid #e4e9e4"><b>'+esc(x.name||'Προμηθευτής')+'</b></div>';
+    }).join('') : '<small>Δεν υπάρχουν προμηθευτές.</small>';
+  }catch(e){ console.error(e); box.innerHTML='<small>Δεν ήταν δυνατή η φόρτωση προμηθευτών.</small>'; }
+}
+</script></body></html>
