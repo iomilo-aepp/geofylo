@@ -1136,13 +1136,51 @@ async function loadWeather(){
 
   for(const item of queue){
     try{
-      const {error}=await sb.from(item.table).insert(item.payload);
-      if(error){
-        remaining.push(item);
+      if(item.operation==='activity_with_inventory'){
+        const ir=await sb.from('inventory').select('*').eq('id',item.inventory_id).single();
+        if(ir.error)throw ir.error;
+        const inv=ir.data;
+        const qty=Number(item.inventory_qty||0);
+
+        if(item.payload.status==='completed'){
+          if(!Number.isFinite(qty)||qty<=0)throw new Error('Μη έγκυρη ποσότητα εφοδίου.');
+          if(qty>Number(inv.quantity||0))throw new Error('Δεν υπάρχει αρκετό απόθεμα για offline εργασία.');
+        }
+
+        const ar=await sb.from('activities').insert(item.payload).select('id').single();
+        if(ar.error)throw ar.error;
+
+        if(item.payload.status==='completed'){
+          const ur=await sb.from('inventory_usage').insert({
+            user_id:user.id,inventory_id:inv.id,greenhouse_id:item.payload.greenhouse_id,
+            activity_id:ar.data.id,usage_date:item.payload.activity_date,quantity:qty,note:item.payload.note||null
+          });
+          if(ur.error){await sb.from('activities').delete().eq('id',ar.data.id);throw ur.error}
+
+          const nr=await sb.from('inventory').update({quantity:Number(inv.quantity||0)-qty}).eq('id',inv.id);
+          if(nr.error){
+            await sb.from('inventory_usage').delete().eq('activity_id',ar.data.id);
+            await sb.from('activities').delete().eq('id',ar.data.id);
+            throw nr.error;
+          }
+
+          const usageCost=qty*Number(inv.unit_cost||0);
+          if(usageCost>0){
+            await sb.from('expenses').insert({
+              user_id:user.id,greenhouse_id:item.payload.greenhouse_id,
+              expense_date:item.payload.activity_date,category:'Εφόδια',amount:usageCost,
+              note:['Αυτόματα από εργασία #'+ar.data.id,'Εφόδιο: '+inv.name,item.payload.note||''].filter(Boolean).join(' • ')
+            });
+          }
+        }
+        synced++;
       }else{
+        const {error}=await sb.from(item.table).insert(item.payload);
+        if(error)throw error;
         synced++;
       }
     }catch(e){
+      console.error('Offline sync item:',e);
       remaining.push(item);
     }
   }
@@ -2969,9 +3007,19 @@ if(etype.value==='activity'){fields.innerHTML='<label>Ημερομηνία<input
 let activityInventoryItems=[];
 async function loadActivityInventoryOptions(){
  const sel=document.getElementById('activityInventory');if(!sel||!user)return;
- const r=await sb.from('inventory').select('*').order('name');
- if(r.error){document.getElementById('activityInventoryAvailable').innerHTML='<small>Σφάλμα φόρτωσης αποθήκης.</small>';return}
- activityInventoryItems=r.data||[];
+ const cacheKey='geofylo_inventory_cache_'+user.id;
+ if(!navigator.onLine){
+   try{activityInventoryItems=JSON.parse(localStorage.getItem(cacheKey)||'[]')}catch(_){activityInventoryItems=[]}
+ }else{
+   const r=await sb.from('inventory').select('*').order('name');
+   if(r.error){
+     try{activityInventoryItems=JSON.parse(localStorage.getItem(cacheKey)||'[]')}catch(_){activityInventoryItems=[]}
+   }else{
+     activityInventoryItems=r.data||[];
+     try{localStorage.setItem(cacheKey,JSON.stringify(activityInventoryItems))}catch(_){}
+   }
+ }
+
  sel.innerHTML='<option value="">— Χωρίς εφόδιο —</option>'+activityInventoryItems.map(x=>`<option value="${x.id}">${esc(x.name)} • ${Number(x.quantity||0).toLocaleString('el-GR')} ${esc(x.unit)}</option>`).join('');
  sel.onchange=showActivityInventoryAvailable;showActivityInventoryAvailable();
  if(editing){sel.disabled=true;const q=document.getElementById('activityInventoryQty');if(q)q.disabled=true;document.getElementById('activityInventoryAvailable').innerHTML='<small>ℹ️ Η κατανάλωση αποθήκης καταχωρείται σε νέα ολοκληρωμένη εργασία.</small>'}
@@ -3006,7 +3054,12 @@ async function addEntry(){
     const invQty=Number(document.getElementById('activityInventoryQty')?.value||0);
     activityInvQty=invQty;
     if(!editing && invId){
-      const ir=await sb.from('inventory').select('*').eq('id',invId).single();if(ir.error)throw ir.error;activityInvItem=ir.data;
+      if(!navigator.onLine){
+        activityInvItem=activityInventoryItems.find(x=>String(x.id)===String(invId))||null;
+        if(!activityInvItem)return alert('Το εφόδιο δεν είναι διαθέσιμο στην offline μνήμη. Συνδέσου μία φορά στο Internet και άνοιξε ξανά την Εργασία.');
+      }else{
+        const ir=await sb.from('inventory').select('*').eq('id',invId).single();if(ir.error)throw ir.error;activityInvItem=ir.data;
+      }
       if(st==='completed'){
         if(!Number.isFinite(invQty)||invQty<=0)return alert('Γράψε την ποσότητα εφοδίου που χρησιμοποιήθηκε.');
         if(invQty>Number(activityInvItem.quantity||0))return alert(`Δεν υπάρχει αρκετό απόθεμα. Διαθέσιμο: ${Number(activityInvItem.quantity||0).toLocaleString('el-GR')} ${activityInvItem.unit}`);
@@ -3015,6 +3068,7 @@ async function addEntry(){
     let photo_path=editing?.photo_path||null;
     const pi=document.getElementById('activityPhoto');
     if(pi?.files?.[0]){
+      if(!navigator.onLine)return alert('📴 Η εργασία μπορεί να αποθηκευτεί offline, αλλά η φωτογραφία χρειάζεται Internet. Αφαίρεσε τη φωτογραφία και πάτησε ξανά Αποθήκευση.');
       const file=pi.files[0];
       if(file.size>6*1024*1024)throw new Error('Η φωτογραφία πρέπει να είναι έως 6 MB.');
       const ext=(file.name.split('.').pop()||'jpg').replace(/[^a-zA-Z0-9]/g,'');
@@ -3028,7 +3082,7 @@ async function addEntry(){
       payload.note=(cleanNote?cleanNote+'\n':'')+'📦 Προγραμματισμένο εφόδιο: '+activityInvItem.name;
     }
   }
-  if(t==='activity' && !editing && activityInvItem && payload.status==='completed'){
+  if(t==='activity' && !editing && activityInvItem && payload.status==='completed' && navigator.onLine){
     r=await sb.from('activities').insert(payload).select('id').single();
     if(r.error)return alert(r.error.message);
     const ur=await sb.from('inventory_usage').insert({user_id:user.id,inventory_id:activityInvItem.id,greenhouse_id:+gh.value,activity_id:r.data.id,usage_date:payload.activity_date,quantity:activityInvQty,note:payload.note||null});
@@ -3042,14 +3096,29 @@ async function addEntry(){
       if(er.error)alert('⚠️ Η εργασία και η κατανάλωση αποθηκεύτηκαν, αλλά δεν δημιουργήθηκε το κόστος καλλιέργειας: '+er.error.message);
     }
   }else{
-  if((t==='expense' || t==='harvest' || t==='sale') && !editing && !navigator.onLine){
-  addToOfflineQueue(table,payload);
-alert('📴 Χωρίς σύνδεση. Η καταχώρηση αποθηκεύτηκε στη συσκευή και θα συγχρονιστεί όταν επανέλθει το Internet.');
-  editing=null;
-  note.value='';
-  entryFields();
-  return;
-}
+  if(!editing && !navigator.onLine){
+    if(t==='activity' && activityInvItem){
+      const queue=getOfflineQueue();
+      queue.push({
+        id:crypto.randomUUID ? crypto.randomUUID() : String(Date.now()),
+        table:'activities',
+        payload:payload,
+        operation:'activity_with_inventory',
+        inventory_id:activityInvItem.id,
+        inventory_qty:activityInvQty,
+        created_at:new Date().toISOString()
+      });
+      saveOfflineQueue(queue);
+    }else{
+      addToOfflineQueue(table,payload);
+    }
+    alert('📴 Χωρίς σύνδεση. Η καταχώρηση αποθηκεύτηκε στη συσκευή και θα συγχρονιστεί όταν επανέλθει το Internet.');
+    editing=null;
+    note.value='';
+    entryFields();
+    updateConnectionStatus();
+    return;
+  }
 r=editing?await sb.from(table).update(payload).eq('id',editing.id):await sb.from(table).insert(payload);
     if(r.error)return alert(r.error.message);
   }
