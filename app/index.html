@@ -195,7 +195,12 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <h4>Υπόλοιπα πελατών</h4><div id="customerBalances"><small>Δεν υπάρχουν στοιχεία.</small></div>
 <h4>Ιστορικό πληρωμών</h4><div id="paymentsPager"></div><div id="paymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div>
 <div class="card"><h3>💳 Πληρωμή προμηθευτή</h3><label>Προμηθευτής<select id="supplierPaymentSupplier"><option value="">— Επίλεξε προμηθευτή —</option></select></label><label>Ημερομηνία<input id="supplierPaymentDate" type="date"/></label><label>Ποσό €<input id="supplierPaymentAmount" min="0.01" placeholder="0,00" step="0.01" type="number"/></label><label>Τρόπος πληρωμής<select id="supplierPaymentMethod"><option value="Μετρητά">Μετρητά</option><option value="Τράπεζα">Τράπεζα</option><option value="Άλλο">Άλλο</option></select></label><label>Σημείωση<input id="supplierPaymentNote" placeholder="Σημείωση"/></label><button id="saveSupplierPaymentBtn" onclick="saveSupplierPayment()">💾 Αποθήκευση πληρωμής</button><button class="soft hidden" id="cancelSupplierPaymentBtn" onclick="cancelSupplierPaymentEdit()">Ακύρωση επεξεργασίας</button><h4>Ιστορικό πληρωμών</h4><div id="supplierPaymentsPager"></div><div id="supplierPaymentsList"><small>Δεν υπάρχουν πληρωμές.</small></div></div>
-</div>
+<div class="card">
+<h3>⏰ Ληξιπρόθεσμες οφειλές</h3><div style="margin:10px 0 14px;padding:12px 14px;background:#f3f7f3;border-radius:12px;color:#5f6f66;font-size:.95rem;line-height:1.45">Όρισε μετά από πόσες ημέρες χωρίς εξόφληση θέλεις το GeoFylo να χαρακτηρίζει μια οφειλή ως ληξιπρόθεσμη, ώστε να εντοπίζεις πιο εύκολα τις καθυστερημένες οφειλές.</div>
+<small>Μια ανεξόφλητη κίνηση θεωρείται ληξιπρόθεσμη μετά από:</small>
+<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><input id="overdueDays" max="365" min="1" style="margin:0;max-width:100px" type="number" value="30"/><span>ημέρες</span><button class="soft" onclick="saveOverdueDays()" style="width:auto;margin:0">Αποθήκευση</button></div>
+<small id="overdueSaveStatus" style="display:block;margin-top:6px"></small>
+</div></div>
 <div class="page" id="page-mydata">
 <div class="card">
 <div class="reportTitle"><h2 style="margin:0">🏛️ ΑΑΔΕ / myDATA</h2></div>
@@ -331,12 +336,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <h3>💳 Η συνδρομή μου</h3>
 <div id="mySubscriptionBox"><small>Φόρτωση συνδρομής...</small></div>
 </div>
-<div class="card">
-<h3>⏰ Ληξιπρόθεσμες οφειλές</h3>
-<small>Μια ανεξόφλητη κίνηση θεωρείται ληξιπρόθεσμη μετά από:</small>
-<div style="display:flex;gap:8px;align-items:center;margin-top:10px;flex-wrap:wrap"><input id="overdueDays" max="365" min="1" style="margin:0;max-width:100px" type="number" value="30"/><span>ημέρες</span><button class="soft" onclick="saveOverdueDays()" style="width:auto;margin:0">Αποθήκευση</button></div>
-<small id="overdueSaveStatus" style="display:block;margin-top:6px"></small>
-</div>
+
 <div class="card">
 <h3>🔐 Γρήγορη είσοδος με PIN</h3>
 <small id="pinSettingsStatus">Έλεγχος PIN...</small>
