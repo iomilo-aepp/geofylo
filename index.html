@@ -38,6 +38,7 @@
     @media(max-width:850px){.hero-grid,.smart-box{grid-template-columns:1fr}.features,.pain-grid,.benefit-grid,.how{grid-template-columns:1fr 1fr}.pricing{grid-template-columns:1fr 1fr}.links a:not(.btn){display:none}}
     @media(max-width:560px){.hero{padding-top:55px}.features,.pricing,.pain-grid,.benefit-grid,.how{grid-template-columns:1fr}.cta{padding:34px 20px}.mock-grid{grid-template-columns:1fr}.brand{font-size:1.35rem}}
   </style>
+<script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 </head>
 <body>
 <header>
@@ -197,7 +198,7 @@
 <textarea name="Μήνυμα" placeholder="Γράψε το μήνυμά σου..." required="" rows="6" style="padding:13px;border:1px solid #ccd7cf;border-radius:10px;font:inherit;resize:vertical"></textarea>
 <button style="padding:13px 20px;border:0;border-radius:10px;font-weight:700;cursor:pointer;width:max-content" type="submit">Στείλε μήνυμα</button>
 </form><div id="supportStatus" style="display:none;margin-top:12px;padding:12px 14px;border-radius:10px"></div>
-<small style="opacity:.7">Το μήνυμα αποστέλλεται με ασφαλή σύνδεση χωρίς να ανοίγει εφαρμογή email.</small>
+<small style="opacity:.7">Το μήνυμα αποστέλλεται με ασφαλή σύνδεση στο GeoFylo.</small>
 </div></section><footer>
 <div class="wrap footer">
 <div><b>GeoFylo – IoMilo</b><br/><small>© 2026. Με επιφύλαξη παντός δικαιώματος.</small></div>
@@ -246,41 +247,55 @@
 <p>Για ακυρώσεις, επιστροφές ή θέματα πληρωμών: milolidakis7@yahoo.gr</p>
 </div>
 </dialog>
+
 <script>
 (function(){
-  const form=document.getElementById('supportForm');
-  const status=document.getElementById('supportStatus');
-  if(!form) return;
+  const SUPABASE_URL = 'https://yaoumcvuzvzrdcnmpmhv.supabase.co';
+  const SUPABASE_ANON_KEY = 'sb_publishable_N9tUlIyCPO9wgPg42MsppQ__PRnSuax';
+  const contactDb = window.supabase.createClient(SUPABASE_URL, SUPABASE_ANON_KEY);
+
+  const form = document.getElementById('supportForm');
+  const status = document.getElementById('supportStatus');
+  if (!form || !status) return;
+
   form.addEventListener('submit', async function(e){
     e.preventDefault();
-    const btn=form.querySelector('button[type="submit"]');
-    const old=btn.textContent;
-    btn.disabled=true; btn.textContent='Αποστολή...';
-    status.style.display='none';
-    const data=new FormData(form);
-    data.append('_subject','Νέο μήνυμα από το GeoFylo');
-    data.append('_captcha','false');
-    try{
-      const res=await fetch('https://formsubmit.co/ajax/geofylo1@gmail.com',{
-        method:'POST',
-        headers:{'Accept':'application/json'},
-        body:data
-      });
-      if(!res.ok) throw new Error('send failed');
+    const btn = form.querySelector('button[type="submit"]');
+    const oldText = btn.textContent;
+    btn.disabled = true;
+    btn.textContent = 'Αποστολή...';
+    status.style.display = 'none';
+
+    const fd = new FormData(form);
+    const payload = {
+      name: String(fd.get('Όνομα') || '').trim(),
+      email: String(fd.get('Email') || '').trim(),
+      subject: String(fd.get('Θέμα') || '').trim(),
+      message: String(fd.get('Μήνυμα') || '').trim()
+    };
+
+    try {
+      const { error } = await contactDb.from('contact_messages').insert(payload);
+      if (error) throw error;
+
       form.reset();
-      status.textContent='✅ Το μήνυμά σας στάλθηκε επιτυχώς. Θα επικοινωνήσουμε μαζί σας σύντομα.';
-      status.style.background='#edf7ee';
-      status.style.color='#176b32';
-      status.style.display='block';
-    }catch(err){
-      status.textContent='⚠️ Δεν ήταν δυνατή η αποστολή. Δοκιμάστε ξανά σε λίγο.';
-      status.style.background='#fff3e8';
-      status.style.color='#8a4b08';
-      status.style.display='block';
-    }finally{
-      btn.disabled=false; btn.textContent=old;
+      status.textContent = '✅ Το μήνυμά σας στάλθηκε επιτυχώς. Θα επικοινωνήσουμε μαζί σας σύντομα.';
+      status.style.background = '#edf7ee';
+      status.style.color = '#176b32';
+      status.style.display = 'block';
+    } catch (err) {
+      console.error('Contact form:', err);
+      status.textContent = '⚠️ Δεν ήταν δυνατή η αποστολή. Δοκιμάστε ξανά σε λίγο.';
+      status.style.background = '#fff3e8';
+      status.style.color = '#8a4b08';
+      status.style.display = 'block';
+    } finally {
+      btn.disabled = false;
+      btn.textContent = oldText;
     }
   });
 })();
-</script></body>
+</script>
+
+</body>
 </html>
