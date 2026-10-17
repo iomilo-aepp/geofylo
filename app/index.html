@@ -3123,7 +3123,7 @@ async function loadActivityInventoryOptions(){
  const rows=[...box.querySelectorAll('.activitySupplyRow')];
  if(!rows.length)addActivitySupplyRow();
  else rows.forEach(row=>{const sel=row.querySelector('.activitySupplySelect');if(sel){const keep=sel.value;sel.innerHTML=activitySupplyOptions(keep);sel.value=keep;showActivitySupplyAvailable(sel)}});
- if(editing){box.querySelectorAll('select,input,button').forEach(el=>el.disabled=true);box.insertAdjacentHTML('beforeend','<small>ℹ️ Η κατανάλωση αποθήκης καταχωρείται σε νέα ολοκληρωμένη εργασία.</small>')}
+
 }
 function showActivitySupplyAvailable(sel){
  const row=sel?.closest('.activitySupplyRow'),box=row?.querySelector('.activitySupplyAvailable');if(!box)return;
@@ -3154,7 +3154,7 @@ async function addEntry(){
   if(t==='sale')Object.assign(payload,{sale_date:document.getElementById('entryDate')?.value||today,kg:+kgs.value,price_per_kg:+price.value,grade:document.getElementById('saleGrade')?.value||'A',buyer:document.getElementById('saleBuyer')?.value||null});
   if(t==='activity'){
     const st=document.getElementById('activityStatus')?.value||'completed';
-    const supplyInputs=editing?[]:collectActivitySupplies();
+    const supplyInputs=collectActivitySupplies();
     const ids=supplyInputs.map(x=>x.inventory_id);if(new Set(ids).size!==ids.length)return alert('Το ίδιο εφόδιο υπάρχει δύο φορές. Βάλ’ το μία φορά με τη συνολική ποσότητα.');
     activitySupplies=[];
     for(const si of supplyInputs){
@@ -3174,7 +3174,54 @@ async function addEntry(){
       payload.note=(cleanNote?cleanNote+'\n':'')+activitySupplies.map(x=>'📦 Προγραμματισμένο εφόδιο: '+x.item.name).join('\n');
     }
   }
-  if(t==='activity' && !editing && activitySupplies.length && payload.status==='completed' && navigator.onLine){
+  if(t==='activity' && editing && navigator.onLine){
+    // Επεξεργασία εργασίας: επαναφέρουμε πρώτα την παλιά κατανάλωση και εφαρμόζουμε τη νέα.
+    const oldUsageR=await sb.from('inventory_usage').select('*').eq('activity_id',editing.id);
+    if(oldUsageR.error)return alert('Δεν φορτώθηκε η παλιά κατανάλωση: '+oldUsageR.error.message);
+    const oldUsages=oldUsageR.data||[];
+    const oldByInv={}; oldUsages.forEach(u=>oldByInv[u.inventory_id]=(oldByInv[u.inventory_id]||0)+Number(u.quantity||0));
+    // Ξαναφορτώνουμε πραγματικό απόθεμα και θεωρούμε διαθέσιμη και την ποσότητα της ίδιας εργασίας.
+    for(const s of activitySupplies){
+      const ir=await sb.from('inventory').select('*').eq('id',s.item.id).single();
+      if(ir.error)return alert(ir.error.message);
+      s.item=ir.data;
+      const available=Number(ir.data.quantity||0)+Number(oldByInv[s.item.id]||0);
+      if(payload.status==='completed' && (!Number.isFinite(s.quantity)||s.quantity<=0))return alert('Γράψε σωστή ποσότητα για κάθε εφόδιο.');
+      if(payload.status==='completed' && s.quantity>available)return alert(`Δεν υπάρχει αρκετό απόθεμα για ${ir.data.name}. Διαθέσιμο για την επεξεργασία: ${available.toLocaleString('el-GR')} ${ir.data.unit}`);
+    }
+    // Επαναφορά παλιών ποσοτήτων στο απόθεμα.
+    for(const u of oldUsages){
+      const ir=await sb.from('inventory').select('id,quantity').eq('id',u.inventory_id).single();
+      if(ir.error)return alert(ir.error.message);
+      const ur=await sb.from('inventory').update({quantity:Number(ir.data.quantity||0)+Number(u.quantity||0)}).eq('id',u.inventory_id);
+      if(ur.error)return alert('Δεν επανήλθε το παλιό απόθεμα: '+ur.error.message);
+    }
+    const du=await sb.from('inventory_usage').delete().eq('activity_id',editing.id);
+    if(du.error)return alert('Δεν διαγράφηκε η παλιά κατανάλωση: '+du.error.message);
+    // Διαγράφουμε μόνο τα αυτόματα έξοδα που είχαν δημιουργηθεί από αυτή την εργασία.
+    const de=await sb.from('expenses').delete().ilike('note','Αυτόματα από εργασία #'+editing.id+'%');
+    if(de.error)console.warn('Δεν διαγράφηκαν παλιά αυτόματα έξοδα εργασίας',de.error);
+    const ar=await sb.from('activities').update(payload).eq('id',editing.id);
+    if(ar.error)return alert(ar.error.message);
+    if(payload.status==='completed'){
+      for(const s of activitySupplies){
+        const ir=await sb.from('inventory').select('*').eq('id',s.item.id).single();
+        if(ir.error)return alert(ir.error.message);
+        const qty=Number(s.quantity||0);
+        const ur=await sb.from('inventory_usage').insert({user_id:user.id,inventory_id:s.item.id,greenhouse_id:+gh.value,activity_id:editing.id,usage_date:payload.activity_date,quantity:qty,note:payload.note||null});
+        if(ur.error)return alert('Δεν αποθηκεύτηκε η νέα κατανάλωση: '+ur.error.message);
+        const nr=await sb.from('inventory').update({quantity:Number(ir.data.quantity||0)-qty}).eq('id',s.item.id);
+        if(nr.error)return alert('Δεν ενημερώθηκε το απόθεμα: '+nr.error.message);
+        const usageCost=qty*Number(ir.data.unit_cost||0);
+        if(usageCost>0){
+          const expenseNote=['Αυτόματα από εργασία #'+editing.id,'Εφόδιο: '+ir.data.name,payload.note||''].filter(Boolean).join(' • ');
+          const er=await sb.from('expenses').insert({user_id:user.id,greenhouse_id:+gh.value,expense_date:payload.activity_date,category:'Εφόδια',amount:usageCost,note:expenseNote});
+          if(er.error)alert('⚠️ Η εργασία αποθηκεύτηκε, αλλά δεν δημιουργήθηκε κόστος για '+ir.data.name+': '+er.error.message);
+        }
+      }
+    }
+    r={error:null};
+  }else if(t==='activity' && !editing && activitySupplies.length && payload.status==='completed' && navigator.onLine){
     r=await sb.from('activities').insert(payload).select('id').single();if(r.error)return alert(r.error.message);
     const applied=[];
     for(const s of activitySupplies){
@@ -3230,7 +3277,23 @@ async function editEntry(type,id){
  }
  if(type==='harvest'){kgs.value=r.data.kg;if(document.getElementById('entryDate'))entryDate.value=r.data.harvest_date}
  if(type==='sale'){kgs.value=r.data.kg;price.value=r.data.price_per_kg;if(document.getElementById('entryDate'))entryDate.value=r.data.sale_date;if(document.getElementById('saleGrade'))saleGrade.value=r.data.grade||'A';await loadBuyerOptions(r.data.buyer||'')}
- if(type==='activity'){activityType.value=r.data.activity_type;if(document.getElementById('activityDate'))activityDate.value=r.data.activity_date;if(document.getElementById('activityStatus'))activityStatus.value=r.data.status||'completed';}
+ if(type==='activity'){
+   activityType.value=r.data.activity_type;
+   if(document.getElementById('activityDate'))activityDate.value=r.data.activity_date;
+   if(document.getElementById('activityStatus'))activityStatus.value=r.data.status||'completed';
+   await loadActivityInventoryOptions();
+   const rowsBox=document.getElementById('activitySupplyRows');
+   if(rowsBox)rowsBox.innerHTML='';
+   const ur=await sb.from('inventory_usage').select('*').eq('activity_id',id);
+   if(!ur.error && (ur.data||[]).length){
+     for(const u of ur.data)addActivitySupplyRow(u.inventory_id,u.quantity);
+   }else if(rowsBox){
+     // Για εκκρεμή εργασία χωρίς κατανάλωση, προσπάθησε να επαναφέρεις τα προγραμματισμένα εφόδια από τη σημείωση.
+     const planned=[...String(r.data.note||'').matchAll(/(?:^|\n)📦 Προγραμματισμένο εφόδιο:\s*([^\n]+)/g)].map(m=>m[1].trim());
+     for(const name of planned){const inv=activityInventoryItems.find(x=>String(x.name).trim()===name);if(inv)addActivitySupplyRow(inv.id,'');}
+     if(!rowsBox.querySelector('.activitySupplyRow'))addActivitySupplyRow();
+   }
+ }
  saveEntryBtn.textContent='Αποθήκευση αλλαγών';showPage('entry');
 }
 function parseGreekNumber(s){return Number(String(s).replace(',','.'))}
