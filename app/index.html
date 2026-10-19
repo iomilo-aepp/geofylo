@@ -22,6 +22,9 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 @media(max-width:560px){.globalContext .contextGrid{grid-template-columns:1fr}}
 
 .moreMenuHead{display:flex;justify-content:space-between;align-items:center;gap:8px}.moreMenuHead button{width:auto;margin:0;padding:7px 10px}.moreMenuGrid{display:grid;grid-template-columns:repeat(2,1fr);gap:8px;margin-top:10px}.moreMenuGrid button{margin:0;min-height:62px}.moreMenuGrid button.active{background:#d9eadb;color:#174d34}#moreMenu{background:#fff;border:1px solid #dfe7df;border-radius:16px;padding:12px;margin:-4px 0 12px;box-shadow:0 10px 28px rgba(23,48,31,.10)}@media(max-width:480px){.moreMenuGrid{grid-template-columns:repeat(2,1fr)}}
+
+/* Mobile-style GeoFylo home */
+.mobileHomeIntro{margin:16px 2px 10px}.mobileHomeIntro h2{margin:0;font-size:26px}.mobileHomeIntro small{font-size:14px}.homeActionGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin:12px 0}.homeAction{background:#fff!important;color:#17301f!important;border:1px solid #e1e9e1!important;border-radius:16px!important;min-height:96px;box-shadow:0 5px 16px rgba(23,48,31,.06);display:flex;flex-direction:column;align-items:center;justify-content:center;gap:6px;font-size:15px!important}.homeAction .homeActionIcon{font-size:30px;line-height:1}.homeSummaryTitle{margin:18px 2px 6px}.homeSummaryGrid{display:grid;grid-template-columns:repeat(3,1fr);gap:8px}.homeSummaryTile{background:#fff;border:1px solid #e1e9e1;border-radius:14px;padding:12px 7px;text-align:center}.homeSummaryTile span{display:block;font-size:24px}.homeSummaryTile small{display:block;margin-top:4px}.homeSummaryTile b{display:block;margin-top:3px;font-size:15px}.bottomNav{position:sticky;bottom:0;z-index:80;border:1px solid #dfe7df;border-radius:16px;box-shadow:0 -5px 18px rgba(23,48,31,.08)}@media(max-width:700px){.bottomNav{display:grid;grid-template-columns:repeat(6,1fr);overflow:visible;gap:1px;padding:5px 2px}.bottomNav button{min-width:0;flex:none;padding:7px 1px;font-size:9px;min-height:52px}.bottomNav .ico{font-size:19px}}
 </style><meta content="#216b3a" name="theme-color"/>
 <meta content="yes" name="apple-mobile-web-app-capable"/>
 <meta content="default" name="apple-mobile-web-app-status-bar-style"/>
@@ -84,38 +87,24 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div>
 <nav class="bottomNav"><button class="active" id="nav-home" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-more" onclick="toggleMoreMenu()"><span class="ico">☰</span>Περισσότερα</button></nav><div class="hidden" id="moreMenu"><div class="moreMenuHead"><b>☰ Περισσότερα</b><button class="soft" type="button" onclick="toggleMoreMenu(false)">✕</button></div><div class="moreMenuGrid"><button class="soft" id="nav-calendar" onclick="openMorePage('calendar')"><span class="ico">📅</span>Εργασίες</button><button class="soft" id="nav-customers" onclick="openMorePage('customers')"><span class="ico">👥</span>Πελάτες</button><button class="soft" id="nav-payments" onclick="openMorePage('payments')"><span class="ico">💳</span>Πληρωμές</button><button class="soft" id="nav-suppliers" onclick="openMorePage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button class="soft" id="nav-cashflow" onclick="openMorePage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button class="soft" id="nav-budget" onclick="openMorePage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button class="soft" id="nav-mydata" onclick="openMorePage('mydata')"><span class="ico">🏛️</span>ΑΑΔΕ</button><button class="soft" id="nav-assistant" onclick="openMorePage('assistant')"><span class="ico">🤖</span>Assistant</button><button class="soft" id="nav-profile" onclick="openMorePage('profile')"><span class="ico">👤</span>Προφίλ</button><button class="soft hidden" id="nav-admin" onclick="openMorePage('admin')"><span class="ico">👑</span>Διαχείριση</button></div></div>
 <div class="page active" id="page-home">
-<div class="card" id="producerHome">
-<h2 id="tQuick" style="margin:0">🌱 Γρήγορη καταχώρηση</h2>
-<small id="tChoose">Επίλεξε τι θέλεις να καταχωρήσεις</small>
-<div class="quickGrid">
-<button onclick="quickEntry('expense')"><span id="tExpense">💶 Έξοδο</span></button>
-<button onclick="quickEntry('harvest')"><span id="tHarvest">⚖️ Συγκομιδή</span></button>
-<button onclick="quickEntry('sale')"><span id="tSale">💰 Πώληση</span></button>
-<button onclick="quickEntry('activity')"><span id="tActivity">📅 Εργασία</span></button>
+<div class="mobileHomeIntro"><h2>Καλημέρα!</h2><small>Η εκμετάλλευσή σου με μια ματιά</small></div>
+<div class="homeActionGrid">
+<button class="homeAction" onclick="showPage('entry')"><span class="homeActionIcon">🌱</span><b>Καλλιέργειες</b></button>
+<button class="homeAction" onclick="quickEntry('harvest')"><span class="homeActionIcon">⚖️</span><b>Παραγωγή</b></button>
+<button class="homeAction" onclick="quickEntry('sale')"><span class="homeActionIcon">🛒</span><b>Πωλήσεις</b></button>
+<button class="homeAction" onclick="quickEntry('expense')"><span class="homeActionIcon">📦</span><b>Έξοδα / Εφόδια</b></button>
+<button class="homeAction" onclick="showPage('calendar')"><span class="homeActionIcon">📋</span><b>Εργασίες</b></button>
+<button class="homeAction" onclick="showPage('reports')"><span class="homeActionIcon">📊</span><b>Αναφορές</b></button>
 </div>
-<button class="voice quickVoice" onclick="startVoice()"><span id="tVoice">🎤 Πες το με τη φωνή</span></button>
-<div class="quickSummary">
-<small id="tCurrent">Τρέχουσα επιλογή</small><br/>
-<b id="homeSelection">Επίλεξε περίοδο και αγροτεμάχιο</b>
-<div id="homeNumbers" style="margin-top:6px"><small>Τα βασικά στοιχεία θα εμφανιστούν εδώ.</small></div>
+<h3 class="homeSummaryTitle">Σύνοψη περιόδου</h3>
+<div class="homeSummaryGrid">
+<div class="homeSummaryTile"><span>🌱</span><small>Παραγωγή</small><b id="dProduction">0 kg</b></div>
+<div class="homeSummaryTile"><span>🪙</span><small>Έσοδα</small><b id="dIncome">0,00 €</b></div>
+<div class="homeSummaryTile"><span>🧾</span><small>Έξοδα</small><b id="dExpense">0,00 €</b></div>
 </div>
+<div style="display:none">
+<b id="dProfit">0,00 €</b><b id="dAvgPrice">—</b><b id="dCostKg">—</b><b id="dGradeA">0 kg</b><b id="dGradeB">0 kg</b><b id="dGradeS">0 kg</b><b id="dBalances">0,00 €</b><b id="dSupplierDebt">0,00 €</b><b id="dDebtNet">0,00 €</b><b id="dInventoryValue">0,00 €</b><b id="dPending">0</b><div id="dashboardAlerts"></div><b id="homeSelection"></b><div id="homeNumbers"></div>
 </div>
-<div class="card" id="dashboardCard"><h3 style="margin-top:0">📈 Dashboard παραγωγού</h3><small>Συνοπτική εικόνα για το επιλεγμένο αγροτεμάχιο και την εκμετάλλευση.</small>
-<div class="dashGrid">
-<div class="dashBox"><small>💰 Έσοδα</small><b id="dIncome">0,00 €</b></div>
-<div class="dashBox"><small>💸 Έξοδα</small><b id="dExpense">0,00 €</b></div>
-<div class="dashBox"><small>📈 Καθαρό αποτέλεσμα</small><b id="dProfit">0,00 €</b></div>
-<div class="dashBox"><small>⚖️ Παραγωγή</small><b id="dProduction">0 kg</b></div>
-<div class="dashBox"><small>💶 Μέση τιμή/kg</small><b id="dAvgPrice">—</b></div>
-<div class="dashBox"><small>🧾 Κόστος/kg</small><b id="dCostKg">—</b></div>
-<div class="dashBox"><small>🅰️ Α</small><b id="dGradeA">0 kg</b></div>
-<div class="dashBox"><small>🅱️ Β</small><b id="dGradeB">0 kg</b></div>
-<div class="dashBox"><small>📦 Σκάρτα</small><b id="dGradeS">0 kg</b></div>
-<div class="dashBox"><small>💳 Υπόλοιπα πελατών</small><b id="dBalances">0,00 €</b></div><div class="dashBox"><small>🏪 Οφειλές σε προμηθευτές</small><b id="dSupplierDebt">0,00 €</b></div><div class="dashBox"><small>⚖️ Καθαρή θέση οφειλών</small><b id="dDebtNet">0,00 €</b></div>
-<div class="dashBox"><small>📦 Αξία αποθήκης</small><b id="dInventoryValue">0,00 €</b></div>
-<div class="dashBox"><small>⏳ Εκκρεμείς εργασίες</small><b id="dPending">0</b></div>
-</div>
-<h4>🔔 Ειδοποιήσεις</h4><div id="dashboardAlerts"><small>Φόρτωση...</small></div></div>
 </div><div class="page" id="page-entry"><div class="card" id="entryCard"><h3 id="tNewEntry">Νέα καταχώρηση</h3>
 <button class="voice" id="voiceBtn" onclick="startVoice()">🎙️ Φωνητική καταχώρηση</button>
 <small id="voiceMsg"></small>
