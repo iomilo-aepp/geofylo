@@ -350,15 +350,15 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div></div>
 <div style="margin-top:18px"><button class="soft" onclick="logout()">🚪 Έξοδος</button></div></div></div>
 <script>
-function openCultivations(){
-  showPage('entry');
+async function openCultivations(){
+  await showPage('entry');
   setTimeout(()=>{
     const target=document.getElementById('ghName');
     if(target){
       const card=target.closest('.card') || target;
       card.scrollIntoView({behavior:'smooth',block:'start'});
     }
-  },80);
+  },250);
 }
 let deferredInstallPrompt = null;
 
