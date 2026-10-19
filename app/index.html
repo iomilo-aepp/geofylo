@@ -89,7 +89,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="page active" id="page-home">
 <div class="mobileHomeIntro"><h2>Καλημέρα!</h2><small>Η εκμετάλλευσή σου με μια ματιά</small></div>
 <div class="homeActionGrid">
-<button class="homeAction" onclick="showPage('entry')"><span class="homeActionIcon">🌱</span><b>Καλλιέργειες</b></button>
+<button class="homeAction" onclick="openCultivations()"><span class="homeActionIcon">🌱</span><b>Καλλιέργειες</b></button>
 <button class="homeAction" onclick="quickEntry('harvest')"><span class="homeActionIcon">⚖️</span><b>Παραγωγή</b></button>
 <button class="homeAction" onclick="quickEntry('sale')"><span class="homeActionIcon">🛒</span><b>Πωλήσεις</b></button>
 <button class="homeAction" onclick="quickEntry('expense')"><span class="homeActionIcon">📦</span><b>Έξοδα / Εφόδια</b></button>
@@ -350,6 +350,16 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div></div>
 <div style="margin-top:18px"><button class="soft" onclick="logout()">🚪 Έξοδος</button></div></div></div>
 <script>
+function openCultivations(){
+  showPage('entry');
+  setTimeout(()=>{
+    const target=document.getElementById('ghName');
+    if(target){
+      const card=target.closest('.card') || target;
+      card.scrollIntoView({behavior:'smooth',block:'start'});
+    }
+  },80);
+}
 let deferredInstallPrompt = null;
 
 function isGeoFyloInstalled(){
