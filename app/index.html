@@ -3518,8 +3518,9 @@ window.renderFertPrograms=function(){
 
 window.scheduleFertProgram=async function(id){
  const x=fertRead().find(r=>r.id===id);if(!x)return alert('Δεν βρέθηκε το πρόγραμμα λίπανσης.');
- if(!window.user||!user.id)return alert('Συνδέσου πρώτα στον λογαριασμό σου.');
- if(!gh||!gh.value)return alert('Επίλεξε πρώτα αγροτεμάχιο / θερμοκήπιο.');
+ if(!user||!user.id)return alert('Συνδέσου πρώτα στον λογαριασμό σου.');
+ const selectedGH=document.getElementById('gh');
+ if(!selectedGH||!selectedGH.value)return alert('Επίλεξε πρώτα αγροτεμάχιο / θερμοκήπιο.');
  const today=new Date().toISOString().slice(0,10);
  const date=prompt('Ημερομηνία προγραμματισμένης λίπανσης (ΕΕΕΕ-ΜΜ-ΗΗ):',today);
  if(date===null)return;
@@ -3534,7 +3535,7 @@ window.scheduleFertProgram=async function(id){
    itemLines?('Εφόδια:\n'+itemLines):'',
    x.notes?('Σημείωση: '+x.notes):''
  ].filter(Boolean);
- const payload={user_id:user.id,greenhouse_id:+gh.value,activity_date:date,activity_type:'Λίπανση',photo_path:null,status:'pending',scheduled:true,note:noteLines.join('\n')};
+ const payload={user_id:user.id,greenhouse_id:+selectedGH.value,activity_date:date,activity_type:'Λίπανση',photo_path:null,status:'pending',scheduled:true,note:noteLines.join('\n')};
  try{
    if(!navigator.onLine){
      addToOfflineQueue('activities',payload);
