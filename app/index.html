@@ -313,7 +313,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button class="soft hidden" id="cancelFertBtn" type="button" onclick="resetFertForm()">Ακύρωση επεξεργασίας</button>
 <small id="fertMsg" style="display:block;margin-top:7px"></small>
 </div>
-<div class="card"><h3>📚 Αποθηκευμένα προγράμματα</h3><div class="grid"><select id="fertFilterCrop" onchange="renderFertPrograms()"><option value="">Όλες οι καλλιέργειες</option></select><select id="fertFilterStage" onchange="renderFertPrograms()"><option value="">Όλα τα στάδια</option></select></div><div id="fertProgramList" style="margin-top:10px"><small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small></div></div>
+<div class="card"><h3>🌱 Πρότυπα GeoFylo</h3><small>Χρησιμοποίησε ένα πρότυπο ως βάση και συμπλήρωσε τις ποσότητες σύμφωνα με τη δική σου καλλιέργεια και τη γεωπονική σου σύσταση.</small><div class="grid" style="margin-top:10px"><label>Καλλιέργεια<select id="fertTemplateCrop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option></select></label><label>Στάδιο<select id="fertTemplateStage"><option>Μεταφύτευση</option><option>Ανάπτυξη</option><option>Ανθοφορία</option><option>Καρπόδεση</option><option>Παραγωγή</option></select></label></div><button class="soft" type="button" onclick="loadFertTemplate()">🌿 Φόρτωση προτύπου</button><div style="margin-top:10px;padding:10px 12px;background:#f5f8f5;border-radius:10px"><small><b>Σημαντικό:</b> Τα πρότυπα προτείνουν τη δομή και ενδεικτικούς τύπους θρεπτικών πηγών, όχι καθολικές δοσολογίες. Οι ποσότητες παραμένουν κενές για ασφαλή προσαρμογή.</small></div></div><div class="card"><h3>📚 Αποθηκευμένα προγράμματα</h3><div class="grid"><select id="fertFilterCrop" onchange="renderFertPrograms()"><option value="">Όλες οι καλλιέργειες</option></select><select id="fertFilterStage" onchange="renderFertPrograms()"><option value="">Όλα τα στάδια</option></select></div><div id="fertProgramList" style="margin-top:10px"><small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small></div></div>
 </div>
 <div class="page" id="page-admin"><div class="card"><h2 style="margin-top:0">👑 Διαχείριση Συνδρομών</h2><small>Μόνο για διαχειριστές GeoFylo. Καταχώρησε πληρωμή και επέκτεινε τη συνδρομή του πελάτη.</small><div style="margin-top:12px"></div><div id="adminSubMsg" style="margin-top:10px"></div><div id="adminStats" style="margin-top:12px"></div><div id="adminSubList" style="margin-top:12px"></div></div><div class="card"><h3>💶 Τιμοκατάλογος</h3><small>Οι τιμές χρησιμοποιούνται αυτόματα όταν ενεργοποιείς ή ανανεώνεις συνδρομή.</small><div id="adminPlanList" style="margin-top:12px"><small>Φόρτωση...</small></div></div><div class="card"><h3>💶 Ιστορικό πληρωμών συνδρομών</h3><div id="adminPaymentHistory"><small>Φόρτωση...</small></div></div></div>
 <div class="page" id="page-profile"><div class="card">
@@ -3514,6 +3514,29 @@ window.renderFertPrograms=function(){
  rows=rows.filter(x=>(!cv||x.crop===cv)&&(!sv||x.stage===sv)); if(!rows.length){list.innerHTML='<small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small>';return;}
  const basis={"1000L":"ανά 1.000 L νερού",stremma:'ανά στρέμμα',application:'ανά εφαρμογή'};
  list.innerHTML=rows.map(x=>'<div style="padding:12px 0;border-bottom:1px solid #e4e9e4"><b>🌿 '+fesc(x.name)+'</b><br><small>'+fesc(x.crop)+' • '+fesc(x.stage)+' • '+fesc(basis[x.basis]||x.basis)+'</small><div style="margin:8px 0">'+(x.items||[]).map(i=>'• '+fesc(i.name)+': <b>'+fesc(i.qty)+' '+fesc(i.unit)+'</b>').join('<br>')+'</div>'+(x.notes?'<small>📝 '+fesc(x.notes)+'</small>':'')+'<div style="display:flex;gap:6px;margin-top:8px"><button class="soft" style="width:auto" onclick="editFertProgram(\''+fesc(x.id)+'\')">✏️ Επεξεργασία</button><button class="danger" style="width:auto" onclick="deleteFertProgram(\''+fesc(x.id)+'\')">🗑️ Διαγραφή</button></div></div>').join('');
+};
+window.loadFertTemplate=function(){
+ const crop=document.getElementById('fertTemplateCrop')?.value||'Αγγούρι';
+ const stage=document.getElementById('fertTemplateStage')?.value||'Ανάπτυξη';
+ const plans={
+  'Μεταφύτευση':['Φωσφορική πηγή','Νιτρικό ασβέστιο','Θειικό μαγνήσιο'],
+  'Ανάπτυξη':['Νιτρικό ασβέστιο','Νιτρικό κάλιο','Θειικό μαγνήσιο'],
+  'Ανθοφορία':['Νιτρικό ασβέστιο','Νιτρικό κάλιο','Φωσφορική πηγή','Θειικό μαγνήσιο'],
+  'Καρπόδεση':['Νιτρικό ασβέστιο','Νιτρικό κάλιο','Θειικό μαγνήσιο'],
+  'Παραγωγή':['Νιτρικό ασβέστιο','Νιτρικό κάλιο','Θειικό μαγνήσιο']
+ };
+ fertEditId=null;
+ document.getElementById('fertName').value=crop+' – '+stage+' (Πρότυπο)';
+ document.getElementById('fertCrop').value=crop;
+ document.getElementById('fertStage').value=stage;
+ document.getElementById('fertBasis').value='1000L';
+ document.getElementById('fertNotes').value='Πρότυπο GeoFylo. Συμπλήρωσε ποσότητες μόνο σύμφωνα με ανάλυση νερού/εδάφους και γεωπονική σύσταση.';
+ const box=document.getElementById('fertItems'); if(box)box.innerHTML='';
+ (plans[stage]||plans['Ανάπτυξη']).forEach(name=>addFertItem({name:name,qty:'',unit:'kg'}));
+ const t=document.getElementById('fertFormTitle'); if(t)t.textContent='🌱 Πρότυπο '+crop+' – '+stage;
+ const b=document.getElementById('saveFertBtn'); if(b)b.textContent='💾 Αποθήκευση ως δικό μου πρόγραμμα';
+ document.getElementById('cancelFertBtn')?.classList.remove('hidden');
+ document.getElementById('fertFormTitle')?.scrollIntoView({behavior:'smooth',block:'start'});
 };
 document.addEventListener('DOMContentLoaded',function(){if(document.getElementById('fertItems')&&!document.querySelector('.fertItemRow'))addFertItem();renderFertPrograms();});
 })();
