@@ -3513,7 +3513,40 @@ window.renderFertPrograms=function(){
  if(fc)fc.innerHTML='<option value="">Όλες οι καλλιέργειες</option>'+crops.map(x=>'<option>'+fesc(x)+'</option>').join('');if(fs)fs.innerHTML='<option value="">Όλα τα στάδια</option>'+stages.map(x=>'<option>'+fesc(x)+'</option>').join('');if(fc)fc.value=cv;if(fs)fs.value=sv;
  rows=rows.filter(x=>(!cv||x.crop===cv)&&(!sv||x.stage===sv)); if(!rows.length){list.innerHTML='<small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small>';return;}
  const basis={"1000L":"ανά 1.000 L νερού",stremma:'ανά στρέμμα',application:'ανά εφαρμογή'};
- list.innerHTML=rows.map(x=>'<div style="padding:12px 0;border-bottom:1px solid #e4e9e4"><b>🌿 '+fesc(x.name)+'</b><br><small>'+fesc(x.crop)+' • '+fesc(x.stage)+' • '+fesc(basis[x.basis]||x.basis)+'</small><div style="margin:8px 0">'+(x.items||[]).map(i=>'• '+fesc(i.name)+': <b>'+fesc(i.qty)+' '+fesc(i.unit)+'</b>').join('<br>')+'</div>'+(x.notes?'<small>📝 '+fesc(x.notes)+'</small>':'')+'<div style="display:flex;gap:6px;margin-top:8px"><button class="soft" style="width:auto" onclick="editFertProgram(\''+fesc(x.id)+'\')">✏️ Επεξεργασία</button><button class="danger" style="width:auto" onclick="deleteFertProgram(\''+fesc(x.id)+'\')">🗑️ Διαγραφή</button></div></div>').join('');
+ list.innerHTML=rows.map(x=>'<div style="padding:12px 0;border-bottom:1px solid #e4e9e4"><b>🌿 '+fesc(x.name)+'</b><br><small>'+fesc(x.crop)+' • '+fesc(x.stage)+' • '+fesc(basis[x.basis]||x.basis)+'</small><div style="margin:8px 0">'+(x.items||[]).map(i=>'• '+fesc(i.name)+': <b>'+fesc(i.qty)+' '+fesc(i.unit)+'</b>').join('<br>')+'</div>'+(x.notes?'<small>📝 '+fesc(x.notes)+'</small>':'')+'<div style="display:flex;gap:6px;margin-top:8px"><button class="soft" style="width:auto" onclick="scheduleFertProgram(\''+fesc(x.id)+'\')">📋 Στις εργασίες</button><button class="soft" style="width:auto" onclick="editFertProgram(\''+fesc(x.id)+'\')">✏️ Επεξεργασία</button><button class="danger" style="width:auto" onclick="deleteFertProgram(\''+fesc(x.id)+'\')">🗑️ Διαγραφή</button></div></div>').join('');
+};
+
+window.scheduleFertProgram=async function(id){
+ const x=fertRead().find(r=>r.id===id);if(!x)return alert('Δεν βρέθηκε το πρόγραμμα λίπανσης.');
+ if(!window.user||!user.id)return alert('Συνδέσου πρώτα στον λογαριασμό σου.');
+ if(!gh||!gh.value)return alert('Επίλεξε πρώτα αγροτεμάχιο / θερμοκήπιο.');
+ const today=new Date().toISOString().slice(0,10);
+ const date=prompt('Ημερομηνία προγραμματισμένης λίπανσης (ΕΕΕΕ-ΜΜ-ΗΗ):',today);
+ if(date===null)return;
+ if(!/^\d{4}-\d{2}-\d{2}$/.test(date))return alert('Γράψε ημερομηνία στη μορφή ΕΕΕΕ-ΜΜ-ΗΗ.');
+ const basis={"1000L":"ανά 1.000 L νερού",stremma:'ανά στρέμμα',application:'ανά εφαρμογή'};
+ const itemLines=(x.items||[]).map(i=>'• '+i.name+': '+i.qty+' '+i.unit).join('\n');
+ const noteLines=[
+   '🌿 Πρόγραμμα λίπανσης: '+x.name,
+   'Καλλιέργεια: '+x.crop,
+   'Στάδιο: '+x.stage,
+   'Βάση: '+(basis[x.basis]||x.basis),
+   itemLines?('Εφόδια:\n'+itemLines):'',
+   x.notes?('Σημείωση: '+x.notes):''
+ ].filter(Boolean);
+ const payload={user_id:user.id,greenhouse_id:+gh.value,activity_date:date,activity_type:'Λίπανση',photo_path:null,status:'pending',scheduled:true,note:noteLines.join('\n')};
+ try{
+   if(!navigator.onLine){
+     addToOfflineQueue('activities',payload);
+     alert('📴 Η λίπανση αποθηκεύτηκε ως προγραμματισμένη εργασία στη συσκευή και θα συγχρονιστεί όταν επανέλθει το Internet.');
+     updateConnectionStatus();
+   }else{
+     const r=await sb.from('activities').insert(payload);
+     if(r.error)throw r.error;
+     alert('✅ Η λίπανση προστέθηκε στις Εργασίες για '+date+'.');
+   }
+   try{await loadCalendar();}catch(e){}
+ }catch(e){console.error(e);alert('Δεν αποθηκεύτηκε η εργασία: '+(e.message||e));}
 };
 window.loadFertTemplate=function(){
  const crop=document.getElementById('fertTemplateCrop')?.value||'Αγγούρι';
