@@ -85,7 +85,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </label>
 </div>
 </div>
-<nav class="bottomNav"><button class="active" id="nav-home" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-more" onclick="toggleMoreMenu()"><span class="ico">☰</span>Περισσότερα</button></nav><div class="hidden" id="moreMenu"><div class="moreMenuHead"><b>☰ Περισσότερα</b><button class="soft" type="button" onclick="toggleMoreMenu(false)">✕</button></div><div class="moreMenuGrid"><button class="soft" id="nav-calendar" onclick="openMorePage('calendar')"><span class="ico">📅</span>Εργασίες</button><button class="soft" id="nav-customers" onclick="openMorePage('customers')"><span class="ico">👥</span>Πελάτες</button><button class="soft" id="nav-payments" onclick="openMorePage('payments')"><span class="ico">💳</span>Πληρωμές</button><button class="soft" id="nav-suppliers" onclick="openMorePage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button class="soft" id="nav-cashflow" onclick="openMorePage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button class="soft" id="nav-budget" onclick="openMorePage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button class="soft" id="nav-mydata" onclick="openMorePage('mydata')"><span class="ico">🏛️</span>ΑΑΔΕ</button><button class="soft" id="nav-fertilization" onclick="openMorePage('fertilization')"><span class="ico">🌿</span>Λίπανση</button><button class="soft" id="nav-assistant" onclick="openMorePage('assistant')"><span class="ico">🤖</span>Assistant</button><button class="soft" id="nav-profile" onclick="openMorePage('profile')"><span class="ico">👤</span>Προφίλ</button><button class="soft hidden" id="nav-admin" onclick="openMorePage('admin')"><span class="ico">👑</span>Διαχείριση</button></div></div>
+<nav class="bottomNav"><button class="active" id="nav-home" onclick="showPage('home')"><span class="ico">🏠</span>Αρχική</button><button id="nav-entry" onclick="showPage('entry')"><span class="ico">➕</span>Καταχώρηση</button><button id="nav-movements" onclick="showPage('movements')"><span class="ico">🧾</span>Κινήσεις</button><button id="nav-inventory" onclick="showPage('inventory')"><span class="ico">📦</span>Αποθήκη</button><button id="nav-reports" onclick="showPage('reports')"><span class="ico">📊</span>Αναφορές</button><button id="nav-more" onclick="toggleMoreMenu()"><span class="ico">☰</span>Περισσότερα</button></nav><div class="hidden" id="moreMenu"><div class="moreMenuHead"><b>☰ Περισσότερα</b><button class="soft" type="button" onclick="toggleMoreMenu(false)">✕</button></div><div class="moreMenuGrid"><button class="soft" id="nav-calendar" onclick="openMorePage('calendar')"><span class="ico">📅</span>Εργασίες</button><button class="soft" id="nav-customers" onclick="openMorePage('customers')"><span class="ico">👥</span>Πελάτες</button><button class="soft" id="nav-payments" onclick="openMorePage('payments')"><span class="ico">💳</span>Πληρωμές</button><button class="soft" id="nav-suppliers" onclick="openMorePage('suppliers')"><span class="ico">🏪</span>Προμηθευτές</button><button class="soft" id="nav-cashflow" onclick="openMorePage('cashflow')"><span class="ico">💰</span>Ταμείο</button><button class="soft" id="nav-budget" onclick="openMorePage('budget')"><span class="ico">🎯</span>Προϋπολογισμός</button><button class="soft" id="nav-mydata" onclick="openMorePage('mydata')"><span class="ico">🏛️</span>ΑΑΔΕ</button><button class="soft" id="nav-assistant" onclick="openMorePage('assistant')"><span class="ico">🤖</span>Assistant</button><button class="soft" id="nav-fertilization" onclick="openMorePage('fertilization')"><span class="ico">🌿</span>Λίπανση</button><button class="soft" id="nav-profile" onclick="openMorePage('profile')"><span class="ico">👤</span>Προφίλ</button><button class="soft hidden" id="nav-admin" onclick="openMorePage('admin')"><span class="ico">👑</span>Διαχείριση</button></div></div>
 <div class="page active" id="page-home">
 <div class="mobileHomeIntro"><h2>Καλημέρα!</h2><small>Η εκμετάλλευσή σου με μια ματιά</small></div>
 <div class="homeActionGrid">
@@ -203,23 +203,6 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="card"><h3>📊 Κατάσταση myDATA</h3><div class="dashGrid"><div class="dashBox"><small>💰 Έσοδα</small><b id="myDataIncomeStatus">—</b></div><div class="dashBox"><small>💸 Έξοδα</small><b id="myDataExpenseStatus">—</b></div></div></div>
 <div class="card"><h3>ℹ️ Πληροφορίες</h3><div id="myDataInfo"><small>Τα οικονομικά σύνολα θα εμφανιστούν όταν ολοκληρωθεί η ανάγνωση και ανάλυση των XML δεδομένων της ΑΑΔΕ.</small></div></div>
 </div>
-<div class="page" id="page-fertilization">
-<div class="card">
-<h2 style="margin-top:0">🌿 Προγράμματα Λίπανσης</h2>
-<small>Οργάνωσε τις δικές σου συνταγές λίπανσης ανά καλλιέργεια και στάδιο ανάπτυξης.</small>
-<div class="quickSummary" style="margin-top:12px"><small>⚠️ Οι συνταγές που καταχωρούνται εδώ είναι αρχεία του παραγωγού και δεν αποτελούν γεωπονική σύσταση. Η εφαρμογή δεν υποκαθιστά ανάλυση νερού/εδάφους ή συμβουλή γεωπόνου.</small></div>
-<label>Καλλιέργεια<select id="fertCrop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option><option>Άλλη</option></select></label>
-<label>Στάδιο<select id="fertStage"><option>Μεταφύτευση / Εγκατάσταση</option><option>Βλαστική ανάπτυξη</option><option>Ανθοφορία</option><option>Καρπόδεση</option><option>Παραγωγή</option><option>Άλλο</option></select></label>
-<label>Όνομα προγράμματος<input id="fertName" placeholder="π.χ. Βασική λίπανση παραγωγής"/></label>
-<label>Βάση υπολογισμού<select id="fertBasis"><option value="1000L">ανά 1.000 L νερού</option><option value="stremma">ανά στρέμμα</option><option value="application">ανά εφαρμογή</option></select></label>
-<h4 style="margin-bottom:6px">Λιπάσματα / Εφόδια</h4><div id="fertRows"></div>
-<button class="soft" type="button" onclick="addFertRow()">➕ Προσθήκη λιπάσματος</button>
-<label>Σημειώσεις<textarea id="fertNotes" placeholder="π.χ. EC/pH, δεξαμενή Α/Β, παρατηρήσεις γεωπόνου" style="width:100%;min-height:85px;padding:12px;border:1px solid #ccd8cd;border-radius:10px;box-sizing:border-box;font:inherit"></textarea></label>
-<button id="saveFertBtn" type="button" onclick="saveFertRecipe()">💾 Αποθήκευση προγράμματος</button>
-<button class="soft hidden" id="cancelFertBtn" type="button" onclick="cancelFertEdit()">Ακύρωση επεξεργασίας</button>
-</div>
-<div class="card"><h3>📚 Τα προγράμματά μου</h3><div class="grid"><label>Καλλιέργεια<select id="fertFilterCrop" onchange="renderFertRecipes()"><option value="">Όλες</option><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option><option>Άλλη</option></select></label><label>Στάδιο<select id="fertFilterStage" onchange="renderFertRecipes()"><option value="">Όλα</option><option>Μεταφύτευση / Εγκατάσταση</option><option>Βλαστική ανάπτυξη</option><option>Ανθοφορία</option><option>Καρπόδεση</option><option>Παραγωγή</option><option>Άλλο</option></select></label></div><div id="fertRecipeList"><small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small></div></div>
-</div>
 <div class="page" id="page-assistant">
 <div class="card">
 <h2 style="margin-top:0">🌱 GeoFylo Assistant</h2>
@@ -311,6 +294,26 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <small>Εκτίμηση με βάση τον στόχο παραγωγής και τη μέχρι σήμερα μέση τιμή πώλησης.</small>
 <div id="budgetForecast" style="margin-top:10px"><small>Επίλεξε αγροτεμάχιο.</small></div>
 </div>
+</div>
+<div class="page" id="page-fertilization">
+<div class="card">
+<h2 style="margin-top:0">🌿 Προγράμματα Λίπανσης</h2>
+<small>Δημιούργησε και αποθήκευσε τα δικά σου προγράμματα λίπανσης ανά καλλιέργεια και στάδιο ανάπτυξης.</small>
+<div style="margin-top:14px;padding:12px 14px;background:#fff8e8;border-radius:12px;font-size:13px;color:#6b5a2b">⚠️ Οι καταχωρήσεις είναι προσωπικά προγράμματα του παραγωγού και δεν αποτελούν γεωπονική σύσταση. Οι ποσότητες πρέπει να προσαρμόζονται στις αναλύσεις νερού/εδάφους και στις οδηγίες γεωπόνου.</div>
+</div>
+<div class="card">
+<h3 id="fertFormTitle">➕ Νέο πρόγραμμα</h3>
+<label>Όνομα προγράμματος<input id="fertName" placeholder="π.χ. Αγγούρι – Παραγωγή"/></label>
+<div class="grid"><label>Καλλιέργεια<select id="fertCrop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option><option>Άλλη</option></select></label><label>Στάδιο<select id="fertStage"><option>Μεταφύτευση</option><option>Ανάπτυξη</option><option>Ανθοφορία</option><option>Καρπόδεση</option><option>Παραγωγή</option><option>Άλλο</option></select></label></div>
+<label>Βάση υπολογισμού<select id="fertBasis"><option value="1000L">Ανά 1.000 L νερού</option><option value="stremma">Ανά στρέμμα</option><option value="application">Ανά εφαρμογή</option></select></label>
+<h4>Λιπάσματα / Εφόδια</h4><div id="fertItems"></div>
+<button class="soft" type="button" onclick="addFertItem()">➕ Προσθήκη λιπάσματος</button>
+<label>Σημειώσεις<input id="fertNotes" placeholder="π.χ. EC/pH, συχνότητα, παρατηρήσεις"/></label>
+<button id="saveFertBtn" type="button" onclick="saveFertProgram()">💾 Αποθήκευση προγράμματος</button>
+<button class="soft hidden" id="cancelFertBtn" type="button" onclick="resetFertForm()">Ακύρωση επεξεργασίας</button>
+<small id="fertMsg" style="display:block;margin-top:7px"></small>
+</div>
+<div class="card"><h3>📚 Αποθηκευμένα προγράμματα</h3><div class="grid"><select id="fertFilterCrop" onchange="renderFertPrograms()"><option value="">Όλες οι καλλιέργειες</option></select><select id="fertFilterStage" onchange="renderFertPrograms()"><option value="">Όλα τα στάδια</option></select></div><div id="fertProgramList" style="margin-top:10px"><small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small></div></div>
 </div>
 <div class="page" id="page-admin"><div class="card"><h2 style="margin-top:0">👑 Διαχείριση Συνδρομών</h2><small>Μόνο για διαχειριστές GeoFylo. Καταχώρησε πληρωμή και επέκτεινε τη συνδρομή του πελάτη.</small><div style="margin-top:12px"></div><div id="adminSubMsg" style="margin-top:10px"></div><div id="adminStats" style="margin-top:12px"></div><div id="adminSubList" style="margin-top:12px"></div></div><div class="card"><h3>💶 Τιμοκατάλογος</h3><small>Οι τιμές χρησιμοποιούνται αυτόματα όταν ενεργοποιείς ή ανανεώνεις συνδρομή.</small><div id="adminPlanList" style="margin-top:12px"><small>Φόρτωση...</small></div></div><div class="card"><h3>💶 Ιστορικό πληρωμών συνδρομών</h3><div id="adminPaymentHistory"><small>Φόρτωση...</small></div></div></div>
 <div class="page" id="page-profile"><div class="card">
@@ -533,35 +536,7 @@ async function exportPDF(){
 <p class="muted">Αναλυτική εικόνα των εφοδίων και των κατηγοριών κόστους για το επιλεγμένο θερμοκήπιο.</p>
 <h2>📦 Αναλυτική Κατανάλωση Εφοδίων</h2><div class="grid"><div class="box">Συνολικό κόστος εφοδίων<div class="big">${money(pdfUsageCost)}</div></div><div class="box">Κόστος / στρέμμα<div class="big">${Number(greenhouse.area||0)?money(pdfUsageCost/Number(greenhouse.area)):'—'}</div></div></div><table><thead><tr><th>Εφόδιο</th><th>Ποσότητα</th><th>Κόστος</th></tr></thead><tbody>${Object.entries(pdfUsageAgg).map(([n,v])=>`<tr><td>${esc(n)}</td><td>${v.qty.toLocaleString('el-GR')} ${esc(v.unit)}</td><td>${money(v.cost)}</td></tr>`).join('')||'<tr><td colspan="3">Δεν υπάρχουν καταναλώσεις εφοδίων</td></tr>'}</tbody></table><h2>🧾 Αγορές Εφοδίων</h2><table><thead><tr><th>Ημερομηνία</th><th>Εφόδιο</th><th>Ποσότητα</th><th>Τιμή μονάδας</th><th>Σύνολο</th><th>Προμηθευτής / Παραστατικό</th></tr></thead><tbody>${(purchases||[]).map(x=>{const it=pdfInvById[x.inventory_id]||{};return `<tr><td>${esc(x.purchase_date)}</td><td>${esc(it.name||'')}</td><td>${Number(x.quantity||0).toLocaleString('el-GR')} ${esc(it.unit||'')}</td><td>${money(x.unit_cost)}</td><td>${money(Number(x.quantity||0)*Number(x.unit_cost||0))}</td><td>${esc(x.supplier||'')}${x.document_number?' • '+esc(x.document_number):''}</td></tr>`}).join('')||'<tr><td colspan="6">Δεν υπάρχουν αγορές εφοδίων</td></tr>'}</tbody></table><h2>Έξοδα ανά κατηγορία</h2><table><thead><tr><th>Κατηγορία</th><th>Ποσό</th></tr></thead><tbody>${Object.entries(cat).map(([k,v])=>`<tr><td>${esc(k)}</td><td>${money(v)}</td></tr>`).join('')||'<tr><td colspan="2">Δεν υπάρχουν έξοδα</td></tr>'}</tbody></table>
   <h2>Κινήσεις</h2><table><thead><tr><th>Ημερομηνία</th><th>Τύπος</th><th>Στοιχεία</th><th>Ποσό</th><th>Σημείωση</th></tr></thead><tbody>${rows.map(r=>`<tr>${r.map(v=>`<td>${esc(v)}</td>`).join('')}</tr>`).join('')||'<tr><td colspan="5">Δεν υπάρχουν κινήσεις</td></tr>'}</tbody></table>
-  <p class="muted">Δημιουργήθηκε από το GeoFylo</p><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script>
-<script>
-let editingFertRecipeId=null;
-function fertStorageKey(){return 'geofylo_fertilization_recipes_'+(user?.id||'guest')}
-function getFertRecipes(){try{return JSON.parse(localStorage.getItem(fertStorageKey())||'[]')}catch(e){return []}}
-function setFertRecipes(v){localStorage.setItem(fertStorageKey(),JSON.stringify(v))}
-function escFert(v){return String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
-function addFertRow(item={}){
- const box=document.getElementById('fertRows');if(!box)return;
- const row=document.createElement('div');row.className='fertRow';row.style.cssText='display:grid;grid-template-columns:1.5fr .7fr .7fr auto;gap:6px;align-items:center;margin:6px 0';
- row.innerHTML=`<input class="fertProduct" placeholder="π.χ. Νιτρικό ασβέστιο" value="${escFert(item.product||'')}"><input class="fertQty" type="number" min="0" step="0.001" placeholder="Ποσότητα" value="${escFert(item.qty||'')}"><select class="fertUnit"><option value="kg">kg</option><option value="g">g</option><option value="lt">lt</option><option value="ml">ml</option></select><button class="danger" type="button" style="width:auto;margin:0;padding:10px" onclick="this.closest('.fertRow').remove()">✕</button>`;
- box.appendChild(row);row.querySelector('.fertUnit').value=item.unit||'kg';
-}
-function resetFertForm(){editingFertRecipeId=null;['fertName','fertNotes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});const r=document.getElementById('fertRows');if(r){r.innerHTML='';addFertRow()}document.getElementById('saveFertBtn')?.classList.remove('hidden');const b=document.getElementById('saveFertBtn');if(b)b.textContent='💾 Αποθήκευση προγράμματος';document.getElementById('cancelFertBtn')?.classList.add('hidden')}
-function loadFertilization(){if(!document.getElementById('fertRows')?.children.length)addFertRow();renderFertRecipes()}
-function saveFertRecipe(){
- const name=document.getElementById('fertName')?.value.trim();if(!name){alert('Γράψε όνομα προγράμματος.');return}
- const items=[...document.querySelectorAll('#fertRows .fertRow')].map(r=>({product:r.querySelector('.fertProduct').value.trim(),qty:Number(r.querySelector('.fertQty').value||0),unit:r.querySelector('.fertUnit').value})).filter(x=>x.product&&x.qty>0);
- if(!items.length){alert('Πρόσθεσε τουλάχιστον ένα λίπασμα με ποσότητα.');return}
- let recipes=getFertRecipes();const obj={id:editingFertRecipeId||Date.now().toString(),crop:document.getElementById('fertCrop').value,stage:document.getElementById('fertStage').value,name,basis:document.getElementById('fertBasis').value,items,notes:document.getElementById('fertNotes').value.trim(),updatedAt:new Date().toISOString()};
- const i=recipes.findIndex(x=>x.id===obj.id);if(i>=0)recipes[i]=obj;else recipes.unshift(obj);setFertRecipes(recipes);resetFertForm();renderFertRecipes();
-}
-function basisLabel(v){return v==='1000L'?'ανά 1.000 L νερού':v==='stremma'?'ανά στρέμμα':'ανά εφαρμογή'}
-function renderFertRecipes(){const box=document.getElementById('fertRecipeList');if(!box)return;const fc=document.getElementById('fertFilterCrop')?.value||'',fs=document.getElementById('fertFilterStage')?.value||'';const rows=getFertRecipes().filter(x=>(!fc||x.crop===fc)&&(!fs||x.stage===fs));if(!rows.length){box.innerHTML='<small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small>';return}box.innerHTML=rows.map(x=>`<div class="quickSummary" style="margin-top:10px"><b>🌿 ${escFert(x.name)}</b><br><small>${escFert(x.crop)} • ${escFert(x.stage)} • ${basisLabel(x.basis)}</small><div style="margin-top:8px">${x.items.map(i=>`<div>• ${escFert(i.product)}: <b>${Number(i.qty).toLocaleString('el-GR')} ${escFert(i.unit)}</b></div>`).join('')}</div>${x.notes?`<small style="display:block;margin-top:7px">📝 ${escFert(x.notes)}</small>`:''}<div style="display:flex;gap:6px;margin-top:9px"><button class="soft" style="width:auto" onclick="editFertRecipe('${x.id}')">✏️ Επεξεργασία</button><button class="danger" style="width:auto" onclick="deleteFertRecipe('${x.id}')">🗑️ Διαγραφή</button></div></div>`).join('')}
-function editFertRecipe(id){const x=getFertRecipes().find(r=>r.id===id);if(!x)return;editingFertRecipeId=id;document.getElementById('fertCrop').value=x.crop;document.getElementById('fertStage').value=x.stage;document.getElementById('fertName').value=x.name;document.getElementById('fertBasis').value=x.basis;document.getElementById('fertNotes').value=x.notes||'';const box=document.getElementById('fertRows');box.innerHTML='';x.items.forEach(addFertRow);document.getElementById('saveFertBtn').textContent='💾 Αποθήκευση αλλαγών';document.getElementById('cancelFertBtn').classList.remove('hidden');window.scrollTo({top:0,behavior:'smooth'})}
-function cancelFertEdit(){resetFertForm()}
-function deleteFertRecipe(id){if(!confirm('Να διαγραφεί αυτό το πρόγραμμα λίπανσης;'))return;setFertRecipes(getFertRecipes().filter(x=>x.id!==id));if(editingFertRecipeId===id)resetFertForm();renderFertRecipes()}
-</script>
-</body></html>`;
+  <p class="muted">Δημιουργήθηκε από το GeoFylo</p><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`;
   const win=window.open('','_blank');
   if(!win){alert('Επίτρεψε τα αναδυόμενα παράθυρα για να δημιουργηθεί το PDF.');return}
   win.document.open();win.document.write(html);win.document.close();
@@ -721,7 +696,7 @@ async function verifySubscriptionGate(){
 function toggleMoreMenu(forceOpen){const m=document.getElementById('moreMenu');if(!m)return;const open=typeof forceOpen==='boolean'?forceOpen:m.classList.contains('hidden');m.classList.toggle('hidden',!open);document.getElementById('nav-more')?.classList.toggle('active',open)}
 async function openMorePage(n){toggleMoreMenu(false);await showPage(n);document.getElementById('nav-more')?.classList.add('active')}
 
-async function showPage(n){if(!(await verifySubscriptionGate()))return;document.getElementById('moreMenu')?.classList.add('hidden');document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));document.getElementById('page-'+n)?.classList.add('active');document.getElementById('nav-'+n)?.classList.add('active');if(['calendar','customers','payments','suppliers','cashflow','budget','mydata','fertilization','assistant','profile','admin'].includes(n))document.getElementById('nav-more')?.classList.add('active');if(n==='home'){dash();loadFirstSteps();}if(n==='movements')dash();if(n==='calendar')loadCalendar();if(n==='reports')loadReports();if(n==='profile')loadProfile();if(n==='customers')loadCustomers();if(n==='payments')loadPayments();if(n==='inventory')loadInventory();if(n==='mydata')loadMyData();if(n==='fertilization')loadFertilization();if(n==='assistant')loadGeoFyloAssistant();if(n==='suppliers')loadSuppliers();if(n==='cashflow')loadCashflow();if(n==='budget')loadBudget();if(n==='admin')loadAdminSubscriptions();window.scrollTo({top:0,behavior:'smooth'});}
+async function showPage(n){if(!(await verifySubscriptionGate()))return;document.getElementById('moreMenu')?.classList.add('hidden');document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));document.getElementById('page-'+n)?.classList.add('active');document.getElementById('nav-'+n)?.classList.add('active');if(['calendar','customers','payments','suppliers','cashflow','budget','mydata','assistant','profile','admin'].includes(n))document.getElementById('nav-more')?.classList.add('active');if(n==='home'){dash();loadFirstSteps();}if(n==='movements')dash();if(n==='calendar')loadCalendar();if(n==='reports')loadReports();if(n==='profile')loadProfile();if(n==='customers')loadCustomers();if(n==='payments')loadPayments();if(n==='inventory')loadInventory();if(n==='mydata')loadMyData();if(n==='assistant')loadGeoFyloAssistant();if(n==='suppliers')loadSuppliers();if(n==='cashflow')loadCashflow();if(n==='budget')loadBudget();if(n==='admin')loadAdminSubscriptions();window.scrollTo({top:0,behavior:'smooth'});}
 
 function formatMyDataDate(value){
  const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -3502,4 +3477,45 @@ async function loadReportSuppliers(){
     }).join('') : '<small>Δεν υπάρχουν προμηθευτές.</small>';
   }catch(e){ console.error(e); box.innerHTML='<small>Δεν ήταν δυνατή η φόρτωση προμηθευτών.</small>'; }
 }
-</script></body></html>
+</script><script>
+(function(){
+let fertEditId=null;
+function fertKey(){return 'geofylo_fertilization_programs_'+(window.user&&user.id?user.id:'local');}
+function fertRead(){try{return JSON.parse(localStorage.getItem(fertKey())||'[]')}catch(e){return []}}
+function fertWrite(rows){localStorage.setItem(fertKey(),JSON.stringify(rows));}
+function fesc(v){return String(v??'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]});}
+window.addFertItem=function(item){
+ const box=document.getElementById('fertItems'); if(!box)return;
+ const row=document.createElement('div'); row.className='fertItemRow'; row.style.cssText='display:grid;grid-template-columns:1.5fr .7fr .7fr auto;gap:6px;align-items:center;margin:6px 0';
+ row.innerHTML='<input class="fertItemName" placeholder="π.χ. Νιτρικό ασβέστιο" value="'+fesc(item?.name||'')+'"><input class="fertItemQty" type="number" min="0" step="0.001" placeholder="Ποσότητα" value="'+fesc(item?.qty||'')+'"><select class="fertItemUnit"><option value="kg">kg</option><option value="g">g</option><option value="lt">lt</option><option value="ml">ml</option></select><button type="button" class="danger" style="width:auto;margin:0;padding:10px" onclick="this.parentElement.remove()">✕</button>';
+ box.appendChild(row); row.querySelector('.fertItemUnit').value=item?.unit||'kg';
+};
+window.resetFertForm=function(){
+ fertEditId=null; ['fertName','fertNotes'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});
+ const box=document.getElementById('fertItems');if(box){box.innerHTML='';addFertItem();}
+ const t=document.getElementById('fertFormTitle');if(t)t.textContent='➕ Νέο πρόγραμμα';
+ const b=document.getElementById('saveFertBtn');if(b)b.textContent='💾 Αποθήκευση προγράμματος';
+ document.getElementById('cancelFertBtn')?.classList.add('hidden');
+};
+window.saveFertProgram=function(){
+ const name=document.getElementById('fertName')?.value.trim()||''; if(!name){alert('Γράψε όνομα προγράμματος.');return;}
+ const items=[...document.querySelectorAll('.fertItemRow')].map(r=>({name:r.querySelector('.fertItemName').value.trim(),qty:Number(r.querySelector('.fertItemQty').value||0),unit:r.querySelector('.fertItemUnit').value})).filter(x=>x.name&&x.qty>0);
+ if(!items.length){alert('Πρόσθεσε τουλάχιστον ένα λίπασμα με ποσότητα.');return;}
+ let rows=fertRead(); const obj={id:fertEditId||('fert_'+Date.now()),name,crop:document.getElementById('fertCrop').value,stage:document.getElementById('fertStage').value,basis:document.getElementById('fertBasis').value,notes:document.getElementById('fertNotes').value.trim(),items,updatedAt:new Date().toISOString()};
+ const i=rows.findIndex(x=>x.id===fertEditId); if(i>=0)rows[i]=obj;else rows.unshift(obj); fertWrite(rows); resetFertForm(); renderFertPrograms(); const m=document.getElementById('fertMsg');if(m)m.textContent='✅ Το πρόγραμμα αποθηκεύτηκε.';
+};
+window.editFertProgram=function(id){const x=fertRead().find(r=>r.id===id);if(!x)return;fertEditId=id;document.getElementById('fertName').value=x.name||'';document.getElementById('fertCrop').value=x.crop||'Αγγούρι';document.getElementById('fertStage').value=x.stage||'Ανάπτυξη';document.getElementById('fertBasis').value=x.basis||'1000L';document.getElementById('fertNotes').value=x.notes||'';const box=document.getElementById('fertItems');box.innerHTML='';(x.items||[]).forEach(addFertItem);document.getElementById('fertFormTitle').textContent='✏️ Επεξεργασία προγράμματος';document.getElementById('saveFertBtn').textContent='💾 Αποθήκευση αλλαγών';document.getElementById('cancelFertBtn').classList.remove('hidden');window.scrollTo({top:document.getElementById('page-fertilization').offsetTop,behavior:'smooth'});};
+window.deleteFertProgram=function(id){if(!confirm('Να διαγραφεί αυτό το πρόγραμμα λίπανσης;'))return;fertWrite(fertRead().filter(x=>x.id!==id));renderFertPrograms();};
+window.renderFertPrograms=function(){
+ const list=document.getElementById('fertProgramList');if(!list)return;let rows=fertRead();
+ const crops=[...new Set(rows.map(x=>x.crop).filter(Boolean))].sort(),stages=[...new Set(rows.map(x=>x.stage).filter(Boolean))].sort();
+ const fc=document.getElementById('fertFilterCrop'),fs=document.getElementById('fertFilterStage');const cv=fc?.value||'',sv=fs?.value||'';
+ if(fc)fc.innerHTML='<option value="">Όλες οι καλλιέργειες</option>'+crops.map(x=>'<option>'+fesc(x)+'</option>').join('');if(fs)fs.innerHTML='<option value="">Όλα τα στάδια</option>'+stages.map(x=>'<option>'+fesc(x)+'</option>').join('');if(fc)fc.value=cv;if(fs)fs.value=sv;
+ rows=rows.filter(x=>(!cv||x.crop===cv)&&(!sv||x.stage===sv)); if(!rows.length){list.innerHTML='<small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small>';return;}
+ const basis={"1000L":"ανά 1.000 L νερού",stremma:'ανά στρέμμα',application:'ανά εφαρμογή'};
+ list.innerHTML=rows.map(x=>'<div style="padding:12px 0;border-bottom:1px solid #e4e9e4"><b>🌿 '+fesc(x.name)+'</b><br><small>'+fesc(x.crop)+' • '+fesc(x.stage)+' • '+fesc(basis[x.basis]||x.basis)+'</small><div style="margin:8px 0">'+(x.items||[]).map(i=>'• '+fesc(i.name)+': <b>'+fesc(i.qty)+' '+fesc(i.unit)+'</b>').join('<br>')+'</div>'+(x.notes?'<small>📝 '+fesc(x.notes)+'</small>':'')+'<div style="display:flex;gap:6px;margin-top:8px"><button class="soft" style="width:auto" onclick="editFertProgram(\''+fesc(x.id)+'\')">✏️ Επεξεργασία</button><button class="danger" style="width:auto" onclick="deleteFertProgram(\''+fesc(x.id)+'\')">🗑️ Διαγραφή</button></div></div>').join('');
+};
+document.addEventListener('DOMContentLoaded',function(){if(document.getElementById('fertItems')&&!document.querySelector('.fertItemRow'))addFertItem();renderFertPrograms();});
+})();
+</script>
+</body></html>
