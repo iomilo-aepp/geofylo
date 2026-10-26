@@ -3480,7 +3480,7 @@ async function loadReportSuppliers(){
 </script><script>
 (function(){
 let fertEditId=null;
-function fertKey(){return 'geofylo_fertilization_programs_'+(window.user&&user.id?user.id:'local');}
+function fertKey(){return 'geofylo_fertilization_programs_'+(user&&user.id?user.id:'local');}
 function fertRead(){try{return JSON.parse(localStorage.getItem(fertKey())||'[]')}catch(e){return []}}
 function fertWrite(rows){localStorage.setItem(fertKey(),JSON.stringify(rows));}
 function fesc(v){return String(v??'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]});}
