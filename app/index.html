@@ -1360,16 +1360,33 @@ function adminStatusLabel(r){
 async function loadAdminSubscriptions(){
  const box=document.getElementById('adminSubList'),msg=document.getElementById('adminSubMsg');if(!box)return;
  box.innerHTML='<small>Φόρτωση συνδρομών...</small>';if(msg)msg.textContent='';
- const [r,pay,plansQ]=await Promise.all([sb.rpc('admin_list_subscriptions'),sb.from('subscription_payments').select('*').order('payment_date',{ascending:false}).order('created_at',{ascending:false}),sb.from('subscription_plans').select('*').order('months',{ascending:true})]);
+ const [r,pay,plansQ,activityQ]=await Promise.all([sb.rpc('admin_list_subscriptions'),sb.from('subscription_payments').select('*').order('payment_date',{ascending:false}).order('created_at',{ascending:false}),sb.from('subscription_plans').select('*').order('months',{ascending:true}),sb.from('user_activity').select('user_id,action_type,action_description,created_at').order('created_at',{ascending:false}).limit(2000)]);
  if(r.error){box.innerHTML='';if(msg)msg.textContent='❌ '+r.error.message;return}
  if(pay.error){if(msg)msg.textContent='❌ Πληρωμές: '+pay.error.message}
- const rows=r.data||[],payments=pay.data||[],plans=plansQ.error?[]:(plansQ.data||[]);
+ const rows=r.data||[],payments=pay.data||[],plans=plansQ.error?[]:(plansQ.data||[]),activity=activityQ.error?[]:(activityQ.data||[]);
+ if(activityQ.error&&msg)msg.textContent='⚠️ Δραστηριότητα: '+activityQ.error.message;
  renderAdminPlans(plans,plansQ.error);
+ const activityByUser={};
+ const sevenDaysAgo=Date.now()-7*24*60*60*1000;
+ activity.forEach(a=>{
+   const x=activityByUser[a.user_id]||(activityByUser[a.user_id]={last:null,lastLogin:null,count7:0});
+   const t=new Date(a.created_at).getTime();
+   if(!x.last)x.last=a;
+   if(a.action_type==='login'&&!x.lastLogin)x.lastLogin=a;
+   if(t>=sevenDaysAgo)x.count7++;
+ });
+ const activityDate=v=>v?new Date(v).toLocaleString('el-GR'):'—';
+ const activityHtml=uid=>{
+   const a=activityByUser[uid];
+   if(!a)return `<div style="margin-top:9px;padding:9px 10px;background:#f7faf6;border-radius:10px"><small>📊 Δραστηριότητα: Δεν έχει καταγραφεί ακόμη χρήση.</small></div>`;
+   const recent=a.last&&new Date(a.last.created_at).getTime()>=sevenDaysAgo;
+   return `<div style="margin-top:9px;padding:9px 10px;background:#f7faf6;border-radius:10px"><small><b>📊 Δραστηριότητα</b><br>🔐 Τελευταία σύνδεση: ${activityDate(a.lastLogin?.created_at)}<br>🕒 Τελευταία κίνηση: ${esc(a.last?.action_description||a.last?.action_type||'—')} • ${activityDate(a.last?.created_at)}<br>🔢 Κινήσεις 7 ημερών: <b>${a.count7}</b><br>${recent?'🟢 Πρόσφατη χρήση':'⚪ Χωρίς πρόσφατη χρήση'}</small></div>`;
+ };
  const active=rows.filter(x=>adminStatusLabel(x).includes('Ενεργή')).length,trial=rows.filter(x=>adminStatusLabel(x).includes('Δοκιμή')).length,total=payments.reduce((a,x)=>a+Number(x.amount||0),0);
  const stats=document.getElementById('adminStats');if(stats)stats.innerHTML=`<div class="grid"><div><small>Ενεργοί συνδρομητές</small><br><b>${active}</b></div><div><small>Σε δοκιμή (Trial)</small><br><b>${trial}</b></div><div><small>Καταγεγραμμένα έσοδα</small><br><b>${euro(total)}</b></div></div>`;
  if(!rows.length){box.innerHTML='<small>Δεν υπάρχουν συνδρομές.</small>';return}
  const planPrices=Object.fromEntries(plans.map(p=>[Number(p.months),Number(p.price)]));
- box.innerHTML=rows.map(x=>`<div class="card" style="margin:10px 0;padding:14px"><b>${esc(x.full_name||x.email||'Χρήστης')}</b><br><small>${esc(x.email||'')}</small><div style="margin-top:8px"><b>${adminStatusLabel(x)}</b> • Πακέτο: ${esc(x.plan||'—')}</div><small>Trial έως: ${adminDate(x.trial_ends_at)} • Συνδρομή έως: ${adminDate(x.subscription_ends_at)}</small><div class="quickGrid" style="margin-top:10px"><button type="button" data-sub-uid="${esc(x.user_id)}" data-sub-months="1" data-sub-name="${esc(x.full_name||x.email||'Χρήστης')}" data-sub-price="${Number.isFinite(Number(planPrices[1]))?Number(planPrices[1]):''}">+1 μήνα</button><button type="button" data-sub-uid="${esc(x.user_id)}" data-sub-months="3" data-sub-name="${esc(x.full_name||x.email||'Χρήστης')}" data-sub-price="${Number.isFinite(Number(planPrices[3]))?Number(planPrices[3]):''}">+3 μήνες</button><button type="button" data-sub-uid="${esc(x.user_id)}" data-sub-months="6" data-sub-name="${esc(x.full_name||x.email||'Χρήστης')}" data-sub-price="${Number.isFinite(Number(planPrices[6]))?Number(planPrices[6]):''}">+6 μήνες</button><button type="button" data-sub-uid="${esc(x.user_id)}" data-sub-months="12" data-sub-name="${esc(x.full_name||x.email||'Χρήστης')}" data-sub-price="${Number.isFinite(Number(planPrices[12]))?Number(planPrices[12]):''}">+12 μήνες</button><button class="soft" onclick="adminEditSubscription('${x.user_id}','${esc(x.plan||'trial')}','${esc(x.status||'trial')}','${x.subscription_ends_at||''}')">✏️ Επεξεργασία</button><button class="danger" onclick="adminDeleteSubscription('${x.user_id}','${esc((x.full_name||x.email||'Χρήστης').replace(/'/g,'&#39;'))}')">⛔ Απενεργοποίηση</button></div></div>`).join('');
+ box.innerHTML=rows.map(x=>`<div class="card" style="margin:10px 0;padding:14px"><b>${esc(x.full_name||x.email||'Χρήστης')}</b><br><small>${esc(x.email||'')}</small><div style="margin-top:8px"><b>${adminStatusLabel(x)}</b> • Πακέτο: ${esc(x.plan||'—')}</div><small>Trial έως: ${adminDate(x.trial_ends_at)} • Συνδρομή έως: ${adminDate(x.subscription_ends_at)}</small>${activityHtml(x.user_id)}<div class="quickGrid" style="margin-top:10px"><button type="button" data-sub-uid="${esc(x.user_id)}" data-sub-months="1" data-sub-name="${esc(x.full_name||x.email||'Χρήστης')}" data-sub-price="${Number.isFinite(Number(planPrices[1]))?Number(planPrices[1]):''}">+1 μήνα</button><button type="button" data-sub-uid="${esc(x.user_id)}" data-sub-months="3" data-sub-name="${esc(x.full_name||x.email||'Χρήστης')}" data-sub-price="${Number.isFinite(Number(planPrices[3]))?Number(planPrices[3]):''}">+3 μήνες</button><button type="button" data-sub-uid="${esc(x.user_id)}" data-sub-months="6" data-sub-name="${esc(x.full_name||x.email||'Χρήστης')}" data-sub-price="${Number.isFinite(Number(planPrices[6]))?Number(planPrices[6]):''}">+6 μήνες</button><button type="button" data-sub-uid="${esc(x.user_id)}" data-sub-months="12" data-sub-name="${esc(x.full_name||x.email||'Χρήστης')}" data-sub-price="${Number.isFinite(Number(planPrices[12]))?Number(planPrices[12]):''}">+12 μήνες</button><button class="soft" onclick="adminEditSubscription('${x.user_id}','${esc(x.plan||'trial')}','${esc(x.status||'trial')}','${x.subscription_ends_at||''}')">✏️ Επεξεργασία</button><button class="danger" onclick="adminDeleteSubscription('${x.user_id}','${esc((x.full_name||x.email||'Χρήστης').replace(/'/g,'&#39;'))}')">⛔ Απενεργοποίηση</button></div></div>`).join('');
  box.querySelectorAll('[data-sub-months]').forEach(btn=>{
   btn.addEventListener('click',()=>openSubscriptionPayment(btn.dataset.subUid,Number(btn.dataset.subMonths),btn.dataset.subName,btn.dataset.subPrice));
  });
