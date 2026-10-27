@@ -1437,6 +1437,13 @@ async function adminDeletePayment(id){
  if(!confirm('Διαγραφή αυτής της πληρωμής από το ιστορικό;'))return;
  const r=await sb.rpc('admin_delete_subscription_payment',{payment_id:id});if(r.error){alert('❌ '+r.error.message);return} await loadAdminSubscriptions();
 }
+async function logUserActivity(actionType,actionDescription){
+ try{
+  if(!user?.id||!navigator.onLine)return;
+  const r=await sb.from('user_activity').insert({user_id:user.id,action_type:String(actionType||'activity'),action_description:actionDescription?String(actionDescription):null});
+  if(r.error)console.warn('GeoFylo activity log:',r.error.message);
+ }catch(e){console.warn('GeoFylo activity log:',e)}
+}
 async function enter(u){
  user=u;
  try{
@@ -1446,6 +1453,7 @@ async function enter(u){
   auth.classList.add('hidden');main.classList.remove('hidden');who.textContent=u.user_metadata?.full_name||u.email;
   await setupAdminUI();
   await loadSeasons();await loadFirstSteps();entryFields();
+  logUserActivity('login','Σύνδεση στο GeoFylo');
  }catch(e){console.error(e);msg.textContent=e.message;main.classList.add('hidden');auth.classList.remove('hidden')}
 }
 // Commercial v1.6.2: while the app remains open, re-check subscription periodically.
@@ -2053,7 +2061,9 @@ async function saveInventory(){
  const payload={user_id:user.id,name,category:inventoryCategory.value,unit:inventoryUnit.value,quantity,unit_cost:unitCost,note:inventoryNote.value.trim()||null};
  if(!editingInventoryId){payload.supplier=null;}
  const r=editingInventoryId?await sb.from('inventory').update(payload).eq('id',editingInventoryId):await sb.from('inventory').insert(payload);
- if(r.error)return alert(r.error.message);cancelInventoryEdit();await loadInventory();
+ if(r.error)return alert(r.error.message);
+ logUserActivity(editingInventoryId?'edit_inventory':'create_inventory',(editingInventoryId?'Επεξεργασία είδους αποθήκης: ':'Νέο είδος αποθήκης: ')+name);
+ cancelInventoryEdit();await loadInventory();
 }
 function editInventory(x){editingInventoryId=x.id;inventoryName.value=x.name||'';inventoryCategory.value=x.category||'Άλλο';inventoryQty.value=x.quantity??0;inventoryUnit.value=x.unit||'kg';inventoryCost.value=x.unit_cost??0;inventoryNote.value=x.note||'';saveInventoryBtn.textContent='💾 Αποθήκευση αλλαγών';cancelInventoryBtn.classList.remove('hidden');requestAnimationFrame(()=>document.getElementById('inventoryEditForm')?.scrollIntoView({behavior:'smooth',block:'start'}))}
 function cancelInventoryEdit(){editingInventoryId=null;inventoryName.value='';inventoryQty.value='';inventoryCost.value='';inventoryNote.value='';inventoryCategory.value='Λίπασμα';inventoryUnit.value='kg';saveInventoryBtn.textContent='💾 Αποθήκευση είδους';cancelInventoryBtn.classList.add('hidden')}
@@ -3280,6 +3290,9 @@ async function addEntry(){
 r=editing?await sb.from(table).update(payload).eq('id',editing.id):await sb.from(table).insert(payload);
     if(r.error)return alert(r.error.message);
   }
+  const activityWasEdit=!!editing;
+  const activityLabels={expense:'Έξοδο',harvest:'Παραγωγή',sale:'Πώληση',activity:'Εργασία'};
+  logUserActivity(activityWasEdit?'edit_'+t:'create_'+t,(activityWasEdit?'Επεξεργασία: ':'Νέα καταχώρηση: ')+(activityLabels[t]||t));
   editing=null;note.value='';entryFields();await dash();
  }finally{saving=false;saveEntryBtn.disabled=false;saveEntryBtn.textContent='Αποθήκευση'}
 }
