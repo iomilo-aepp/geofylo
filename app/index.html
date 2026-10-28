@@ -694,9 +694,9 @@ async function verifySubscriptionGate(){
  return true;
 }
 function toggleMoreMenu(forceOpen){const m=document.getElementById('moreMenu');if(!m)return;const open=typeof forceOpen==='boolean'?forceOpen:m.classList.contains('hidden');m.classList.toggle('hidden',!open);document.getElementById('nav-more')?.classList.toggle('active',open)}
-async function openMorePage(n){toggleMoreMenu(false);await showPage(n);document.getElementById('nav-more')?.classList.add('active')}
+async function openMorePage(n){toggleMoreMenu(false);await showPage(n)}
 
-async function showPage(n){if(!(await verifySubscriptionGate()))return;document.getElementById('moreMenu')?.classList.add('hidden');document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));document.getElementById('page-'+n)?.classList.add('active');document.getElementById('nav-'+n)?.classList.add('active');if(['calendar','customers','payments','suppliers','cashflow','budget','mydata','assistant','profile','admin'].includes(n))document.getElementById('nav-more')?.classList.add('active');if(n==='home'){dash();loadFirstSteps();}if(n==='movements')dash();if(n==='calendar')loadCalendar();if(n==='reports')loadReports();if(n==='profile')loadProfile();if(n==='customers')loadCustomers();if(n==='payments')loadPayments();if(n==='inventory')loadInventory();if(n==='mydata')loadMyData();if(n==='assistant')loadGeoFyloAssistant();if(n==='suppliers')loadSuppliers();if(n==='cashflow')loadCashflow();if(n==='budget')loadBudget();if(n==='admin')loadAdminSubscriptions();window.scrollTo({top:0,behavior:'smooth'});}
+async function showPage(n){if(!(await verifySubscriptionGate()))return;document.getElementById('moreMenu')?.classList.add('hidden');document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));document.getElementById('page-'+n)?.classList.add('active');document.getElementById('nav-'+n)?.classList.add('active');if(n==='home'){dash();loadFirstSteps();}if(n==='movements')dash();if(n==='calendar')loadCalendar();if(n==='reports')loadReports();if(n==='profile')loadProfile();if(n==='customers')loadCustomers();if(n==='payments')loadPayments();if(n==='inventory')loadInventory();if(n==='mydata')loadMyData();if(n==='assistant')loadGeoFyloAssistant();if(n==='suppliers')loadSuppliers();if(n==='cashflow')loadCashflow();if(n==='budget')loadBudget();if(n==='admin')loadAdminSubscriptions();window.scrollTo({top:0,behavior:'smooth'});}
 
 function formatMyDataDate(value){
  const m=String(value||'').match(/^(\d{4})-(\d{2})-(\d{2})$/);
@@ -3513,7 +3513,7 @@ async function loadReportSuppliers(){
 </script><script>
 (function(){
 let fertEditId=null;
-function fertKey(){return 'geofylo_fertilization_programs_'+(window.user&&user.id?user.id:'local');}
+function fertKey(){return 'geofylo_fertilization_programs_'+(user&&user.id?user.id:'local');}
 function fertRead(){try{return JSON.parse(localStorage.getItem(fertKey())||'[]')}catch(e){return []}}
 function fertWrite(rows){localStorage.setItem(fertKey(),JSON.stringify(rows));}
 function fesc(v){return String(v??'').replace(/[&<>"']/g,function(c){return {'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]});}
