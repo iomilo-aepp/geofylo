@@ -693,7 +693,7 @@ async function verifySubscriptionGate(){
  if(!subscriptionAccess(q.data).ok){showSubscriptionExpired(q.data);return false}
  return true;
 }
-function toggleMoreMenu(forceOpen){const m=document.getElementById('moreMenu');if(!m)return;const open=typeof forceOpen==='boolean'?forceOpen:m.classList.contains('hidden');if(open){document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));}m.classList.toggle('hidden',!open);document.getElementById('nav-more')?.classList.toggle('active',open)}
+function toggleMoreMenu(forceOpen){const m=document.getElementById('moreMenu');if(!m)return;const open=typeof forceOpen==='boolean'?forceOpen:m.classList.contains('hidden');if(open){document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));}m.classList.toggle('hidden',!open);document.getElementById('nav-more')?.classList.toggle('active',open)}
 async function openMorePage(n){toggleMoreMenu(false);await showPage(n)}
 
 async function showPage(n){document.getElementById('moreMenu')?.classList.add('hidden');document.getElementById('nav-more')?.classList.remove('active');if(!(await verifySubscriptionGate()))return;document.querySelectorAll('.page').forEach(e=>e.classList.remove('active'));document.querySelectorAll('.bottomNav button').forEach(e=>e.classList.remove('active'));document.getElementById('page-'+n)?.classList.add('active');document.getElementById('nav-'+n)?.classList.add('active');if(n==='home'){dash();loadFirstSteps();}if(n==='movements')dash();if(n==='calendar')loadCalendar();if(n==='reports')loadReports();if(n==='profile')loadProfile();if(n==='customers')loadCustomers();if(n==='payments')loadPayments();if(n==='inventory')loadInventory();if(n==='mydata')loadMyData();if(n==='assistant')loadGeoFyloAssistant();if(n==='suppliers')loadSuppliers();if(n==='cashflow')loadCashflow();if(n==='budget')loadBudget();if(n==='admin')loadAdminSubscriptions();window.scrollTo({top:0,behavior:'smooth'});}
@@ -1470,6 +1470,7 @@ async function enter(u){
   auth.classList.add('hidden');main.classList.remove('hidden');who.textContent=u.user_metadata?.full_name||u.email;
   await setupAdminUI();
   await loadSeasons();await loadFirstSteps();entryFields();
+  try{resetFertForm();renderFertPrograms();}catch(e){console.warn('Fertilization profile refresh:',e)}
   logUserActivity('login','Σύνδεση στο GeoFylo');
  }catch(e){console.error(e);msg.textContent=e.message;main.classList.add('hidden');auth.classList.remove('hidden')}
 }
@@ -1479,7 +1480,9 @@ async function logout(){
   // With PIN enabled, Logout acts as an app lock: keep the Supabase session and PIN.
   // This lets the producer reopen/unlock GeoFylo with only the 4-digit PIN.
   if(user && localStorage.getItem(pinKey(user))){sessionStorage.removeItem(pinSessionKey(user));showPinScreen(user);return}
-  await sb.auth.signOut();user=null;showEmailScreen();main.classList.add('hidden');auth.classList.remove('hidden')
+  await sb.auth.signOut();user=null;
+  const fertList=document.getElementById('fertProgramList');if(fertList)fertList.innerHTML='<small>Δεν υπάρχουν αποθηκευμένα προγράμματα.</small>';
+  showEmailScreen();main.classList.add('hidden');auth.classList.remove('hidden')
 }
 const BACKUP_TABLES=['profiles','seasons','greenhouses','expenses','harvests','sales','activities','customers','payments','inventory','inventory_usage','inventory_purchases','purchase_invoices','purchase_invoice_items','suppliers','supplier_payments'];
 async function downloadFullBackup(){
