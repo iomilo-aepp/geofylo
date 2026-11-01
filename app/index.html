@@ -298,9 +298,9 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="page" id="page-market">
 <div class="card"><h2 style="margin-top:0">🛒 GeoFylo Market</h2><small>Δημοσίευσε διαθέσιμα αγροτικά προϊόντα και δες προσφορές παραγωγών. Η επικοινωνία και η συμφωνία γίνονται απευθείας μεταξύ παραγωγού και ενδιαφερόμενου αγοραστή.</small></div>
 <div class="card"><h3>➕ Νέα αγγελία προϊόντος</h3>
-<label>Προϊόν<input id="marketProduct" placeholder="π.χ. Πιπεριά Φλωρίνης"/></label>
+<label>Προϊόν<select id="marketProduct"><option value="">— Επίλεξε προϊόν —</option><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Πατάτα</option><option>Ελιά</option><option>Ελαιόλαδο</option><option>Σταφύλι</option><option>Αβοκάντο</option><option>Πορτοκάλι</option><option>Μανταρίνι</option><option>Λεμόνι</option><option>Άλλο</option></select></label>
 <div class="grid"><label>Ποσότητα<input id="marketQty" min="0" step="0.01" type="number" placeholder="π.χ. 500"/></label><label>Μονάδα<select id="marketUnit"><option value="kg">kg</option><option value="tn">τόνοι</option><option value="τεμ.">τεμάχια</option><option value="κιβώτια">κιβώτια</option></select></label></div>
-<div class="grid"><label>Τιμή / μονάδα €<input id="marketPrice" min="0" step="0.01" type="number" placeholder="προαιρετικά"/></label><label>Ποιότητα<select id="marketQuality"><option value="">— Δεν ορίστηκε —</option><option>Α</option><option>Β</option><option>Σκάρτα / Βιομηχανική</option></select></label></div>
+<div class="grid"><label>Τιμή / μονάδα €<input id="marketPrice" min="0" step="0.01" type="number" placeholder="προαιρετικά"/></label><label>Ποιότητα<select id="marketQuality"><option value="">— Δεν ορίστηκε —</option><option>Α</option><option>Β</option><option>Σκάρτα / Βιομηχανική</option></select></label></div><label>Τρόπος παραγωγής<select id="marketProductionMethod"><option value="conventional">Συμβατικό</option><option value="organic">Βιολογικό</option></select></label>
 <label>Χώρα<select id="marketCountry"><option value="Ελλάδα">Ελλάδα</option><option value="Κύπρος">Κύπρος</option><option value="Ιταλία">Ιταλία</option><option value="Γερμανία">Γερμανία</option><option value="Γαλλία">Γαλλία</option><option value="Ολλανδία">Ολλανδία</option><option value="Άλλη">Άλλη χώρα</option></select></label>
 <label>Περιοχή<input id="marketArea" placeholder="π.χ. Τυμπάκι, Ηράκλειο"/></label>
 <label>Τηλέφωνο / WhatsApp<input id="marketPhone" type="tel" placeholder="π.χ. +30 69..."/></label>
@@ -3561,7 +3561,7 @@ async function loadMarketListings(){
  const box=document.getElementById('marketListings'); if(!box)return;
  box.innerHTML='<small>Φόρτωση αγγελιών...</small>';
  try{
-  const r=await sb.from('market_listings').select('*').eq('active',true).order('created_at',{ascending:false});
+  const r=await sb.from('market_listings').select('*').eq('status','active').order('created_at',{ascending:false});
   if(r.error)throw r.error; marketListingsCache=r.data||[]; renderMarketListings(); renderMyMarketListings();
  }catch(e){box.innerHTML='<div class="quickSummary"><small>Το GeoFylo Market χρειάζεται πρώτα ενεργοποίηση της βάσης δεδομένων.</small></div>'; console.warn('Market:',e)}
 }
@@ -3569,26 +3569,26 @@ function renderMarketListings(){
  const box=document.getElementById('marketListings'); if(!box)return;
  const q=(document.getElementById('marketSearch')?.value||'').trim().toLowerCase();
  const country=document.getElementById('marketCountryFilter')?.value||'';
- const rows=marketListingsCache.filter(x=>(!q||String(x.product||'').toLowerCase().includes(q)||String(x.area||'').toLowerCase().includes(q))&&(!country||x.country===country));
+ const rows=marketListingsCache.filter(x=>(!q||String(x.product||'').toLowerCase().includes(q)||String(x.region||'').toLowerCase().includes(q))&&(!country||x.country===country));
  if(!rows.length){box.innerHTML='<small>Δεν βρέθηκαν διαθέσιμα προϊόντα.</small>';return}
- box.innerHTML=rows.map(x=>`<div class="entry"><div class="entryText"><b>🌱 ${esc(x.product)}</b><br><small>${esc(x.quantity)} ${esc(x.unit||'kg')} • ${x.price!=null&&x.price!==''?esc(Number(x.price).toFixed(2))+' €/'+esc(x.unit||'kg'):'Τιμή κατόπιν επικοινωνίας'}<br>📍 ${esc(x.area||'—')}, ${esc(x.country||'Ελλάδα')}${x.quality?' • Ποιότητα '+esc(x.quality):''}</small>${x.description?`<br><small>${esc(x.description)}</small>`:''}${x.phone?`<br><a href="tel:${esc(x.phone)}" style="font-weight:700;color:#216b3a">📞 ${esc(x.phone)}</a>`:''}</div></div>`).join('');
+ box.innerHTML=rows.map(x=>`<div class="entry"><div class="entryText"><b>🌱 ${esc(x.product)}</b><br><small>${esc(x.quantity)} ${esc(x.unit||'kg')} • ${x.price!=null&&x.price!==''?esc(Number(x.price).toFixed(2))+' €/'+esc(x.unit||'kg'):'Τιμή κατόπιν επικοινωνίας'}<br>📍 ${esc(x.region||'—')}, ${esc(x.country||'Ελλάδα')}${x.grade?' • Ποιότητα '+esc(x.grade):''}</small>${x.production_method?`<br><small>🌿 ${x.production_method==='organic'?'Βιολογικό':'Συμβατικό'}</small>`:''}${x.description?`<br><small>${esc(x.description)}</small>`:''}${x.contact_phone?`<br><a href="tel:${esc(x.contact_phone)}" style="font-weight:700;color:#216b3a">📞 ${esc(x.contact_phone)}</a>`:''}</div></div>`).join('');
 }
 function renderMyMarketListings(){
  const box=document.getElementById('myMarketListings');if(!box)return;
  const rows=marketListingsCache.filter(x=>user&&x.user_id===user.id);
  if(!rows.length){box.innerHTML='<small>Δεν υπάρχουν ενεργές αγγελίες.</small>';return}
- box.innerHTML=rows.map(x=>`<div class="entry"><div class="entryText"><b>${esc(x.product)}</b><br><small>${esc(x.quantity)} ${esc(x.unit||'kg')} • ${esc(x.area||'')}</small></div><div class="entryActions"><button class="danger" type="button" onclick="closeMarketListing('${esc(x.id)}')">Κλείσιμο</button></div></div>`).join('');
+ box.innerHTML=rows.map(x=>`<div class="entry"><div class="entryText"><b>${esc(x.product)}</b><br><small>${esc(x.quantity)} ${esc(x.unit||'kg')} • ${esc(x.region||'')}</small></div><div class="entryActions"><button class="danger" type="button" onclick="closeMarketListing('${esc(x.id)}')">Κλείσιμο</button></div></div>`).join('');
 }
 async function publishMarketListing(){
  const msg=document.getElementById('marketMsg'); if(!user){if(msg)msg.textContent='Χρειάζεται σύνδεση.';return}
  const product=document.getElementById('marketProduct').value.trim(), quantity=Number(document.getElementById('marketQty').value), area=document.getElementById('marketArea').value.trim(), phone=document.getElementById('marketPhone').value.trim();
  if(!product||!quantity||quantity<=0||!area||!phone){if(msg)msg.textContent='Συμπλήρωσε προϊόν, ποσότητα, περιοχή και τηλέφωνο.';return}
  const priceRaw=document.getElementById('marketPrice').value;
- const payload={user_id:user.id,product,quantity,unit:document.getElementById('marketUnit').value,price:priceRaw===''?null:Number(priceRaw),quality:document.getElementById('marketQuality').value||null,country:document.getElementById('marketCountry').value,area,phone,description:document.getElementById('marketDescription').value.trim()||null,active:true};
+ const payload={user_id:user.id,product,quantity,unit:document.getElementById('marketUnit').value,price:priceRaw===''?null:Number(priceRaw),grade:document.getElementById('marketQuality').value||null,country:document.getElementById('marketCountry').value,region:area,contact_phone:phone,production_method:document.getElementById('marketProductionMethod').value,description:document.getElementById('marketDescription').value.trim()||null,status:'active'};
  const r=await sb.from('market_listings').insert(payload); if(r.error){if(msg)msg.textContent='Δεν αποθηκεύτηκε: '+r.error.message;return}
  if(msg)msg.textContent='✅ Η αγγελία δημοσιεύτηκε.'; ['marketProduct','marketQty','marketPrice','marketArea','marketPhone','marketDescription'].forEach(id=>document.getElementById(id).value=''); document.getElementById('marketQuality').value=''; await loadMarketListings();
 }
-async function closeMarketListing(id){if(!confirm('Να κλείσει αυτή η αγγελία;'))return;const r=await sb.from('market_listings').update({active:false}).eq('id',id).eq('user_id',user.id);if(r.error)return alert(r.error.message);await loadMarketListings()}
+async function closeMarketListing(id){if(!confirm('Να κλείσει αυτή η αγγελία;'))return;const r=await sb.from('market_listings').update({status:'closed'}).eq('id',id).eq('user_id',user.id);if(r.error)return alert(r.error.message);await loadMarketListings()}
 
 window.editFertProgram=function(id){const x=fertRead().find(r=>r.id===id);if(!x)return;fertEditId=id;document.getElementById('fertName').value=x.name||'';document.getElementById('fertCrop').value=x.crop||'Αγγούρι';document.getElementById('fertStage').value=x.stage||'Ανάπτυξη';document.getElementById('fertBasis').value=x.basis||'1000L';document.getElementById('fertNotes').value=x.notes||'';const box=document.getElementById('fertItems');box.innerHTML='';(x.items||[]).forEach(addFertItem);document.getElementById('fertFormTitle').textContent='✏️ Επεξεργασία προγράμματος';document.getElementById('saveFertBtn').textContent='💾 Αποθήκευση αλλαγών';document.getElementById('cancelFertBtn').classList.remove('hidden');window.scrollTo({top:document.getElementById('page-fertilization').offsetTop,behavior:'smooth'});};
 window.deleteFertProgram=function(id){if(!confirm('Να διαγραφεί αυτό το πρόγραμμα λίπανσης;'))return;fertWrite(fertRead().filter(x=>x.id!==id));renderFertPrograms();};
