@@ -164,7 +164,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="m">Καθαρό αποτέλεσμα<b id="rProfit">0 €</b></div>
 <div class="m">Περιθώριο<b id="rMargin">—</b></div>
 <div class="m">Κέρδος / στρέμμα<b id="rProfitArea">—</b></div>
-</div><h4>Διαλογή πωλήσεων</h4><div id="gradeBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><div id="reportCategoryButtons" style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 8px"><button class="soft" onclick="showReportGroup('profit',this)" style="width:auto;margin:0" type="button">🌱 Κερδοφορία</button><button class="soft" onclick="showReportGroup('periods',this)" style="width:auto;margin:0" type="button">📊 Σύγκριση περιόδων</button><button class="soft" onclick="showReportGroup('sales',this)" style="width:auto;margin:0" type="button">👥 Πωλήσεις</button><button class="soft" onclick="showReportGroup('supplies',this)" style="width:auto;margin:0" type="button">📦 Κατανάλωση εφοδίων</button><button class="soft" onclick="showReportGroup('cost',this)" style="width:auto;margin:0" type="button">💸 Κόστος</button></div>
+</div><h4>Διαλογή πωλήσεων</h4><div id="gradeBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div><div id="reportCategoryButtons" style="display:flex;gap:8px;flex-wrap:wrap;margin:16px 0 8px"><button class="soft" onclick="showReportGroup('profit',this)" style="width:auto;margin:0" type="button">🌱 Κερδοφορία</button><button class="soft" onclick="showReportGroup('periods',this)" style="width:auto;margin:0" type="button">📊 Σύγκριση περιόδων</button><button class="soft" onclick="showReportGroup('sales',this)" style="width:auto;margin:0" type="button">👥 Πωλήσεις</button><button class="soft" onclick="showReportGroup('supplies',this)" style="width:auto;margin:0" type="button">📦 Κατανάλωση εφοδίων</button><button class="soft" onclick="showReportGroup('cost',this)" style="width:auto;margin:0" type="button">💸 Κόστος</button><button class="soft" onclick="showReportGroup('producerbook',this);loadProducerBook()" style="width:auto;margin:0" type="button">📖 Βιβλίο Παραγωγού</button></div>
 <div class="reportPanel" data-report-panel="profit" style="display:none;margin-top:14px"><h4>🌱 Σύγκριση κερδοφορίας περιόδου</h4><small>Σύγκριση όλων των αγροτεμαχίων / θερμοκηπίων της επιλεγμένης καλλιεργητικής περιόδου.</small><div id="profitabilityComparison"><small>Φόρτωση...</small></div>
 </div><div class="reportPanel" data-report-panel="periods" style="display:none;margin-top:14px"><h4>📊 Σύγκριση καλλιεργητικών περιόδων</h4><small>Επίλεξε δύο περιόδους για να δεις πώς μεταβάλλονται παραγωγή, έσοδα, έξοδα, κόστος/kg και καθαρό αποτέλεσμα.</small>
 <div class="grid" style="margin-top:8px"><label>Περίοδος Α<select id="compareSeasonA"></select></label><label>Περίοδος Β<select id="compareSeasonB"></select></label></div>
@@ -173,7 +173,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div><div class="reportPanel" data-report-panel="sales" style="display:none;margin-top:14px"><h4>👥 Πωλήσεις ανά πελάτη / έμπορο</h4><div id="customerBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div></div><div class="reportPanel" data-report-panel="supplies" style="display:none;margin-top:14px"><h4>📦 Κατανάλωση εφοδίων</h4><div id="inventoryUsageSummary"><small>Δεν υπάρχουν καταναλώσεις εφοδίων.</small></div>
 </div><div class="reportPanel" data-report-panel="cost" style="display:none;margin-top:14px"><h4>💸 Κόστος ανά κατηγορία</h4><div id="expenseBreakdown"><small>Δεν υπάρχουν έξοδα.</small></div>
 <h4>Ανά μήνα</h4><div id="monthlyReport"><small>Δεν υπάρχουν δεδομένα.</small></div>
-</div></div>
+</div><div class="reportPanel" data-report-panel="producerbook" style="display:none;margin-top:14px"><div class="reportTitle"><div><h4 style="margin:0">📖 Βιβλίο Παραγωγού</h4><small>Χρονολογικό αρχείο των εφοδίων που χρησιμοποιήθηκαν στην επιλεγμένη καλλιέργεια.</small></div><button class="soft" onclick="exportProducerBookPDF()" style="width:auto" type="button">📄 Εξαγωγή PDF</button></div><div id="producerBookList" style="margin-top:12px"><small>Πάτησε «Βιβλίο Παραγωγού» για φόρτωση.</small></div></div></div>
 </div>
 <div class="page" id="page-customers"><div class="card"><h3>👥 Πελάτες / Έμποροι</h3><small>Αποθήκευσε τους αγοραστές σου για γρήγορη επιλογή στις πωλήσεις.</small><label>Όνομα / Επωνυμία<input id="customerName" placeholder="π.χ. Έμπορος Α"/></label><label>Τηλέφωνο<input id="customerPhone" placeholder="Τηλέφωνο (προαιρετικά)" type="tel"/></label><label>Σημείωση<input id="customerNote" placeholder="Σημείωση (προαιρετικά)"/></label><button id="saveCustomerBtn" onclick="saveCustomer()">➕ Αποθήκευση πελάτη</button><button class="soft hidden" id="cancelCustomerBtn" onclick="cancelCustomerEdit()">Ακύρωση επεξεργασίας</button><div id="customersList" style="margin-top:12px"><small>Δεν υπάρχουν πελάτες.</small></div><div class="card hidden" id="customerCard"></div></div></div>
 <div class="page" id="page-payments"><div class="card"><h3>💳 Πληρωμές &amp; Υπόλοιπα</h3><small>Καταχώρησε τις εισπράξεις από πελάτες και δες τι υπόλοιπο απομένει.</small>
@@ -500,6 +500,46 @@ function renderMovements(){
  ml.innerHTML=`<div style="display:flex;gap:8px;align-items:center;margin:8px 0 12px"><small>Εμφάνιση:</small><select id="movementLimit" style="width:auto;margin:0" onchange="renderMovements()"><option value="20">20</option><option value="50">50</option><option value="100">100</option><option value="all">Όλες</option></select></div>`+(visible.length?visible.map(x=>`<div class="entry"><div class="entryText"><b>${x.label}</b><br><small>${new Date(x.date+'T12:00:00').toLocaleDateString('el-GR')}${x.note?' • '+esc(x.note):''}</small>${x.details?`<div style="margin-top:6px;padding:8px 10px;background:#f5f8f5;border-radius:9px"><small>${x.details}</small></div>`:''}</div><div class="entryActions"><button class="soft" onclick="editEntry('${x.type}',${x.id})">✏️</button><button class="danger" onclick="deleteEntry('${x.type}',${x.id})">🗑️</button></div></div>`).join(''):'<small>Δεν βρέθηκαν κινήσεις με αυτά τα φίλτρα.</small>');
  const sel=document.getElementById('movementLimit');if(sel)sel.value=oldLimit;
 }
+
+
+async function getProducerBookData(){
+ if(!user)throw new Error('Χρειάζεται σύνδεση.');
+ const ghEl=document.getElementById('gh'),seasonEl=document.getElementById('season');
+ if(!ghEl||!ghEl.value)throw new Error('Επίλεξε πρώτα αγροτεμάχιο.');
+ const [{data:greenhouse,error:gErr},{data:seasonData,error:sErr},{data:usage,error:uErr},{data:inventory,error:iErr},{data:activities,error:aErr},{data:profile,error:pErr}]=await Promise.all([
+  sb.from('greenhouses').select('*').eq('id',ghEl.value).single(),
+  sb.from('seasons').select('*').eq('id',seasonEl.value).single(),
+  sb.from('inventory_usage').select('*').eq('greenhouse_id',ghEl.value).order('usage_date',{ascending:true}),
+  sb.from('inventory').select('*'),
+  sb.from('activities').select('*').eq('greenhouse_id',ghEl.value).order('activity_date',{ascending:true}),
+  sb.from('profiles').select('full_name,phone,farm_name,area').eq('id',user.id).maybeSingle()
+ ]);
+ if(gErr||sErr||uErr||iErr||aErr||pErr)throw(gErr||sErr||uErr||iErr||aErr||pErr);
+ const invById=Object.fromEntries((inventory||[]).map(x=>[String(x.id),x]));
+ const actById=Object.fromEntries((activities||[]).map(x=>[String(x.id),x]));
+ const rows=(usage||[]).map(x=>{const it=invById[String(x.inventory_id)]||{};const ac=actById[String(x.activity_id)]||{};return {date:x.usage_date||ac.activity_date||'',activity:ac.activity_type||'Εφαρμογή εφοδίου',supply:it.name||'Άγνωστο εφόδιο',quantity:Number(x.quantity||0),unit:it.unit||'',note:x.note||ac.note||''}}).sort((a,b)=>String(a.date).localeCompare(String(b.date)));
+ return {greenhouse,season:seasonData,profile,rows};
+}
+async function loadProducerBook(){
+ const box=document.getElementById('producerBookList');if(!box)return;
+ box.innerHTML='<small>Φόρτωση βιβλίου παραγωγού...</small>';
+ try{
+  const d=await getProducerBookData();
+  if(!d.rows.length){box.innerHTML='<small>Δεν υπάρχουν καταχωρημένες χρήσεις εφοδίων για το επιλεγμένο αγροτεμάχιο.</small>';return}
+  box.innerHTML=d.rows.map(x=>`<div class="entry"><div class="entryText"><b>${new Date(x.date+'T12:00:00').toLocaleDateString('el-GR')} • ${esc(x.activity)}</b><br><small>📦 ${esc(x.supply)}: <b>${x.quantity.toLocaleString('el-GR')} ${esc(x.unit)}</b>${x.note?' • '+esc(x.note):''}</small></div></div>`).join('');
+ }catch(e){box.innerHTML=`<small>⚠️ ${esc(e.message||e)}</small>`}
+}
+async function exportProducerBookPDF(){
+ try{
+  const d=await getProducerBookData();
+  const e=v=>String(v??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+  const date=v=>v?new Date(v+'T12:00:00').toLocaleDateString('el-GR'):'—';
+  const body=d.rows.length?d.rows.map((x,i)=>`<tr><td>${i+1}</td><td>${date(x.date)}</td><td>${e(x.activity)}</td><td>${e(x.supply)}</td><td>${x.quantity.toLocaleString('el-GR')} ${e(x.unit)}</td><td>${e(x.note||'')}</td></tr>`).join(''):'<tr><td colspan="6">Δεν υπάρχουν καταχωρημένες χρήσεις εφοδίων.</td></tr>';
+  const html=`<!doctype html><html lang="el"><head><meta charset="utf-8"><title>Βιβλίο Παραγωγού - GeoFylo</title><style>body{font-family:Arial,sans-serif;color:#17251b;margin:30px}h1{color:#174f2c;margin-bottom:2px}.muted{color:#66736a}table{width:100%;border-collapse:collapse;margin-top:14px;font-size:12px}th,td{border:1px solid #d9e2da;padding:7px;text-align:left;vertical-align:top}th{background:#eef5ef}.info td:first-child{font-weight:bold;width:28%}@media print{body{margin:10mm}.noPrint{display:none}}@page{size:A4 landscape;margin:10mm}</style></head><body><h1>🌱 GeoFylo</h1><div class="muted">📖 Βιβλίο Παραγωγού</div><table class="info"><tbody><tr><td>Παραγωγός</td><td>${e(d.profile?.full_name||user.user_metadata?.full_name||'—')}</td></tr><tr><td>Εκμετάλλευση</td><td>${e(d.profile?.farm_name||'—')}</td></tr><tr><td>Περιοχή</td><td>${e(d.profile?.area||'—')}</td></tr><tr><td>Καλλιεργητική περίοδος</td><td>${e(d.season?.name||'—')}</td></tr><tr><td>Αγροτεμάχιο / Θερμοκήπιο</td><td>${e(d.greenhouse?.name||'—')}</td></tr><tr><td>Καλλιέργεια</td><td>${e(d.greenhouse?.crop||'—')}</td></tr><tr><td>Έκταση</td><td>${e(d.greenhouse?.area||'—')} στρέμματα</td></tr></tbody></table><h2>Καταγραφή εφαρμογών εφοδίων</h2><table><thead><tr><th>#</th><th>Ημερομηνία</th><th>Εργασία</th><th>Εφόδιο</th><th>Ποσότητα</th><th>Σημείωση</th></tr></thead><tbody>${body}</tbody></table><p class="muted">Δημιουργήθηκε από το GeoFylo • ${new Date().toLocaleDateString('el-GR')}</p><script>window.onload=()=>setTimeout(()=>window.print(),300)<\/script></body></html>`;
+  const win=window.open('','_blank');if(!win){alert('Επίτρεψε τα αναδυόμενα παράθυρα για να δημιουργηθεί το PDF.');return}win.document.open();win.document.write(html);win.document.close();
+ }catch(e){alert('Δεν μπόρεσε να δημιουργηθεί το Βιβλίο Παραγωγού: '+(e.message||e))}
+}
+window.loadProducerBook=loadProducerBook;window.exportProducerBookPDF=exportProducerBookPDF;
 
 
 async function exportPDF(){
