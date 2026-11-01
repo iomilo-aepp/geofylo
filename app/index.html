@@ -3590,6 +3590,11 @@ async function publishMarketListing(){
 }
 async function closeMarketListing(id){if(!confirm('Να κλείσει αυτή η αγγελία;'))return;const r=await sb.from('market_listings').update({status:'closed'}).eq('id',id).eq('user_id',user.id);if(r.error)return alert(r.error.message);await loadMarketListings()}
 
+// Expose Market handlers used by inline buttons and the main page router.
+window.loadMarketListings=loadMarketListings;
+window.publishMarketListing=publishMarketListing;
+window.closeMarketListing=closeMarketListing;
+
 window.editFertProgram=function(id){const x=fertRead().find(r=>r.id===id);if(!x)return;fertEditId=id;document.getElementById('fertName').value=x.name||'';document.getElementById('fertCrop').value=x.crop||'Αγγούρι';document.getElementById('fertStage').value=x.stage||'Ανάπτυξη';document.getElementById('fertBasis').value=x.basis||'1000L';document.getElementById('fertNotes').value=x.notes||'';const box=document.getElementById('fertItems');box.innerHTML='';(x.items||[]).forEach(addFertItem);document.getElementById('fertFormTitle').textContent='✏️ Επεξεργασία προγράμματος';document.getElementById('saveFertBtn').textContent='💾 Αποθήκευση αλλαγών';document.getElementById('cancelFertBtn').classList.remove('hidden');window.scrollTo({top:document.getElementById('page-fertilization').offsetTop,behavior:'smooth'});};
 window.deleteFertProgram=function(id){if(!confirm('Να διαγραφεί αυτό το πρόγραμμα λίπανσης;'))return;fertWrite(fertRead().filter(x=>x.id!==id));renderFertPrograms();};
 window.renderFertPrograms=function(){
