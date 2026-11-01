@@ -3599,6 +3599,7 @@ async function loadMarketInquiries(){
   const r=await sb.from('market_inquiries').select('id,listing_id,buyer_name,buyer_email,buyer_phone,message,status,created_at,market_listings(product)').eq('producer_id',user.id).order('created_at',{ascending:false});
   if(r.error)throw r.error;
   const rows=r.data||[];
+  updateMarketInquiryBadge(rows.filter(x=>x.status==='new').length);
   if(!rows.length){box.innerHTML='<small>Δεν υπάρχουν ακόμη αιτήματα αγοραστών.</small>';return}
   box.innerHTML=rows.map(x=>{
    const d=x.created_at?new Date(x.created_at).toLocaleString('el-GR'):'—';
@@ -3608,6 +3609,14 @@ async function loadMarketInquiries(){
   }).join('');
  }catch(e){box.innerHTML='<small>⚠️ Δεν ήταν δυνατή η φόρτωση των αιτημάτων.</small>';console.warn('Market inquiries:',e)}
 }
+function updateMarketInquiryBadge(count){
+ const btn=document.getElementById('nav-market');if(!btn)return;
+ const ico=btn.querySelector('.ico');
+ btn.innerHTML='';
+ if(ico)btn.appendChild(ico);else btn.insertAdjacentHTML('beforeend','<span class="ico">🛒</span>');
+ btn.appendChild(document.createTextNode(count>0?'Market ('+count+')':'Market'));
+}
+
 async function markMarketInquiryRead(id){
  if(!user)return;
  const r=await sb.from('market_inquiries').update({status:'read'}).eq('id',id).eq('producer_id',user.id);
