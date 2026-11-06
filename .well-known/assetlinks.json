@@ -1,0 +1,12 @@
+[
+  {
+    "relation": ["delegate_permission/common.handle_all_urls"],
+    "target": {
+      "namespace": "android_app",
+      "package_name": "gr.geofylo.app",
+      "sha256_cert_fingerprints": [
+        "92:EE:F7:BA:B1:E4:6C:B3:12:F9:88:F9:79:12:57:40:60:BC:ED:4B:0E:03:C1:6F:99:FE:41:23:19:1D:3A:21"
+      ]
+    }
+  }
+]
