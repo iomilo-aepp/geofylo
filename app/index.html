@@ -2492,6 +2492,38 @@ function geoFyloDeltaText(oldValue,newValue,suffix=''){
 
 
 let assistantRecognition=null;
+let assistantSpeakNextReply=false;
+
+function geoFyloPlainSpeech(html){
+ const box=document.createElement('div');
+ box.innerHTML=String(html||'').replace(/<br\s*\/?>/gi,'. ');
+ return (box.textContent||box.innerText||'')
+   .replace(/🤖|🌱|📊|💰|📦|📅|⚠️|🔴|🟠|🟢|💳|🧾|🎯|💸|➡️|✅|💎|🌿|💶/g,'')
+   .replace(/\s+/g,' ')
+   .trim();
+}
+function speakGeoFyloReply(html){
+ if(!('speechSynthesis' in window))return;
+ const text=geoFyloPlainSpeech(html);
+ if(!text)return;
+ try{
+   window.speechSynthesis.cancel();
+   const u=new SpeechSynthesisUtterance(text);
+   u.lang='el-GR';
+   u.rate=1;
+   u.pitch=1;
+   const voices=window.speechSynthesis.getVoices?.()||[];
+   const greek=voices.find(v=>String(v.lang||'').toLowerCase().startsWith('el'));
+   if(greek)u.voice=greek;
+   window.speechSynthesis.speak(u);
+ }catch(e){}
+}
+function stopGeoFyloSpeech(){
+ try{if('speechSynthesis' in window)window.speechSynthesis.cancel()}catch(e){}
+}
+window.speakGeoFyloReply=speakGeoFyloReply;
+window.stopGeoFyloSpeech=stopGeoFyloSpeech;
+
 function startAssistantVoice(){
  const SpeechRecognition=window.SpeechRecognition||window.webkitSpeechRecognition;
  const msg=document.getElementById('assistantVoiceMsg');
@@ -2517,7 +2549,10 @@ function startAssistantVoice(){
      const input=document.getElementById('assistantInput');
      if(input)input.value=text;
      if(msg)msg.textContent=text?'✅ Αναγνωρίστηκε: '+text:'⚠️ Δεν αναγνωρίστηκε ομιλία.';
-     if(text)setTimeout(()=>askGeoFylo(),180);
+     if(text){
+       assistantSpeakNextReply=true;
+       setTimeout(()=>askGeoFylo(),180);
+     }
    };
    r.onerror=(event)=>{
      const labels={
@@ -2549,7 +2584,12 @@ async function askGeoFylo(preset){
  assistantAdd('user',esc(q));
  if(!geoFyloAssistantData)await loadGeoFyloAssistant();
  const d=geoFyloAssistantData;
- if(!d)return assistantAdd('assistant','<small>Δεν υπάρχουν διαθέσιμα δεδομένα για απάντηση.</small>');
+ if(!d){
+   const noData='<small>Δεν υπάρχουν διαθέσιμα δεδομένα για απάντηση.</small>';
+   assistantAdd('assistant',noData);
+   if(assistantSpeakNextReply){assistantSpeakNextReply=false;speakGeoFyloReply(noData);}
+   return;
+ }
 
  const s=q.toLocaleLowerCase('el-GR');
  const sn=s.normalize('NFD').replace(/[\u0300-\u036f]/g,'');
@@ -2842,6 +2882,10 @@ async function askGeoFylo(preset){
    ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων, εργασίες σήμερα/αύριο/εβδομάδα, καθυστερημένες εργασίες, ανάλυση ανά μήνα και σύγκριση περιόδων.</small>';
  }
  assistantAdd('assistant',ans);
+ if(assistantSpeakNextReply){
+   assistantSpeakNextReply=false;
+   speakGeoFyloReply(ans);
+ }
 }
 async function dash(){if(!gh.value){const ml=document.getElementById('movementsList');if(ml)ml.innerHTML='<small>Επίλεξε αγροτεμάχιο.</small>';return}
 let [a,b,c,d,u,iv]=await Promise.all([
