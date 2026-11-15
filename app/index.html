@@ -113,8 +113,9 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div id="fields"></div><input id="note" placeholder="Σημείωση"/><button id="saveEntryBtn" onclick="addEntry()">Αποθήκευση</button></div>
 <div class="card"><h3>Καλλιεργητική περίοδος</h3><select id="season" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentSeasonKey(user),this.value);if(user)localStorage.removeItem(currentGHKey(user));loadGH()"></select><input id="newSeason" placeholder="π.χ. 2026–27"/><button onclick="addSeason()">+ Περίοδος</button>
 <div class="grid"><button class="soft" onclick="renameSeason()">✏️ Μετονομασία περιόδου</button><button class="danger" onclick="deleteSeason()">🗑️ Διαγραφή περιόδου</button></div></div>
-<div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentGHKey(user),this.value);syncGlobalContext();dash()"></select><input id="ghName" placeholder="Όνομα"/><div class="grid"><input id="area" placeholder="Στρέμματα" step=".1" type="number"/><select id="crop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option></select></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
-<div class="grid"><button class="soft" onclick="editGH()">✏️ Επεξεργασία</button><button class="danger" onclick="deleteGH()">🗑️ Διαγραφή</button></div></div>
+<div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentGHKey(user),this.value);syncGlobalContext();dash();renderFieldGPS()"></select><input id="ghName" placeholder="Όνομα"/><div class="grid"><input id="area" placeholder="Στρέμματα" step=".1" type="number"/><select id="crop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option></select></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
+<div class="grid"><button class="soft" onclick="editGH()">✏️ Επεξεργασία</button><button class="danger" onclick="deleteGH()">🗑️ Διαγραφή</button></div>
+<div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4ece4"><h4 style="margin:0 0 6px">📍 GPS αγροτεμαχίου</h4><small>Αποθήκευσε τη θέση του επιλεγμένου αγροτεμαχίου από το κινητό σου.</small><div class="grid" style="margin-top:8px"><button class="soft" type="button" onclick="captureFieldGPS()">📍 Καταγραφή GPS</button><button class="soft" id="fieldMapBtn" type="button" onclick="openFieldMap()">🗺️ Προβολή σε χάρτη</button></div><button class="soft" id="fieldNavBtn" type="button" onclick="navigateToField()">🧭 Πλοήγηση στο χωράφι</button><div id="fieldGPSStatus" class="quickSummary" style="margin-top:8px"><small>Δεν έχει αποθηκευτεί θέση GPS.</small></div></div></div>
 </div><div class="page" id="page-movements"><div class="card" id="movementsCard">
 <h3>🧾 Κινήσεις</h3>
 <small>Βρες γρήγορα οποιαδήποτε καταχώρηση και διόρθωσέ την.</small>
@@ -2200,6 +2201,7 @@ async function loadGH(){
  if(saved&&[...gh.options].some(o=>o.value===saved))gh.value=saved;
  else if(gh.value&&user)localStorage.setItem(currentGHKey(user),gh.value);
  syncGlobalContext();
+ renderFieldGPS();
  await dash();
 }
 async function changeGlobalSeason(id){
@@ -2234,6 +2236,48 @@ async function refreshCurrentContextData(){
  else if(active==='movements')renderMovements();
  syncGlobalContext();
 }
+// GeoFylo GPS αγροτεμαχίου - απομονωμένη αποθήκευση ανά χρήστη και greenhouse id
+function fieldGPSStorageKey(){
+ if(!user||!gh||!gh.value)return '';
+ return 'geofylo_field_gps_'+user.id+'_'+String(gh.value);
+}
+function getFieldGPS(){
+ const key=fieldGPSStorageKey();if(!key)return null;
+ try{const x=JSON.parse(localStorage.getItem(key)||'null');return x&&Number.isFinite(Number(x.lat))&&Number.isFinite(Number(x.lng))?x:null}catch(e){return null}
+}
+function renderFieldGPS(){
+ const box=document.getElementById('fieldGPSStatus');if(!box)return;
+ if(!gh||!gh.value){box.innerHTML='<small>Επίλεξε πρώτα αγροτεμάχιο / θερμοκήπιο.</small>';return}
+ const x=getFieldGPS();
+ if(!x){box.innerHTML='<small>Δεν έχει αποθηκευτεί θέση GPS για το επιλεγμένο αγροτεμάχιο.</small>';return}
+ const accuracy=Number.isFinite(Number(x.accuracy))?' • ακρίβεια περίπου '+Math.round(Number(x.accuracy))+' m':'';
+ const when=x.saved_at?'<br/><small>Αποθήκευση: '+new Date(x.saved_at).toLocaleString('el-GR')+'</small>':'';
+ box.innerHTML='<b>📌 '+Number(x.lat).toFixed(6)+', '+Number(x.lng).toFixed(6)+'</b><small>'+accuracy+'</small>'+when;
+}
+function captureFieldGPS(){
+ if(!user)return alert('Χρειάζεται σύνδεση.');
+ if(!gh||!gh.value)return alert('Επίλεξε πρώτα αγροτεμάχιο / θερμοκήπιο.');
+ if(!navigator.geolocation)return alert('Η συσκευή ή ο browser δεν υποστηρίζει GPS / τοποθεσία.');
+ const box=document.getElementById('fieldGPSStatus');if(box)box.innerHTML='<small>📡 Αναζήτηση θέσης GPS...</small>';
+ navigator.geolocation.getCurrentPosition(pos=>{
+   const data={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy,saved_at:new Date().toISOString()};
+   try{localStorage.setItem(fieldGPSStorageKey(),JSON.stringify(data));renderFieldGPS();}
+   catch(e){if(box)box.innerHTML='<small>⚠️ Δεν ήταν δυνατή η αποθήκευση της θέσης στη συσκευή.</small>';}
+ },err=>{
+   const labels={1:'Δεν δόθηκε άδεια τοποθεσίας. Επίτρεψε την πρόσβαση GPS στον browser.',2:'Δεν ήταν δυνατός ο εντοπισμός της θέσης.',3:'Ο εντοπισμός GPS άργησε πολύ. Δοκίμασε ξανά σε ανοιχτό χώρο.'};
+   if(box)box.innerHTML='<small>⚠️ '+(labels[err.code]||'Αποτυχία εντοπισμού GPS.')+'</small>';
+ },{enableHighAccuracy:true,timeout:15000,maximumAge:0});
+}
+function openFieldMap(){
+ const x=getFieldGPS();if(!x)return alert('Δεν έχει αποθηκευτεί θέση GPS για αυτό το αγροτεμάχιο.');
+ window.open('https://www.google.com/maps/search/?api=1&query='+encodeURIComponent(x.lat+','+x.lng),'_blank','noopener');
+}
+function navigateToField(){
+ const x=getFieldGPS();if(!x)return alert('Δεν έχει αποθηκευτεί θέση GPS για αυτό το αγροτεμάχιο.');
+ window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(x.lat+','+x.lng),'_blank','noopener');
+}
+window.captureFieldGPS=captureFieldGPS;window.openFieldMap=openFieldMap;window.navigateToField=navigateToField;window.renderFieldGPS=renderFieldGPS;
+
 async function addGH(){
  if(!season.value)return alert('Φτιάξε πρώτα περίοδο.');
  const n=ghName.value.trim(), ar=Number(area.value);
