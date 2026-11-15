@@ -2357,6 +2357,15 @@ let gfFarmMap=null,gfFarmStreetLayer=null,gfFarmSatelliteLayer=null,gfFarmLayers
 function gfStoredGPSForGH(id){if(!user||!id)return null;try{return JSON.parse(localStorage.getItem('geofylo_field_gps_'+user.id+'_'+String(id))||'null')}catch(e){return null}}
 function gfStoredBoundaryForGH(id){if(!user||!id)return null;try{return JSON.parse(localStorage.getItem('geofylo_boundary_'+user.id+'_'+String(id))||'null')}catch(e){return null}}
 function gfFarmNavigate(lat,lng){window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(lat+','+lng),'_blank','noopener')}
+async function gfSelectFarm(id){
+ const gid=String(id||'');
+ if(!gid||!gh)return;
+ if(![...gh.options].some(o=>o.value===gid)){alert('Το αγροτεμάχιο δεν ανήκει στην τρέχουσα περίοδο.');return}
+ await changeGlobalGH(gid);
+ const x=gh.options[gh.selectedIndex];
+ const st=document.getElementById('farmMapStatus');
+ if(st)st.innerHTML='<b>✅ Επιλέχθηκε: '+esc(x?.text||'Αγροτεμάχιο')+'</b><br><small>Η επιλογή ισχύει πλέον σε όλο το GeoFylo.</small>';
+}
 async function loadFarmMap(){
  const mapEl=document.getElementById('farmMap'),status=document.getElementById('farmMapStatus'),list=document.getElementById('farmMapList');
  if(!mapEl||!status)return;if(typeof L==='undefined'){status.innerHTML='<small>⚠️ Δεν φορτώθηκε ο χάρτης. Έλεγξε τη σύνδεση Internet.</small>';return}
@@ -2382,15 +2391,15 @@ async function loadFarmMap(){
    mapped++;
    const calc=b?.points?.length>=3?gfBoundaryAreaM2(b.points)/1000:null;
    const areaText=calc&&Number.isFinite(calc)?calc.toFixed(3).replace('.',',')+' στρ. (GPS)':Number(x.area||0).toLocaleString('el-GR')+' στρ.';
-   const popup='<b>'+esc(x.name)+'</b><br>'+esc(x.crop||'')+'<br>📐 '+areaText+'<br><small>'+kind+'</small><br><button style="margin-top:8px;padding:7px 10px" onclick="gfFarmNavigate('+center.lat+','+center.lng+')">🧭 Πλοήγηση</button>';
+   const popup='<b>'+esc(x.name)+'</b><br>'+esc(x.crop||'')+'<br>📐 '+areaText+'<br><small>'+kind+'</small><br><button style="margin-top:8px;padding:7px 10px" onclick="gfSelectFarm('+JSON.stringify(String(x.id))+')">🌱 Επιλογή αγροτεμαχίου</button><button class="soft" style="margin-top:5px;padding:7px 10px" onclick="gfFarmNavigate('+center.lat+','+center.lng+')">🧭 Πλοήγηση</button>';
    layer.addTo(gfFarmMap).bindPopup(popup);gfFarmLayers.push(layer);
-   rows.push('<div class="entry"><div class="entryText"><b>'+esc(x.name)+'</b><br><small>'+esc(x.crop||'')+' • '+areaText+' • '+kind+'</small></div><div class="entryActions"><button class="soft" onclick="gfFarmNavigate('+center.lat+','+center.lng+')">🧭</button></div></div>');
+   rows.push('<div class="entry"><div class="entryText"><b>'+esc(x.name)+'</b><br><small>'+esc(x.crop||'')+' • '+areaText+' • '+kind+'</small></div><div class="entryActions"><button class="soft" title="Επιλογή αγροτεμαχίου" onclick="gfSelectFarm('+JSON.stringify(String(x.id))+')">🌱</button><button class="soft" title="Πλοήγηση" onclick="gfFarmNavigate('+center.lat+','+center.lng+')">🧭</button></div></div>');
  }
  setTimeout(()=>{gfFarmMap.invalidateSize();if(bounds.length===1)gfFarmMap.setView(bounds[0],17);else if(bounds.length>1)gfFarmMap.fitBounds(L.latLngBounds(bounds).pad(.15))},80);
  status.innerHTML='<b>🌱 '+mapped+' από '+(r.data||[]).length+' αγροτεμάχια στον χάρτη</b><br><small>🔷 '+boundaryCount+' με όρια • 📍 '+markerCount+' μόνο με θέση GPS</small>';
  list.innerHTML=rows.length?rows.join(''):'<small>Δεν υπάρχουν αγροτεμάχια στην επιλεγμένη περίοδο.</small>';
 }
-window.loadFarmMap=loadFarmMap;window.gfFarmNavigate=gfFarmNavigate;
+window.loadFarmMap=loadFarmMap;window.gfFarmNavigate=gfFarmNavigate;window.gfSelectFarm=gfSelectFarm;
 
 async function addGH(){
  if(!season.value)return alert('Φτιάξε πρώτα περίοδο.');
