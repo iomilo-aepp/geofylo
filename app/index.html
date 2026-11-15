@@ -3,6 +3,8 @@
 <html lang="el"><head><meta charset="utf-8"/><meta content="width=device-width,initial-scale=1" name="viewport"/>
 <title>GeoFylo v4.9.2</title><script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
 <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"/>
+<script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
 <style>
 body{font-family:system-ui;margin:0;background:#f4f7f2;color:#17301f}.app{max-width:700px;margin:auto;padding:20px}.card{background:white;padding:18px;border-radius:18px;margin:12px 0;border:1px solid #dfe7df}
 input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;border:1px solid #ccd8cd;font-size:16px;box-sizing:border-box}button{background:#216b3a;color:white;font-weight:bold;border:0}.soft{background:#e8f3e8;color:#216b3a}.hidden{display:none}.grid{display:grid;grid-template-columns:1fr 1fr;gap:8px}.metrics{display:grid;grid-template-columns:1fr 1fr;gap:8px}.m{background:#f7faf6;padding:12px;border-radius:12px}.m b{display:block;font-size:20px}small{color:#718078}.entry{display:flex;justify-content:space-between;gap:10px;align-items:center;padding:10px 0;border-bottom:1px solid #edf0ed}.entry:last-child{border-bottom:0}.entryText{flex:1}.entryActions{display:flex;gap:5px}.entryActions button{width:auto;padding:7px 9px;margin:0}.danger{background:#f7eaea;color:#9c2f2f}.voice{background:#365f47}h1{margin-bottom:2px}.quickGrid{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:12px}.quickGrid button{min-height:70px;font-size:17px}.quickVoice{margin-top:10px;min-height:58px;font-size:17px}.quickSummary{margin-top:12px;padding:12px;border-radius:12px;background:#f5f8f5}.quickSummary b{font-size:18px}.barrow{margin:10px 0}.barlabel{display:flex;justify-content:space-between;font-size:13px}.bar{height:10px;background:#edf2ed;border-radius:99px;overflow:hidden}.bar>i{display:block;height:100%;background:#216b3a;border-radius:99px}.reportTitle{display:flex;justify-content:space-between;align-items:center;gap:8px}
@@ -115,7 +117,9 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="grid"><button class="soft" onclick="renameSeason()">✏️ Μετονομασία περιόδου</button><button class="danger" onclick="deleteSeason()">🗑️ Διαγραφή περιόδου</button></div></div>
 <div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentGHKey(user),this.value);syncGlobalContext();dash();renderFieldGPS()"></select><input id="ghName" placeholder="Όνομα"/><div class="grid"><input id="area" placeholder="Στρέμματα" step=".1" type="number"/><select id="crop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option></select></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
 <div class="grid"><button class="soft" onclick="editGH()">✏️ Επεξεργασία</button><button class="danger" onclick="deleteGH()">🗑️ Διαγραφή</button></div>
-<div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4ece4"><h4 style="margin:0 0 6px">📍 GPS αγροτεμαχίου</h4><small>Αποθήκευσε τη θέση του επιλεγμένου αγροτεμαχίου από το κινητό σου.</small><div class="grid" style="margin-top:8px"><button class="soft" type="button" onclick="captureFieldGPS()">📍 Καταγραφή GPS</button><button class="soft" id="fieldMapBtn" type="button" onclick="openFieldMap()">🗺️ Προβολή σε χάρτη</button></div><button class="soft" id="fieldNavBtn" type="button" onclick="navigateToField()">🧭 Πλοήγηση στο χωράφι</button><div id="fieldGPSStatus" class="quickSummary" style="margin-top:8px"><small>Δεν έχει αποθηκευτεί θέση GPS.</small></div></div></div>
+<div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4ece4"><h4 style="margin:0 0 6px">📍 GPS αγροτεμαχίου</h4><small>Αποθήκευσε τη θέση ή τα όρια του επιλεγμένου αγροτεμαχίου.</small><div class="grid" style="margin-top:8px"><button class="soft" type="button" onclick="captureFieldGPS()">📍 Καταγραφή GPS</button><button class="soft" id="fieldMapBtn" type="button" onclick="openFieldMap()">🗺️ Προβολή σε χάρτη</button></div><button class="soft" id="fieldNavBtn" type="button" onclick="navigateToField()">🧭 Πλοήγηση στο χωράφι</button><div id="fieldGPSStatus" class="quickSummary" style="margin-top:8px"><small>Δεν έχει αποθηκευτεί θέση GPS.</small></div>
+<div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4ece4"><h4 style="margin:0 0 6px">🔷 Όρια & έκταση</h4><small>Διάλεξε καταγραφή περπατώντας ή σχεδίαση των γωνιών απευθείας στον χάρτη.</small><div class="grid" style="margin-top:8px"><button class="soft" id="boundaryStartBtn" type="button" onclick="startFieldBoundary()">🚶 Καταγραφή περπατώντας</button><button class="soft" type="button" onclick="openBoundaryMapEditor()">✏️ Σχεδίαση στον χάρτη</button></div><div class="grid"><button class="soft" id="boundaryStopBtn" type="button" onclick="finishFieldBoundary()" disabled>⏹️ Ολοκλήρωση</button><button class="danger hidden" id="boundaryCancelBtn" type="button" onclick="cancelFieldBoundary()">Ακύρωση</button></div><div id="fieldBoundaryStatus" class="quickSummary" style="margin-top:8px"><small>Δεν έχουν αποθηκευτεί όρια.</small></div></div>
+<div id="boundaryMapEditor" class="hidden" style="margin-top:12px"><div style="display:flex;justify-content:space-between;align-items:center;gap:8px"><b>✏️ Σχεδίαση ορίων</b><button class="soft" type="button" style="width:auto;margin:0" onclick="closeBoundaryMapEditor()">✕</button></div><small>Πάτησε διαδοχικά τις γωνίες του χωραφιού. Χρειάζονται τουλάχιστον 3 σημεία.</small><div id="boundaryMap" style="height:380px;border-radius:12px;margin-top:10px;border:1px solid #dfe7df;overflow:hidden"></div><div id="boundaryMapInfo" class="quickSummary"><small>Σημεία: 0</small></div><div class="grid"><button class="soft" type="button" onclick="undoBoundaryMapPoint()">↩️ Αναίρεση</button><button class="danger" type="button" onclick="clearBoundaryMapPoints()">🗑️ Καθαρισμός</button></div><button type="button" onclick="saveBoundaryMap()">💾 Αποθήκευση ορίων & έκτασης</button></div></div></div>
 </div><div class="page" id="page-movements"><div class="card" id="movementsCard">
 <h3>🧾 Κινήσεις</h3>
 <small>Βρες γρήγορα οποιαδήποτε καταχώρηση και διόρθωσέ την.</small>
@@ -2202,6 +2206,7 @@ async function loadGH(){
  else if(gh.value&&user)localStorage.setItem(currentGHKey(user),gh.value);
  syncGlobalContext();
  renderFieldGPS();
+ gfLoadBoundary();
  await dash();
 }
 async function changeGlobalSeason(id){
@@ -2277,6 +2282,62 @@ function navigateToField(){
  window.open('https://www.google.com/maps/dir/?api=1&destination='+encodeURIComponent(x.lat+','+x.lng),'_blank','noopener');
 }
 window.captureFieldGPS=captureFieldGPS;window.openFieldMap=openFieldMap;window.navigateToField=navigateToField;window.renderFieldGPS=renderFieldGPS;
+
+
+/* GeoFylo field boundaries v2: walking GPS + manual map drawing. Stored locally per user/field. */
+let gfBoundaryWatchId=null, gfBoundaryPoints=[];
+let gfBoundaryMap=null, gfBoundaryLayer=null, gfBoundaryMarkers=[], gfManualPoints=[];
+function gfBoundaryKey(){if(!user||!gh||!gh.value)return '';return 'geofylo_boundary_'+user.id+'_'+String(gh.value)}
+function gfToRad(v){return Number(v)*Math.PI/180}
+function gfBoundaryAreaM2(points){
+ if(!Array.isArray(points)||points.length<3)return 0;
+ const R=6378137, lat0=points.reduce((a,p)=>a+Number(p.lat),0)/points.length, c=Math.cos(gfToRad(lat0));
+ const xy=points.map(p=>({x:R*gfToRad(p.lng)*c,y:R*gfToRad(p.lat)}));let sum=0;
+ for(let i=0,j=xy.length-1;i<xy.length;j=i++)sum+=xy[j].x*xy[i].y-xy[i].x*xy[j].y;
+ return Math.abs(sum)/2;
+}
+function gfGetBoundary(){const k=gfBoundaryKey();if(!k)return null;try{return JSON.parse(localStorage.getItem(k)||'null')}catch(e){return null}}
+function gfLoadBoundary(){
+ const box=document.getElementById('fieldBoundaryStatus');if(!box)return;
+ const d=gfGetBoundary();if(!d||!Array.isArray(d.points)||d.points.length<3){box.innerHTML='<small>Δεν έχουν αποθηκευτεί όρια.</small>';return}
+ const m2=Number(d.area_m2||gfBoundaryAreaM2(d.points));
+ box.innerHTML='<b>🔷 Αποθηκευμένα όρια</b><br><small>Σημεία: '+d.points.length+' • Έκταση: <b>'+(m2/1000).toFixed(3).replace('.',',')+' στρ.</b> ('+Math.round(m2).toLocaleString('el-GR')+' m²)<br>Τρόπος: '+(d.method==='map'?'σχεδίαση στον χάρτη':'GPS περπάτημα')+' • '+new Date(d.saved_at).toLocaleString('el-GR')+'</small>';
+}
+function gfSaveBoundary(points,method){
+ if(!gfBoundaryKey()||points.length<3)return false;const m2=gfBoundaryAreaM2(points);
+ localStorage.setItem(gfBoundaryKey(),JSON.stringify({points,area_m2:m2,method,saved_at:new Date().toISOString()}));gfLoadBoundary();return true;
+}
+function startFieldBoundary(){
+ if(!gfBoundaryKey())return alert('Επίλεξε πρώτα αγροτεμάχιο / θερμοκήπιο.');if(!navigator.geolocation)return alert('Η συσκευή δεν υποστηρίζει GPS.');if(gfBoundaryWatchId!==null)return;
+ gfBoundaryPoints=[];document.getElementById('boundaryStartBtn').disabled=true;document.getElementById('boundaryStopBtn').disabled=false;document.getElementById('boundaryCancelBtn').classList.remove('hidden');
+ const box=document.getElementById('fieldBoundaryStatus');box.innerHTML='<small>📡 Ξεκινά η καταγραφή. Περπάτησε περιμετρικά.</small>';
+ gfBoundaryWatchId=navigator.geolocation.watchPosition(pos=>{const p={lat:pos.coords.latitude,lng:pos.coords.longitude,accuracy:pos.coords.accuracy};const q=gfBoundaryPoints.at(-1);let keep=!q;if(q){const dy=(p.lat-q.lat)*111320,dx=(p.lng-q.lng)*111320*Math.cos(gfToRad(p.lat));keep=Math.hypot(dx,dy)>=2}if(keep)gfBoundaryPoints.push(p);box.innerHTML='<b>🔴 Καταγραφή σε εξέλιξη</b><br><small>Σημεία: '+gfBoundaryPoints.length+' • ακρίβεια ±'+Math.round(p.accuracy)+' m</small>'},err=>{box.innerHTML='<small>⚠️ '+(err.message||'Αποτυχία GPS')+'</small>'},{enableHighAccuracy:true,maximumAge:0,timeout:15000});
+}
+function finishFieldBoundary(){
+ if(gfBoundaryWatchId!==null){navigator.geolocation.clearWatch(gfBoundaryWatchId);gfBoundaryWatchId=null}document.getElementById('boundaryStartBtn').disabled=false;document.getElementById('boundaryStopBtn').disabled=true;document.getElementById('boundaryCancelBtn').classList.add('hidden');
+ if(gfBoundaryPoints.length<3){gfBoundaryPoints=[];gfLoadBoundary();return alert('Χρειάζονται τουλάχιστον 3 διαφορετικά σημεία.')};gfSaveBoundary(gfBoundaryPoints,'walk');gfBoundaryPoints=[];
+}
+function cancelFieldBoundary(){if(gfBoundaryWatchId!==null){navigator.geolocation.clearWatch(gfBoundaryWatchId);gfBoundaryWatchId=null}gfBoundaryPoints=[];document.getElementById('boundaryStartBtn').disabled=false;document.getElementById('boundaryStopBtn').disabled=true;document.getElementById('boundaryCancelBtn').classList.add('hidden');gfLoadBoundary()}
+function gfMapCenter(){const d=gfGetBoundary();if(d?.points?.length)return [d.points[0].lat,d.points[0].lng];const x=getFieldGPS();if(x)return [x.lat,x.lng];return [35.2401,24.8093]}
+function openBoundaryMapEditor(){
+ if(!gfBoundaryKey())return alert('Επίλεξε πρώτα αγροτεμάχιο / θερμοκήπιο.');if(typeof L==='undefined')return alert('Δεν φορτώθηκε ο χάρτης. Έλεγξε τη σύνδεση Internet.');
+ const panel=document.getElementById('boundaryMapEditor');panel.classList.remove('hidden');const saved=gfGetBoundary();gfManualPoints=saved?.points?.map(p=>({lat:Number(p.lat),lng:Number(p.lng)}))||[];
+ if(!gfBoundaryMap){gfBoundaryMap=L.map('boundaryMap').setView(gfMapCenter(),17);L.tileLayer('https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png',{maxZoom:20,attribution:'© OpenStreetMap'}).addTo(gfBoundaryMap);gfBoundaryMap.on('click',e=>{gfManualPoints.push({lat:e.latlng.lat,lng:e.latlng.lng});gfRenderManualBoundary()})}
+ setTimeout(()=>{gfBoundaryMap.invalidateSize();if(gfManualPoints.length>=1){const b=L.latLngBounds(gfManualPoints.map(p=>[p.lat,p.lng]));gfBoundaryMap.fitBounds(b.pad(.25))}else gfBoundaryMap.setView(gfMapCenter(),17);gfRenderManualBoundary()},100);
+}
+function closeBoundaryMapEditor(){document.getElementById('boundaryMapEditor')?.classList.add('hidden')}
+function gfRenderManualBoundary(){
+ if(!gfBoundaryMap)return;if(gfBoundaryLayer){gfBoundaryMap.removeLayer(gfBoundaryLayer);gfBoundaryLayer=null}gfBoundaryMarkers.forEach(m=>gfBoundaryMap.removeLayer(m));gfBoundaryMarkers=[];
+ gfManualPoints.forEach((p,i)=>gfBoundaryMarkers.push(L.marker([p.lat,p.lng]).addTo(gfBoundaryMap).bindTooltip(String(i+1),{permanent:true,direction:'top'})));
+ if(gfManualPoints.length>=2)gfBoundaryLayer=L.polygon(gfManualPoints.map(p=>[p.lat,p.lng]),{weight:3,fillOpacity:.15}).addTo(gfBoundaryMap);
+ const m2=gfBoundaryAreaM2(gfManualPoints),info=document.getElementById('boundaryMapInfo');if(info)info.innerHTML='<small>Σημεία: <b>'+gfManualPoints.length+'</b>'+(gfManualPoints.length>=3?' • Προσωρινή έκταση: <b>'+(m2/1000).toFixed(3).replace('.',',')+' στρ.</b>':' • πάτησε τουλάχιστον 3 γωνίες')+'</small>';
+}
+function undoBoundaryMapPoint(){gfManualPoints.pop();gfRenderManualBoundary()}
+function clearBoundaryMapPoints(){gfManualPoints=[];gfRenderManualBoundary()}
+function saveBoundaryMap(){if(gfManualPoints.length<3)return alert('Πάτησε τουλάχιστον 3 γωνίες του αγροτεμαχίου.');gfSaveBoundary(gfManualPoints,'map');closeBoundaryMapEditor();alert('Τα όρια και η έκταση αποθηκεύτηκαν.')}
+document.addEventListener('change',e=>{if(e.target?.id==='gh'){setTimeout(()=>{gfLoadBoundary();if(!document.getElementById('boundaryMapEditor')?.classList.contains('hidden'))closeBoundaryMapEditor()},0)}});
+window.startFieldBoundary=startFieldBoundary;window.finishFieldBoundary=finishFieldBoundary;window.cancelFieldBoundary=cancelFieldBoundary;window.gfLoadBoundary=gfLoadBoundary;window.openBoundaryMapEditor=openBoundaryMapEditor;window.closeBoundaryMapEditor=closeBoundaryMapEditor;window.undoBoundaryMapPoint=undoBoundaryMapPoint;window.clearBoundaryMapPoints=clearBoundaryMapPoints;window.saveBoundaryMap=saveBoundaryMap;
+setTimeout(gfLoadBoundary,800);
 
 async function addGH(){
  if(!season.value)return alert('Φτιάξε πρώτα περίοδο.');
