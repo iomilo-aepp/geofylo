@@ -3975,7 +3975,21 @@ async function editEntry(type,id){
  }
  saveEntryBtn.textContent='Αποθήκευση αλλαγών';showPage('entry');
 }
-function parseGreekNumber(s){return Number(String(s).replace(',','.'))}
+function parseGreekNumber(s){
+ let v=String(s??'').trim().replace(/\s/g,'');
+ if(!v)return NaN;
+ // Ελληνική μορφή: 1.200 = 1200, 12.500 = 12500, 1.200,50 = 1200.50
+ if(/^\d{1,3}(?:\.\d{3})+(?:,\d+)?$/.test(v)){
+   return Number(v.replace(/\./g,'').replace(',','.'));
+ }
+ // Διεθνής μορφή με χιλιάδες: 1,200.50
+ if(/^\d{1,3}(?:,\d{3})+(?:\.\d+)?$/.test(v)){
+   return Number(v.replace(/,/g,''));
+ }
+ // Απλός ελληνικός δεκαδικός: 1,2 = 1.2
+ if(/^\d+,\d+$/.test(v))return Number(v.replace(',','.'));
+ return Number(v);
+}
 function normalizeVoice(t){
  return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/€/g," ευρω ").replace(/\s+/g," ").trim();
 }
