@@ -3607,39 +3607,74 @@ function gfInvoiceBuyer(text){
  }
  return '';
 }
-function gfInvoiceNumberGR(s){
- s=String(s||'').replace(/\s/g,'').replace(/[€]/g,'').replace(/[^\d.,-]/g,''); if(!s)return null;
- if(s.includes(',')&&s.includes('.')){if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(/,/g,'');}
- else if(s.includes(',')){const p=s.split(',');s=(p.length===2&&p[1].length<=4)?p[0].replace(/\./g,'')+'.'+p[1]:s.replace(/,/g,'');}
- const v=Number(s);return Number.isFinite(v)?v:null;
-}
 function gfInvoiceKgPrice(text){
- const lines=String(text||'').replace(/\r/g,'').split('\n').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
- const nr=/\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,4})|\d+(?:[.,]\d{1,4})?/g;
- let kg=null,price=null,total=null,line='',verified=false,c=[];
- for(let i=0;i<lines.length;i++){
-  const L=lines[i],U=L.toUpperCase(),ns=(L.match(nr)||[]).map(gfInvoiceNumberGR).filter(v=>v!=null);
-  if(/ΣΥΝΟΛΟ\s+ΠΟΣΟΤΗΤΑΣ|ΣΥΝΟΛΙΚΗ\s+ΠΟΣΟΤΗΤΑ/.test(U)&&ns.length)kg=ns[ns.length-1];
-  if(/(?:ΚΑΘΑΡΗ\s+)?ΑΞΙΑ|ΠΛΗΡΩΤΕΟ|ΣΥΝΟΛΟ\s+ΑΞΙΑΣ/.test(U)){const x=ns.filter(v=>v>=10&&v<1000000);if(x.length)total=Math.max(...x);}
+ const s=String(text).replace(/\u00a0/g,' '),lines=s.split(/\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+ const parseNums=line=>[...line.matchAll(/\d{1,7}(?:[.,]\d{1,4})?/g)].map(m=>({raw:m[0],n:gfParseGreekNumber(m[0])})).filter(x=>Number.isFinite(x.n)&&x.n>0);
+ const candidates=[];
+ function addCandidates(block,contextBoost=0){
+   const nums=parseNums(block).map(x=>x.n);
+   if(nums.length<3)return;
+   const low=block.toLocaleLowerCase('el-GR');
+   for(let i=0;i<nums.length;i++)for(let j=0;j<nums.length;j++)for(let k=0;k<nums.length;k++){
+     if(i===j||i===k||j===k)continue;
+     const qty=nums[i],price=nums[j],total=nums[k];
+     if(qty<5||qty>100000||price<0.05||price>100||total<5)continue;
+     const err=Math.abs(qty*price-total)/Math.max(total,1);if(err>0.025)continue;
+     let score=100-(err*1000)+contextBoost;
+     // Σε αγροτικό τιμολόγιο η τιμολογημένη ποσότητα είναι συνήθως δεκάδες/εκατοντάδες kg.
+     if(qty>=20)score+=12;if(qty>=100)score+=12;if(qty>=500)score+=8;
+     // Η τιμή/kg συνήθως είναι μικρός δεκαδικός αριθμός, όχι 1 που προέκυψε από κωδικό/στήλη.
+     if(price>1&&price<20)score+=10;if(price===1)score-=15;
+     // Αποφεύγουμε ψευδή μικρά γινόμενα τύπου 2,24 × 1 = 2,24.
+     if(total>=100)score+=15;if(total>=1000)score+=12;if(total<20)score-=35;
+     if(/συνολο\s+ποσοτ|σύνολο\s+ποσότ|ποσοτητα|ποσότητα/.test(low))score+=18;
+     if(/τιμη|τιμή|price/.test(low))score+=10;
+     if(/αξια|αξία|value|πληρωτ/.test(low))score+=18;
+     if(/κιλ|kg/.test(low))score+=8;
+     candidates.push({kg:qty,price,total,line:block,verified:true,score});
+   }
  }
- for(let i=0;i<lines.length;i++){
-  const w=lines.slice(i,Math.min(lines.length,i+4)).join(' '),U=w.toUpperCase();
-  if(/ΠΟΣΟΤΗΤΑ\s+ΠΑΡΑΛΑΒΗΣ/.test(U)&&!/ΣΥΝΟΛΟ\s+ΠΟΣΟΤΗΤΑΣ/.test(U))continue;
-  const ns=(w.match(nr)||[]).map(gfInvoiceNumberGR).filter(v=>v!=null&&v>0);
-  for(const q of ns)for(const p of ns)for(const a of ns){
-   if(q===p||p===a||q<5||q>100000||p<.05||p>100||a<10||a>1000000)continue;
-   const e=Math.abs(q*p-a)/Math.max(a,1);if(e>.015)continue;
-   let s=100-e*1000;if(/ΚΙΛ|KG|ΠΟΣΟΤΗΤΑ/.test(U))s+=15;if(/ΤΙΜΗ/.test(U))s+=15;if(/ΑΞΙΑ/.test(U))s+=15;
-   if(q>=20)s+=8;if(p<=20)s+=8;if(a>=100)s+=8;c.push({q,p,a,s,line:w});
-  }
+ // Γραμμές και μεγαλύτερα παράθυρα ώστε να συνδυάζονται στοιχεία που το OCR έσπασε σε διαφορετικές σειρές.
+ for(let n=0;n<lines.length;n++){
+   const line=lines[n],low=line.toLocaleLowerCase('el-GR');
+   addCandidates(line,/(κιλ|kg|πιπερ|αγγουρ|ντοματ|ποσοτ|τιμ|αξ)/i.test(low)?15:0);
+   for(const span of [2,3,4,5]){
+     const block=lines.slice(n,n+span).join(' ');
+     if(/(κιλ|kg|πιπερ|αγγουρ|ντοματ|ποσοτ|τιμ|αξ|σύνολο|συνολο)/i.test(block))addCandidates(block,span<=3?10:4);
+   }
  }
- c.sort((a,b)=>b.s-a.s);
- if(kg!=null){const x=c.find(z=>Math.abs(z.q-kg)/Math.max(kg,1)<.01);if(x){price=x.p;total=x.a;line=x.line;verified=true;}}
- if(!verified&&c[0]&&c[0].s>=125){kg=c[0].q;price=c[0].p;total=c[0].a;line=c[0].line;verified=true;}
- if(verified)verified=Math.abs(kg*price-total)/Math.max(total,1)<=.015;
- if(!verified)price=null;
- return {kg,price,total,line,verified};
-}function gfInvoicePreprocessCanvas(input){
+ if(candidates.length){
+   candidates.sort((a,b)=>b.score-a.score);
+   return candidates[0];
+ }
+ // Ισχυρό fallback από τα ρητά σύνολα του παραστατικού.
+ const kgm=s.match(/(?:συνολο\s+ποσοτητας|σύνολο\s+ποσότητας|ποσότητα|ποσοτητα|quantity|κιλά|κιλα)\s*[:=\-]?\s*(\d{1,6}(?:[.,]\d{1,3})?)/i);
+ const pm=s.match(/(?:τιμή\s*(?:μονάδας|kg)?|τιμη\s*(?:μοναδας|kg)?|price)\s*[:=\-]?\s*(\d+(?:[.,]\d{1,4})?)/i);
+ const tm=s.match(/(?:καθαρη\s+αξια|καθαρή\s+αξία|συνολικη\s+αξια|συνολική\s+αξία|πληρωτεο|πληρωτέο|αξια|αξία)\s*[:=\-]?\s*(\d{1,7}(?:[.,]\d{1,3})?)/i);
+ const kg=kgm?gfParseGreekNumber(kgm[1]):null,price=pm?gfParseGreekNumber(pm[1]):null,total=tm?gfParseGreekNumber(tm[1]):null;
+ const verified=!!(kg&&price&&total&&Math.abs(kg*price-total)/Math.max(total,1)<=0.025);
+ return {kg,price,total,line:'',verified};
+}
+async function gfInvoiceImageSource(file){
+ let input=file;
+ if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
+   const buf=await file.arrayBuffer();
+   const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
+   pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
+   const pdf=await pdfjs.getDocument({data:buf}).promise,page=await pdf.getPage(1),vp=page.getViewport({scale:3});
+   const clean=document.createElement('canvas');clean.width=Math.round(vp.width);clean.height=Math.round(vp.height);
+   await page.render({canvasContext:clean.getContext('2d'),viewport:vp}).promise;
+   return {clean,processed:gfInvoicePreprocessCanvas(clean)};
+ }
+ const url=URL.createObjectURL(input);
+ try{
+   const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url});
+   const targetW=Math.min(2800,Math.max(img.naturalWidth,1800)),scale=targetW/img.naturalWidth,w=Math.round(img.naturalWidth*scale),h=Math.round(img.naturalHeight*scale);
+   const clean=document.createElement('canvas');clean.width=w;clean.height=h;const ctx=clean.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,w,h);
+   return {clean,processed:gfInvoicePreprocessCanvas(clean)};
+ }finally{URL.revokeObjectURL(url)}
+}
+function gfInvoicePreprocessCanvas(input){
  const c=document.createElement('canvas');c.width=input.width;c.height=input.height;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(input,0,0);
  const im=ctx.getImageData(0,0,c.width,c.height),d=im.data;
  for(let i=0;i<d.length;i+=4){let g=d[i]*.299+d[i+1]*.587+d[i+2]*.114;g=Math.max(0,Math.min(255,(g-128)*1.35+128));d[i]=d[i+1]=d[i+2]=g}
@@ -3650,44 +3685,53 @@ function gfInvoiceOCRQuality(raw,confidence){
  const score=(Number(confidence)||0)+(letters>=20?10:0)+(digits>=4?8:0)-(weird>=8?12:0);
  return {ok:s.length>=35&&letters>=12&&score>=42,score,letters,digits};
 }
+function gfShowSaleInvoiceReview(data,msg){
+ saleInvoiceScanResult=data||{};
+ const pv=document.getElementById('saleInvoicePreview');if(!pv)return;
+ const D=saleInvoiceScanResult, dt=/^\d{4}-\d{2}-\d{2}$/.test(D.date||'')?D.date:'';
+ pv.classList.remove('hidden');
+ pv.innerHTML=`<div class="dashAlert">${msg||'✍️ Έλεγξε τα στοιχεία.'}</div>
+ <div style="display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-top:10px">
+ <label><small>Ημερομηνία</small><input id="gfInvReviewDate" type="date" value="${esc(dt)}"></label>
+ <label><small>Πελάτης / Αγοραστής</small><input id="gfInvReviewBuyer" value="${esc(D.buyer||'')}" placeholder="π.χ. ΒΙΑΝΑΜΕ Α.Ε."></label>
+ <label><small>Κιλά</small><input id="gfInvReviewKg" type="number" step="0.01" inputmode="decimal" value="${D.kg||''}" placeholder="800" oninput="gfUpdateInvoiceReviewTotal()"></label>
+ <label><small>Τιμή/kg €</small><input id="gfInvReviewPrice" type="number" step="0.0001" inputmode="decimal" value="${D.price||''}" placeholder="2.80" oninput="gfUpdateInvoiceReviewTotal()"></label></div>
+ <div id="gfInvReviewTotal" style="margin-top:10px"></div>
+ <small>Δεν αποθηκεύεται τίποτα ακόμη. Τα στοιχεία μεταφέρονται πρώτα στη φόρμα πώλησης.</small>
+ <button type="button" onclick="applySaleInvoiceScan()">⬇️ Μεταφορά στα πεδία πώλησης</button>`;
+ gfUpdateInvoiceReviewTotal();
+}
+function gfUpdateInvoiceReviewTotal(){
+ const k=Number(document.getElementById('gfInvReviewKg')?.value||0),p=Number(document.getElementById('gfInvReviewPrice')?.value||0),e=document.getElementById('gfInvReviewTotal');
+ if(e)e.innerHTML='<b>Υπολογισμένη αξία:</b> '+(k>0&&p>0?(k*p).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €':'—');
+}
 async function scanSaleInvoice(file){
- const st=document.getElementById('saleInvoiceScanStatus'),pv=document.getElementById('saleInvoicePreview');if(!file||!st||!pv)return;
- if(!navigator.onLine){st.innerHTML='<small>📴 Η σάρωση χρειάζεται Internet για να φορτωθεί η μηχανή OCR.</small>';return}
- st.innerHTML='<small>🖼️ Προετοιμασία εικόνας…</small>';pv.classList.add('hidden');
+ const st=document.getElementById('saleInvoiceScanStatus'),pv=document.getElementById('saleInvoicePreview');if(!file||!st||!pv)return;pv.classList.add('hidden');
  try{
-   if(!window.Tesseract)throw new Error('OCR library');
-   const sources=await gfInvoiceImageSource(file);
-   async function runOCR(source,label){
-     try{
-       const r=await Tesseract.recognize(source,'ell+eng',{logger:m=>{if(m.status==='recognizing text')st.innerHTML=`<small>🔎 ${label}… ${Math.round((m.progress||0)*100)}%</small>`}});
-       const raw=r.data?.text||'',confidence=Number(r.data?.confidence||0),quality=gfInvoiceOCRQuality(raw,confidence),qp=gfInvoiceKgPrice(raw),buyer=gfInvoiceBuyer(raw),date=gfInvoiceDate(raw);
-       const found=[date,buyer,qp.kg,qp.price].filter(Boolean).length,score=quality.score+(qp.verified?20:0)+(buyer?8:0)+(date?5:0)+(qp.kg?6:0)+(qp.price?6:0);
-       return {raw,confidence,quality,qp,buyer,date,found,score,label};
-     }catch(err){console.warn('OCR attempt failed:',label,err);return null}
-   }
-   const attempts=[];
-   const first=await runOCR(sources.clean,'Ανάγνωση αρχικής φωτογραφίας');if(first)attempts.push(first);
-   if(!first||!first.quality.ok||first.found<3||!first.qp.verified){const second=await runOCR(sources.processed,'Δεύτερη βελτιωμένη ανάγνωση');if(second)attempts.push(second)}
-   if(!attempts.length)throw new Error('all OCR attempts failed');
-   attempts.sort((x,y)=>y.score-x.score);const best=attempts[0],raw=best.raw,confidence=best.confidence,quality=best.quality,qp=best.qp,buyer=best.buyer,date=best.date;
-   const isPurchaseInvoice=/τιμολόγιο\s+αγοράς|τιμολογιο\s+αγορας/i.test(raw);saleInvoiceScanResult={date,buyer,kg:qp.kg,price:qp.price,total:qp.total||null,verified:!!qp.verified,isPurchaseInvoice,raw,confidence};
-   const found=[date?'ημερομηνία':null,buyer?'πελάτης':null,qp.kg?'ποσότητα':null,qp.price?'τιμή':null].filter(Boolean);pv.classList.remove('hidden');
-   if(!quality.ok)st.innerHTML=`<div class="dashAlert">⚠️ Έγιναν ${attempts.length} προσπάθειες OCR. Η καλύτερη έχει χαμηλή βεβαιότητα (${Math.round(confidence)}%). <b>Δεν μεταφέρονται αυτόματα αβέβαια στοιχεία.</b></div>`;
-   else st.innerHTML=`<small>✅ Επιλέχθηκε η καλύτερη ανάγνωση (${esc(best.label)}, OCR ${Math.round(confidence)}%). Βρέθηκαν: ${found.length?found.join(', '):'δεν εντοπίστηκαν βασικά πεδία'}.</small>`;
-   const canApply=quality.ok&&found.length>0;
-   pv.innerHTML=`<b>Έλεγχος πριν τη μεταφορά</b><br><small>Ημερομηνία: <b>${esc(date||'—')}</b><br>Πελάτης: <b>${esc(buyer||'—')}</b><br>Ποσότητα: <b>${qp.kg?Number(qp.kg).toLocaleString('el-GR')+' kg':'—'}</b><br>Τιμή/kg: <b>${qp.price?Number(qp.price).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:4})+' €':'—'}</b><br>Αξία: <b>${qp.total?Number(qp.total).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €':'—'}</b><br>${qp.verified?'<span style="color:#216b3a"><b>✓ Ποσότητα × τιμή = αξία</b></span>':''}${isPurchaseInvoice?'<br><span><b>📄 Τιμολόγιο Αγοράς:</b> ως πελάτης χρησιμοποιείται ο εκδότης.</span>':''}</small>${canApply?'<button type="button" onclick="applySaleInvoiceScan()">⬇️ Μεταφορά στα πεδία πώλησης</button>':'<div class="dashAlert" style="margin-top:10px">🚫 Η μεταφορά απενεργοποιήθηκε επειδή η ανάγνωση δεν είναι αρκετά αξιόπιστη.</div>'}<details style="margin-top:8px"><summary><small>Προβολή καλύτερου κειμένου OCR</small></summary><pre style="white-space:pre-wrap;font-size:11px;max-height:180px;overflow:auto">${esc(raw.slice(0,5000))}</pre></details>`;
- }catch(e){console.error('Invoice OCR:',e);st.innerHTML='<small>⚠️ Απέτυχαν και οι δύο τρόποι ανάγνωσης. Δοκίμασε φωτογραφία κάθετα και σε καλό φωτισμό.</small>'}
+  if(!navigator.onLine||!window.Tesseract)throw new Error('OCR unavailable');
+  const sources=await gfInvoiceImageSource(file), attempts=[];
+  async function run(src,label){try{const r=await Tesseract.recognize(src,'ell+eng',{logger:m=>{if(m.status==='recognizing text')st.innerHTML=`<small>🔎 ${label} ${Math.round((m.progress||0)*100)}%</small>`}});const raw=r.data?.text||'',confidence=Number(r.data?.confidence||0),q=gfInvoiceKgPrice(raw);return {raw,confidence,date:gfInvoiceDate(raw),buyer:gfInvoiceBuyer(raw),kg:q.kg||'',price:q.price||'',verified:!!q.verified,label}}catch(e){return null}}
+  const x=await run(sources.clean,'Ανάγνωση 1:');if(x)attempts.push(x);
+  const y=await run(sources.processed,'Ανάγνωση 2:');if(y)attempts.push(y);
+  if(!attempts.length)throw new Error('OCR failed');
+  attempts.sort((m,n)=>(n.confidence+(n.verified?20:0))- (m.confidence+(m.verified?20:0)));
+  const best=attempts[0];st.innerHTML=`<small>✅ OCR ${Math.round(best.confidence)}%. Έλεγξε/διόρθωσε τα στοιχεία.</small>`;
+  gfShowSaleInvoiceReview(best,'✍️ Έλεγξε και διόρθωσε ό,τι δεν αναγνωρίστηκε σωστά.');
+ }catch(e){
+  st.innerHTML='<small>⚠️ Η αυτόματη ανάγνωση απέτυχε. Συμπλήρωσε τα στοιχεία χειροκίνητα.</small>';
+  gfShowSaleInvoiceReview({},'✍️ Το OCR απέτυχε, αλλά μπορείς να συνεχίσεις χειροκίνητα.');
+ }
 }
 async function applySaleInvoiceScan(){
- const x=saleInvoiceScanResult;if(!x)return;
- if(x.date&&document.getElementById('entryDate'))entryDate.value=x.date;
- if(x.kg&&document.getElementById('kgs'))kgs.value=x.kg;
- if(x.price&&document.getElementById('price'))price.value=x.price;
- if(x.buyer){
-   const el=document.getElementById('saleBuyer');if(el){await loadBuyerOptions();const opt=[...el.options].find(o=>o.value.trim().toLocaleLowerCase('el-GR')===x.buyer.trim().toLocaleLowerCase('el-GR'));if(opt)el.value=opt.value;else{const pv=document.getElementById('saleInvoicePreview');if(pv)pv.insertAdjacentHTML('beforeend',`<div class="dashAlert">⚠️ Ο πελάτης <b>${esc(x.buyer)}</b> δεν βρέθηκε στους αποθηκευμένους πελάτες. Επίλεξέ τον χειροκίνητα ή πρόσθεσέ τον πρώτα στους Πελάτες.</div>`);}}
- }
- updateSalePriceAdvice();
- const st=document.getElementById('saleInvoiceScanStatus');if(st)st.innerHTML='<small>✅ Τα αναγνωρισμένα στοιχεία μεταφέρθηκαν. <b>Έλεγξέ τα και μετά πάτησε Αποθήκευση.</b></small>';
+ const date=document.getElementById('gfInvReviewDate')?.value||'',buyer=(document.getElementById('gfInvReviewBuyer')?.value||'').trim(),kg=Number(document.getElementById('gfInvReviewKg')?.value||0),price=Number(document.getElementById('gfInvReviewPrice')?.value||0);
+ if(!date||!buyer||kg<=0||price<=0){alert('Συμπλήρωσε Ημερομηνία, Πελάτη, Κιλά και Τιμή/kg.');return}
+ const d=document.getElementById('date');if(d)d.value=date;
+ const q=document.getElementById('qty')||document.getElementById('kg')||document.querySelector('input[placeholder="Κιλά"]');
+ const p=document.getElementById('price')||document.getElementById('unitPrice')||document.querySelector('input[placeholder*="Τιμή/kg"]');
+ if(q){q.value=kg;q.dispatchEvent(new Event('input',{bubbles:true}))} if(p){p.value=price;p.dispatchEvent(new Event('input',{bubbles:true}))}
+ const c=document.getElementById('customer')||document.getElementById('customerId')||document.querySelector('select[name*="customer" i]');
+ if(c){const norm=v=>(v||'').toLocaleUpperCase('el-GR').replace(/[.#]/g,'').replace(/\s+/g,' ').trim(),target=norm(buyer);const o=[...c.options].find(z=>norm(z.textContent)===target)||[...c.options].find(z=>norm(z.textContent).includes(target));if(o){c.value=o.value;c.dispatchEvent(new Event('change',{bubbles:true}))}else alert('Ο πελάτης «'+buyer+'» δεν βρέθηκε στους υπάρχοντες πελάτες. Επίλεξέ τον ή πρόσθεσέ τον πριν την αποθήκευση.')}
+ if(st=document.getElementById('saleInvoiceScanStatus'))st.innerHTML='<small>✅ Τα ελεγμένα στοιχεία μεταφέρθηκαν. Έλεγξέ τα και πάτησε Αποθήκευση.</small>';
 }
 window.scanSaleInvoice=scanSaleInvoice;window.applySaleInvoiceScan=applySaleInvoiceScan;
 
