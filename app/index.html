@@ -149,6 +149,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div>
 <button onclick="quickEntry('activity')">➕ Νέα εργασία</button>
 </div>
+<div class="card"><div class="reportTitle"><div><h3 style="margin:0">🌦️ Καιρός & εργασίες</h3><small>Έλεγχος των προγραμματισμένων εργασιών με την πρόγνωση του επιλεγμένου αγροτεμαχίου.</small></div><button class="soft" type="button" onclick="loadWeatherTaskAlerts()" style="width:auto">🔄 Έλεγχος</button></div><div id="weatherTaskAlerts" style="margin-top:12px"><small>Φόρτωση ελέγχου...</small></div></div>
 <div class="card"><h3>⚠️ Εκπρόθεσμες</h3><div id="taskOverdueList"><small>Δεν υπάρχουν εκπρόθεσμες εργασίες.</small></div></div>
 <div class="card"><h3>📌 Σήμερα</h3><div id="taskTodayList"><small>Δεν υπάρχουν εργασίες για σήμερα.</small></div></div>
 <div class="card"><h3>⏳ Επόμενες</h3><div id="taskUpcomingList"><small>Δεν υπάρχουν επόμενες εργασίες.</small></div></div>
@@ -3452,7 +3453,93 @@ async function loadCalendarHistory(){
  }).join('');
  await showCalendarPhotos();
 }
-async function loadCalendar(){await Promise.all([loadTaskCenter(),loadCalendarHistory()]);}
+
+async function gfFieldWeatherForecast(){
+ if(!navigator.onLine)throw new Error('offline');
+ let lat=null,lon=null,source='GPS αγροτεμαχίου';
+ const fieldGps=(typeof getFieldGPS==='function')?getFieldGPS():null;
+ if(fieldGps&&Number.isFinite(Number(fieldGps.lat))&&Number.isFinite(Number(fieldGps.lng))){
+   lat=Number(fieldGps.lat);lon=Number(fieldGps.lng);
+ }else{
+   let area='';
+   if(user){
+     const p=await sb.from('profiles').select('area').eq('id',user.id).maybeSingle();
+     if(!p.error&&p.data?.area)area=String(p.data.area).trim();
+   }
+   if(!area)throw new Error('no_location');
+   const gr=await fetch(`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(area)}&count=1&language=el&format=json`);
+   if(!gr.ok)throw new Error('geocoding');
+   const gj=await gr.json();
+   if(!gj.results?.length)throw new Error('no_location');
+   lat=Number(gj.results[0].latitude);lon=Number(gj.results[0].longitude);source='περιοχή Προφίλ';
+ }
+ const wr=await fetch(`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&daily=temperature_2m_max,precipitation_probability_max,precipitation_sum,wind_speed_10m_max&timezone=auto&forecast_days=3`);
+ if(!wr.ok)throw new Error('weather');
+ const w=await wr.json();
+ return {
+   source,
+   days:(w.daily?.time||[]).map((date,i)=>({
+     date,
+     maxTemp:Number(w.daily.temperature_2m_max?.[i]||0),
+     rainProb:Number(w.daily.precipitation_probability_max?.[i]||0),
+     rainMm:Number(w.daily.precipitation_sum?.[i]||0),
+     wind:Number(w.daily.wind_speed_10m_max?.[i]||0)
+   }))
+ };
+}
+function gfWeatherWarningsForTask(task,day){
+ const type=String(task.activity_type||'').toLocaleLowerCase('el-GR');
+ const warnings=[];
+ const isSpray=type.includes('ψεκ')||type.includes('φυτοπροστα');
+ const isIrrigation=type.includes('ποτισ')||type.includes('άρδευ')||type.includes('αρδευ');
+ if(isSpray&&day.rainProb>=50)warnings.push(`🌧️ Πιθανότητα βροχής ${Math.round(day.rainProb)}%`);
+ if(isSpray&&day.wind>=25)warnings.push(`💨 Άνεμος έως ${Math.round(day.wind)} km/h`);
+ if(isIrrigation&&(day.rainProb>=60||day.rainMm>=3))warnings.push(`🌧️ Αναμένεται βροχή ${day.rainMm.toFixed(1)} mm`);
+ if(day.maxTemp>=35)warnings.push(`🌡️ Μέγιστη θερμοκρασία ${Math.round(day.maxTemp)}°C`);
+ return warnings;
+}
+async function loadWeatherTaskAlerts(){
+ const box=document.getElementById('weatherTaskAlerts');
+ if(!box)return;
+ if(!gh?.value){box.innerHTML='<small>Επίλεξε αγροτεμάχιο.</small>';return}
+ if(!navigator.onLine){box.innerHTML='<small>📴 Ο έλεγχος καιρού χρειάζεται σύνδεση στο Internet.</small>';return}
+ box.innerHTML='<small>🌦️ Έλεγχος πρόγνωσης και εργασιών...</small>';
+ try{
+   const [weather,tasksR]=await Promise.all([
+     gfFieldWeatherForecast(),
+     sb.from('activities').select('*').eq('greenhouse_id',gh.value).eq('status','pending').order('activity_date',{ascending:true})
+   ]);
+   if(tasksR.error)throw tasksR.error;
+   const dayMap=Object.fromEntries(weather.days.map(d=>[d.date,d]));
+   const checked=(tasksR.data||[]).filter(t=>dayMap[t.activity_date]);
+   const alerts=[];
+   checked.forEach(t=>{
+     const d=dayMap[t.activity_date];
+     const warnings=gfWeatherWarningsForTask(t,d);
+     if(warnings.length)alerts.push({task:t,warnings});
+   });
+   if(!checked.length){
+     box.innerHTML=`<div class="dashOk">✅ Δεν υπάρχουν εκκρεμείς εργασίες μέσα στην 3ήμερη πρόγνωση.</div><small>Θέση πρόγνωσης: ${esc(weather.source)}.</small>`;
+     return;
+   }
+   if(!alerts.length){
+     box.innerHTML=`<div class="dashOk">✅ Δεν εντοπίστηκε βασική καιρική προειδοποίηση για τις ${checked.length} εργασίες των επόμενων 3 ημερών.</div><small>Θέση πρόγνωσης: ${esc(weather.source)}.</small>`;
+     return;
+   }
+   box.innerHTML=alerts.map(a=>{
+     const dt=new Date(a.task.activity_date+'T12:00:00').toLocaleDateString('el-GR');
+     return `<div class="dashAlert"><b>⚠️ ${esc(a.task.activity_type||'Εργασία')}</b> • ${dt}<br><small>${a.warnings.map(esc).join(' • ')}</small></div>`;
+   }).join('')+
+   `<small style="display:block;margin-top:8px">Βρέθηκαν <b>${alerts.length}</b> εργασίες που χρειάζονται έλεγχο λόγω πρόγνωσης (${esc(weather.source)}). Το GeoFylo δεν αλλάζει αυτόματα καμία εργασία.</small>`;
+ }catch(e){
+   console.error('Weather task alerts:',e);
+   const msg=e?.message==='no_location'
+     ?'📍 Δεν υπάρχει GPS στο αγροτεμάχιο ούτε περιοχή στο Προφίλ.'
+     :'⚠️ Δεν ήταν δυνατός ο έλεγχος καιρού για τις εργασίες.';
+   box.innerHTML='<small>'+msg+'</small>';
+ }
+}
+async function loadCalendar(){await Promise.all([loadTaskCenter(),loadCalendarHistory(),loadWeatherTaskAlerts()]);}
 
 function quickEntry(type){
  if(!season.value){alert('Επίλεξε πρώτα καλλιεργητική περίοδο.');season.scrollIntoView({behavior:'smooth',block:'center'});return}
