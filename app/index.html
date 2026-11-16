@@ -3569,74 +3569,32 @@ function gfInvoiceDate(text){
  const a=m[1].split(/[\/.-]/).map(Number);let y=a[2];if(y<100)y+=2000;return `${y}-${String(a[1]).padStart(2,'0')}-${String(a[0]).padStart(2,'0')}`;
 }
 function gfInvoiceBuyer(text){
- const lines=String(text).split(/\n/).map(x=>x.trim()).filter(Boolean);
- const keys=['πελάτης','πελατησ','επωνυμία','επωνυμια','αγοραστής','αγοραστης','λήπτης','ληπτης','customer','buyer'];
- for(const line of lines){const low=line.toLocaleLowerCase('el-GR');for(const k of keys){const i=low.indexOf(k);if(i>=0){let v=line.slice(i+k.length).replace(/^\s*[:\-]\s*/,'').trim();if(v.length>=2)return v.slice(0,100)}}}
- return '';
-}
-function gfInvoiceKgPrice(text){
- const lines=String(text).split(/\n/).map(x=>x.trim()).filter(Boolean);
- let best=null;
- for(const line of lines){
-   const kgm=line.match(/(\d+(?:[.,]\d+)?)\s*(?:kg|κιλ(?:ά|α)?)/i);
-   if(!kgm)continue; const kg=gfParseGreekNumber(kgm[1]);if(!(kg>0))continue;
-   let pm=line.match(/(?:€\s*)?(\d+(?:[.,]\d+)?)\s*(?:€\s*)?(?:\/\s*(?:kg|κιλ)|(?:€\s*)?(?:kg|κιλ))/i);
-   let price=pm?gfParseGreekNumber(pm[1]):null;
-   if(!(price>0)){
-     const nums=[...line.matchAll(/\d+(?:[.,]\d+)?/g)].map(m=>gfParseGreekNumber(m[0])).filter(n=>n>0&&Math.abs(n-kg)>.0001);
-     const plausible=nums.filter(n=>n<=50);if(plausible.length)price=plausible[0];
-   }
-   if(price>0){best={kg,price,line};break;}
- }
- if(best)return best;
- // fallback: explicit labels anywhere
- const kgm=String(text).match(/(?:ποσότητα|ποσοτητα|κιλά|κιλα|quantity)\s*[:\-]?\s*(\d+(?:[.,]\d+)?)/i);
- const pm=String(text).match(/(?:τιμή\s*(?:μονάδας|kg)?|τιμη\s*(?:μοναδας|kg)?|price)\s*[:\-]?\s*(\d+(?:[.,]\d+)?)/i);
- return {kg:kgm?gfParseGreekNumber(kgm[1]):null,price:pm?gfParseGreekNumber(pm[1]):null,line:''};
-}
-async function gfInvoiceImageSource(file){
- let source=file;
- if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
-   const buf=await file.arrayBuffer();
-   const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
-   pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-   const pdf=await pdfjs.getDocument({data:buf}).promise,page=await pdf.getPage(1),vp=page.getViewport({scale:3});
-   const c=document.createElement('canvas');c.width=Math.round(vp.width);c.height=Math.round(vp.height);
-   await page.render({canvasContext:c.getContext('2d'),viewport:vp}).promise;source=c;
- }
- if(source instanceof HTMLCanvasElement)return gfInvoicePreprocessCanvas(source);
- const url=URL.createObjectURL(source);
- try{
-   const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url});
-   const maxW=2400,scale=Math.min(3,maxW/img.naturalWidth),w=Math.max(img.naturalWidth,Math.round(img.naturalWidth*scale)),h=Math.round(img.naturalHeight*(w/img.naturalWidth));
-   const c=document.createElement('canvas');c.width=w;c.height=h;c.getContext('2d').drawImage(img,0,0,w,h);
-   return gfInvoicePreprocessCanvas(c);
- }finally{URL.revokeObjectURL(url)}
-}
-function gfInvoicePreprocessCanvas(input){
- const maxW=2600,scale=input.width>maxW?maxW/input.width:1,w=Math.round(input.width*scale),h=Math.round(input.height*scale);
- const c=document.createElement('canvas');c.width=w;c.height=h;const ctx=c.getContext('2d',{willReadFrequently:true});
- ctx.drawImage(input,0,0,w,h);
- const im=ctx.getImageData(0,0,w,h),d=im.data;
- let sum=0;for(let i=0;i<d.length;i+=4)sum+=(d[i]*.299+d[i+1]*.587+d[i+2]*.114);
- const mean=sum/(d.length/4),threshold=Math.max(135,Math.min(205,mean*.88));
- for(let i=0;i<d.length;i+=4){
-   let g=d[i]*.299+d[i+1]*.587+d[i+2]*.114;
-   g=(g-128)*1.65+128;
-   const v=g>threshold?255:Math.max(0,Math.min(255,g*.72));
-   d[i]=d[i+1]=d[i+2]=v;
- }
- ctx.putImageData(im,0,0);return c;
-}
-function gfInvoiceOCRQuality(raw,confidence){
- const s=String(raw||'').trim(),letters=(s.match(/[A-Za-zΑ-Ωα-ωΆ-ώ]/g)||[]).length,digits=(s.match(/\d/g)||[]).length;
- const weird=(s.match(/[<>{}|\\^~]/g)||[]).length;
- const score=(Number(confidence)||0)+(letters>=20?10:0)+(digits>=4?8:0)-(weird>=8?15:0);
- return {ok:s.length>=35&&letters>=12&&score>=45,score,letters,digits};
-}
-function gfInvoiceBuyer(text){
  const lines=String(text).split(/\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
- const keys=['πελάτης','πελατης','πελατησ','επωνυμία','επωνυμια','αγοραστής','αγοραστης','λήπτης','ληπτης','customer','buyer'];
+ const all=lines.join('\n'),lowAll=all.toLocaleLowerCase('el-GR');
+ const isPurchaseInvoice=/τιμολόγιο\s+αγοράς|τιμολογιο\s+αγορας/i.test(all);
+
+ // Σε Τιμολόγιο Αγοράς ο παραγωγός είναι ο "Συμβαλλόμενος".
+ // Για την πώληση στο GeoFylo θέλουμε τον εκδότη/αγοραστή που εμφανίζεται στην κεφαλίδα.
+ if(isPurchaseInvoice){
+   const stop=Math.max(3,lines.findIndex(x=>/είδος\s+παραστατικού|ειδος\s+παραστατικου/i.test(x)));
+   const header=lines.slice(0,stop>0?stop:10);
+   const companyPatterns=[
+     /\b(.{2,80}?\b(?:Α\.?\s*Ε\.?|ΑΕ|Ο\.?\s*Ε\.?|ΟΕ|Ε\.?\s*Π\.?\s*Ε\.?|ΕΠΕ|Ι\.?\s*Κ\.?\s*Ε\.?|ΙΚΕ))\b/i,
+     /\b(.{2,80}?\b(?:εταιρεία|εταιρεια|company))\b/i
+   ];
+   for(const line of header){
+     for(const p of companyPatterns){
+       const m=line.match(p);
+       if(m){
+         let v=m[1].replace(/^[^A-Za-zΑ-Ωα-ωΆ-ώ]+/,'').trim();
+         if(v.length>=3)return v.slice(0,100);
+       }
+     }
+   }
+ }
+
+ // Συνήθη τιμολόγια: αναζήτηση ρητής ένδειξης πελάτη/αγοραστή.
+ const keys=['πελάτης','πελατης','πελατησ','αγοραστής','αγοραστης','λήπτης','ληπτης','customer','buyer'];
  for(let n=0;n<lines.length;n++){
    const line=lines[n],low=line.toLocaleLowerCase('el-GR');
    for(const k of keys){
@@ -3651,23 +3609,51 @@ function gfInvoiceBuyer(text){
 }
 function gfInvoiceKgPrice(text){
  const s=String(text).replace(/\u00a0/g,' '),lines=s.split(/\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
- let best=null;
+ const parseNums=line=>[...line.matchAll(/\d{1,7}(?:[.,]\d{1,4})?/g)].map(m=>({raw:m[0],n:gfParseGreekNumber(m[0])})).filter(x=>Number.isFinite(x.n)&&x.n>0);
+
+ // Πρώτα ψάχνουμε γραμμή είδους και επιλέγουμε τον συνδυασμό:
+ // τιμολογημένη ποσότητα × τιμή μονάδας ≈ αξία.
+ let best=null,bestErr=Infinity;
  for(const line of lines){
-   const kgm=line.match(/(\d{1,6}(?:[.,]\d{1,3})?)\s*(?:kg|kgs|κιλ(?:ά|α)?|κιλά)/i);
-   if(!kgm)continue;
-   const kg=gfParseGreekNumber(kgm[1]);if(!(kg>0))continue;
-   const nums=[...line.matchAll(/\d{1,7}(?:[.,]\d{1,4})?/g)].map(m=>gfParseGreekNumber(m[0])).filter(n=>Number.isFinite(n)&&n>0);
-   const candidates=nums.filter(n=>Math.abs(n-kg)>.0001&&n<=100);
-   let price=null;
-   const explicit=line.match(/(?:τιμ(?:ή|η)(?:\s*μονάδας)?|price|€\s*\/?\s*kg)\s*[:=]?\s*(\d+(?:[.,]\d+)?)/i);
-   if(explicit)price=gfParseGreekNumber(explicit[1]);
-   if(!(price>0)&&candidates.length)price=candidates[0];
-   if(price>0){best={kg,price,line};break}
+   const low=line.toLocaleLowerCase('el-GR');
+   if(!/(κιλ|kg|πιπερ|αγγουρ|ντοματ|προϊόν|προιον|είδος|ειδος)/i.test(low))continue;
+   const nums=parseNums(line).map(x=>x.n);
+   if(nums.length<3)continue;
+   for(let i=0;i<nums.length;i++){
+     const qty=nums[i];if(qty<1||qty>100000)continue;
+     for(let j=0;j<nums.length;j++){
+       const price=nums[j];if(j===i||price<=0||price>100)continue;
+       for(let k=0;k<nums.length;k++){
+         if(k===i||k===j)continue;
+         const total=nums[k];if(total<1)continue;
+         const err=Math.abs(qty*price-total)/Math.max(total,1);
+         if(err<=0.025&&err<bestErr){best={kg:qty,price,total,line,verified:true};bestErr=err}
+       }
+     }
+   }
  }
  if(best)return best;
- const kgm=s.match(/(?:ποσότητα|ποσοτητα|quantity|κιλά|κιλα)\s*[:=\-]?\s*(\d{1,6}(?:[.,]\d{1,3})?)/i);
+
+ // OCR συχνά σπάει τη γραμμή του πίνακα σε διαδοχικές γραμμές.
+ // Ελέγχουμε αριθμούς σε μικρά παράθυρα 3 γραμμών με τον ίδιο μαθηματικό κανόνα.
+ for(let n=0;n<lines.length;n++){
+   const block=lines.slice(n,n+3).join(' ');
+   if(!/(κιλ|kg|πιπερ|αγγουρ|ντοματ)/i.test(block))continue;
+   const nums=parseNums(block).map(x=>x.n);
+   for(let i=0;i<nums.length;i++)for(let j=0;j<nums.length;j++)for(let k=0;k<nums.length;k++){
+     if(i===j||i===k||j===k)continue;
+     const qty=nums[i],price=nums[j],total=nums[k];
+     if(qty<1||price<=0||price>100||total<1)continue;
+     const err=Math.abs(qty*price-total)/Math.max(total,1);
+     if(err<=0.02&&err<bestErr){best={kg:qty,price,total,line:block,verified:true};bestErr=err}
+   }
+ }
+ if(best)return best;
+
+ // Fallback σε ρητές επικεφαλίδες.
+ const kgm=s.match(/(?:συνολο\s+ποσοτητας|σύνολο\s+ποσότητας|ποσότητα|ποσοτητα|quantity|κιλά|κιλα)\s*[:=\-]?\s*(\d{1,6}(?:[.,]\d{1,3})?)/i);
  const pm=s.match(/(?:τιμή\s*(?:μονάδας|kg)?|τιμη\s*(?:μοναδας|kg)?|price)\s*[:=\-]?\s*(\d+(?:[.,]\d{1,4})?)/i);
- return {kg:kgm?gfParseGreekNumber(kgm[1]):null,price:pm?gfParseGreekNumber(pm[1]):null,line:''};
+ return {kg:kgm?gfParseGreekNumber(kgm[1]):null,price:pm?gfParseGreekNumber(pm[1]):null,total:null,line:'',verified:false};
 }
 async function scanSaleInvoice(file){
  const st=document.getElementById('saleInvoiceScanStatus'),pv=document.getElementById('saleInvoicePreview');if(!file||!st||!pv)return;
@@ -3681,7 +3667,7 @@ async function scanSaleInvoice(file){
    });
    const raw=r.data?.text||'',confidence=Number(r.data?.confidence||0),quality=gfInvoiceOCRQuality(raw,confidence);
    const qp=gfInvoiceKgPrice(raw),buyer=gfInvoiceBuyer(raw),date=gfInvoiceDate(raw);
-   saleInvoiceScanResult={date,buyer,kg:qp.kg,price:qp.price,raw,confidence};
+   const isPurchaseInvoice=/τιμολόγιο\s+αγοράς|τιμολογιο\s+αγορας/i.test(raw);saleInvoiceScanResult={date,buyer,kg:qp.kg,price:qp.price,total:qp.total||null,verified:!!qp.verified,isPurchaseInvoice,raw,confidence};
    const found=[date?'ημερομηνία':null,buyer?'πελάτης':null,qp.kg?'ποσότητα':null,qp.price?'τιμή':null].filter(Boolean);
    pv.classList.remove('hidden');
    if(!quality.ok){
@@ -3690,7 +3676,7 @@ async function scanSaleInvoice(file){
      st.innerHTML=`<small>✅ Η ανάγνωση ολοκληρώθηκε (βεβαιότητα OCR ${Math.round(confidence)}%). Βρέθηκαν: ${found.length?found.join(', '):'δεν εντοπίστηκαν βασικά πεδία'}.</small>`;
    }
    const canApply=quality.ok&&found.length>0;
-   pv.innerHTML=`<b>Έλεγχος πριν τη μεταφορά</b><br><small>Ημερομηνία: <b>${esc(date||'—')}</b><br>Πελάτης: <b>${esc(buyer||'—')}</b><br>Ποσότητα: <b>${qp.kg?Number(qp.kg).toLocaleString('el-GR')+' kg':'—'}</b><br>Τιμή/kg: <b>${qp.price?Number(qp.price).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:4})+' €':'—'}</b></small>${canApply?'<button type="button" onclick="applySaleInvoiceScan()">⬇️ Μεταφορά στα πεδία πώλησης</button>':'<div class="dashAlert" style="margin-top:10px">🚫 Η μεταφορά απενεργοποιήθηκε επειδή η ανάγνωση δεν είναι αρκετά αξιόπιστη.</div>'}<details style="margin-top:8px"><summary><small>Προβολή κειμένου OCR</small></summary><pre style="white-space:pre-wrap;font-size:11px;max-height:180px;overflow:auto">${esc(raw.slice(0,5000))}</pre></details>`;
+   pv.innerHTML=`<b>Έλεγχος πριν τη μεταφορά</b><br><small>Ημερομηνία: <b>${esc(date||'—')}</b><br>Πελάτης: <b>${esc(buyer||'—')}</b><br>Ποσότητα: <b>${qp.kg?Number(qp.kg).toLocaleString('el-GR')+' kg':'—'}</b><br>Τιμή/kg: <b>${qp.price?Number(qp.price).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:4})+' €':'—'}</b><br>Αξία: <b>${qp.total?Number(qp.total).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €':'—'}</b><br>${qp.verified?'<span style="color:#216b3a"><b>✓ Ποσότητα × τιμή = αξία</b></span>':''}${isPurchaseInvoice?'<br><span><b>📄 Τιμολόγιο Αγοράς:</b> ως πελάτης χρησιμοποιείται ο εκδότης.</span>':''}</small>${canApply?'<button type="button" onclick="applySaleInvoiceScan()">⬇️ Μεταφορά στα πεδία πώλησης</button>':'<div class="dashAlert" style="margin-top:10px">🚫 Η μεταφορά απενεργοποιήθηκε επειδή η ανάγνωση δεν είναι αρκετά αξιόπιστη.</div>'}<details style="margin-top:8px"><summary><small>Προβολή κειμένου OCR</small></summary><pre style="white-space:pre-wrap;font-size:11px;max-height:180px;overflow:auto">${esc(raw.slice(0,5000))}</pre></details>`;
  }catch(e){console.error('Invoice OCR:',e);st.innerHTML='<small>⚠️ Δεν ήταν δυνατή η ανάγνωση. Δοκίμασε καθαρότερη φωτογραφία, κάθετα πάνω από το τιμολόγιο και χωρίς σκιά.</small>'}
 }
 async function applySaleInvoiceScan(){
