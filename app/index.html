@@ -4010,13 +4010,22 @@ function spokenPrice(t){
  return null;
 }
 function spokenSaleGrade(t){
- // Προτεραιότητα στα σαφή συμφραζόμενα κατηγορίας.
- if(/(?:κατηγορι[αa]|διαλογ[ηi])\s*(?:α|αλφα|a|πρωτη|1η|πρωτης)\b/.test(t))return 'A';
- if(/(?:κατηγορι[αa]|διαλογ[ηi])\s*(?:β|βητα|b|δευτερη|2η|δευτερης)\b/.test(t))return 'B';
- if(/(?:σκαρτ|βιομηχανικ)/.test(t))return 'SKARTA';
- // Φυσικές εκφράσεις χωρίς τη λέξη "κατηγορία".
- if(/\b(?:αλφα|πρωτη\s+κατηγορια)\b/.test(t))return 'A';
- if(/\b(?:βητα|δευτερη\s+κατηγορια)\b/.test(t))return 'B';
+ const x=normalizeVoice(t)
+   .replace(/[.,;:!?()[\]{}]/g,' ')
+   .replace(/\s+/g,' ')
+   .trim();
+
+ // Σκάρτα / βιομηχανική
+ if(/\b(?:σκαρτα|σκαρτο|σκαρτων|βιομηχανικα|βιομηχανικη|βιομηχανικο)\b/.test(x))return 'SKARTA';
+
+ // Κατηγορία Α: πιάνει "κατηγορία α", "κατηγορία άλφα", "άλφα", "πρώτη κατηγορία"
+ if(/\b(?:κατηγορια|διαλογη)\s*(?:α|αλφα|a|πρωτη|πρωτης|1|1η)\b/.test(x) ||
+    /\b(?:αλφα|πρωτη)\s*(?:κατηγορια|διαλογη)?\b/.test(x))return 'A';
+
+ // Κατηγορία Β: πιάνει "κατηγορία β", "κατηγορία βήτα", "βήτα", "δεύτερη κατηγορία"
+ if(/\b(?:κατηγορια|διαλογη)\s*(?:β|βητα|b|δευτερη|δευτερης|2|2η)\b/.test(x) ||
+    /\b(?:βητα|δευτερη)\s*(?:κατηγορια|διαλογη)?\b/.test(x))return 'B';
+
  return null;
 }
 function startVoice(){
@@ -4056,8 +4065,13 @@ function startVoice(){
       else if(nums.length>1)pr=nums[1];
     }
     if(pr!=null)price.value=pr.toFixed(2);
-    const saleGradeVoice=spokenSaleGrade(t);
-    if(saleGradeVoice&&document.getElementById('saleGrade'))saleGrade.value=saleGradeVoice;
+    const saleGradeVoice=spokenSaleGrade(heard);
+    const saleGradeEl=document.getElementById('saleGrade');
+    if(saleGradeVoice&&saleGradeEl){
+      saleGradeEl.value=saleGradeVoice;
+      saleGradeEl.dispatchEvent(new Event('change',{bubbles:true}));
+      voiceMsg.textContent+=' — Κατηγορία: '+(saleGradeVoice==='SKARTA'?'Σκάρτα':saleGradeVoice)+'.';
+    }
   } else if(isHarvest){
     etype.value='harvest';entryFields();
     let m=t.match(/(\d+(?:[.,]\d+)?)\s*(?:κιλα|kg)/);
