@@ -4009,6 +4009,16 @@ function spokenPrice(t){
  if(m)return Number(m[1]+"."+m[2]);
  return null;
 }
+function spokenSaleGrade(t){
+ // Προτεραιότητα στα σαφή συμφραζόμενα κατηγορίας.
+ if(/(?:κατηγορι[αa]|διαλογ[ηi])\s*(?:α|αλφα|a|πρωτη|1η|πρωτης)\b/.test(t))return 'A';
+ if(/(?:κατηγορι[αa]|διαλογ[ηi])\s*(?:β|βητα|b|δευτερη|2η|δευτερης)\b/.test(t))return 'B';
+ if(/(?:σκαρτ|βιομηχανικ)/.test(t))return 'SKARTA';
+ // Φυσικές εκφράσεις χωρίς τη λέξη "κατηγορία".
+ if(/\b(?:αλφα|πρωτη\s+κατηγορια)\b/.test(t))return 'A';
+ if(/\b(?:βητα|δευτερη\s+κατηγορια)\b/.test(t))return 'B';
+ return null;
+}
 function startVoice(){
  const SR=window.SpeechRecognition||window.webkitSpeechRecognition;
  if(!SR){voiceMsg.textContent='Η φωνητική αναγνώριση δεν υποστηρίζεται σε αυτόν τον browser.';return}
@@ -4046,6 +4056,8 @@ function startVoice(){
       else if(nums.length>1)pr=nums[1];
     }
     if(pr!=null)price.value=pr.toFixed(2);
+    const saleGradeVoice=spokenSaleGrade(t);
+    if(saleGradeVoice&&document.getElementById('saleGrade'))saleGrade.value=saleGradeVoice;
   } else if(isHarvest){
     etype.value='harvest';entryFields();
     let m=t.match(/(\d+(?:[.,]\d+)?)\s*(?:κιλα|kg)/);
