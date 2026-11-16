@@ -236,11 +236,6 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button id="assistantVoiceBtn" class="voice" onclick="startAssistantVoice()" title="Φωνητική ερώτηση" type="button" style="width:auto;margin:0;white-space:nowrap">🎙️</button>
 <button onclick="askGeoFylo()" style="width:auto;margin:0;white-space:nowrap">Αποστολή</button>
 </div>
-<div style="display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap">
-<button id="assistantSpeechToggle" class="soft" type="button" onclick="toggleAssistantSpeech()" style="width:auto;margin:0">🔊 Φωνή: Ενεργή</button>
-<button class="soft" type="button" onclick="repeatAssistantSpeech()" style="width:auto;margin:0">▶️ Επανάληψη απάντησης</button>
-<button class="soft" type="button" onclick="stopGeoFyloSpeech()" style="width:auto;margin:0">⏹️ Διακοπή</button>
-</div>
 <small id="assistantVoiceMsg" style="display:block;margin-top:7px"></small>
 <small style="display:block;margin-top:8px">GeoFylo Assistant v1.9 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
@@ -2649,19 +2644,6 @@ function geoFyloDeltaText(oldValue,newValue,suffix=''){
 
 let assistantRecognition=null;
 let assistantSpeakNextReply=false;
-let assistantSpeechEnabled=true;
-let assistantLastSpeech='';
-function toggleAssistantSpeech(){
- assistantSpeechEnabled=!assistantSpeechEnabled;
- const btn=document.getElementById('assistantSpeechToggle');
- if(btn)btn.textContent=assistantSpeechEnabled?'🔊 Φωνή: Ενεργή':'🔇 Φωνή: Κλειστή';
- if(!assistantSpeechEnabled)stopGeoFyloSpeech();
-}
-function repeatAssistantSpeech(){
- if(assistantLastSpeech)speakGeoFyloReply(assistantLastSpeech,true);
-}
-window.toggleAssistantSpeech=toggleAssistantSpeech;
-window.repeatAssistantSpeech=repeatAssistantSpeech;
 
 function geoFyloPlainSpeech(html){
  const box=document.createElement('div');
@@ -2671,8 +2653,7 @@ function geoFyloPlainSpeech(html){
    .replace(/\s+/g,' ')
    .trim();
 }
-function speakGeoFyloReply(html,force=false){
- if(!force&&!assistantSpeechEnabled)return;
+function speakGeoFyloReply(html){
  if(!('speechSynthesis' in window))return;
  const text=geoFyloPlainSpeech(html);
  if(!text)return;
@@ -2751,16 +2732,13 @@ async function askGeoFylo(preset){
  const q=(preset||(input?.value||'')).trim();
  if(!q)return;
  if(input)input.value='';
- stopGeoFyloSpeech();
  assistantAdd('user',esc(q));
  if(!geoFyloAssistantData)await loadGeoFyloAssistant();
  const d=geoFyloAssistantData;
  if(!d){
    const noData='<small>Δεν υπάρχουν διαθέσιμα δεδομένα για απάντηση.</small>';
    assistantAdd('assistant',noData);
-   assistantSpeakNextReply=false;
-   assistantLastSpeech=noData;
-   speakGeoFyloReply(noData);
+   if(assistantSpeakNextReply){assistantSpeakNextReply=false;speakGeoFyloReply(noData);}
    return;
  }
 
@@ -3055,9 +3033,10 @@ async function askGeoFylo(preset){
    ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων, εργασίες σήμερα/αύριο/εβδομάδα, καθυστερημένες εργασίες, ανάλυση ανά μήνα και σύγκριση περιόδων.</small>';
  }
  assistantAdd('assistant',ans);
- assistantSpeakNextReply=false;
- assistantLastSpeech=ans;
- speakGeoFyloReply(ans);
+ if(assistantSpeakNextReply){
+   assistantSpeakNextReply=false;
+   speakGeoFyloReply(ans);
+ }
 }
 async function dash(){if(!gh.value){const ml=document.getElementById('movementsList');if(ml)ml.innerHTML='<small>Επίλεξε αγροτεμάχιο.</small>';return}
 let [a,b,c,d,u,iv]=await Promise.all([
@@ -3628,74 +3607,39 @@ function gfInvoiceBuyer(text){
  }
  return '';
 }
+function gfInvoiceNumberGR(s){
+ s=String(s||'').replace(/\s/g,'').replace(/[€]/g,'').replace(/[^\d.,-]/g,''); if(!s)return null;
+ if(s.includes(',')&&s.includes('.')){if(s.lastIndexOf(',')>s.lastIndexOf('.'))s=s.replace(/\./g,'').replace(',','.');else s=s.replace(/,/g,'');}
+ else if(s.includes(',')){const p=s.split(',');s=(p.length===2&&p[1].length<=4)?p[0].replace(/\./g,'')+'.'+p[1]:s.replace(/,/g,'');}
+ const v=Number(s);return Number.isFinite(v)?v:null;
+}
 function gfInvoiceKgPrice(text){
- const s=String(text).replace(/\u00a0/g,' '),lines=s.split(/\n/).map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
- const parseNums=line=>[...line.matchAll(/\d{1,7}(?:[.,]\d{1,4})?/g)].map(m=>({raw:m[0],n:gfParseGreekNumber(m[0])})).filter(x=>Number.isFinite(x.n)&&x.n>0);
- const candidates=[];
- function addCandidates(block,contextBoost=0){
-   const nums=parseNums(block).map(x=>x.n);
-   if(nums.length<3)return;
-   const low=block.toLocaleLowerCase('el-GR');
-   for(let i=0;i<nums.length;i++)for(let j=0;j<nums.length;j++)for(let k=0;k<nums.length;k++){
-     if(i===j||i===k||j===k)continue;
-     const qty=nums[i],price=nums[j],total=nums[k];
-     if(qty<5||qty>100000||price<0.05||price>100||total<5)continue;
-     const err=Math.abs(qty*price-total)/Math.max(total,1);if(err>0.025)continue;
-     let score=100-(err*1000)+contextBoost;
-     // Σε αγροτικό τιμολόγιο η τιμολογημένη ποσότητα είναι συνήθως δεκάδες/εκατοντάδες kg.
-     if(qty>=20)score+=12;if(qty>=100)score+=12;if(qty>=500)score+=8;
-     // Η τιμή/kg συνήθως είναι μικρός δεκαδικός αριθμός, όχι 1 που προέκυψε από κωδικό/στήλη.
-     if(price>1&&price<20)score+=10;if(price===1)score-=15;
-     // Αποφεύγουμε ψευδή μικρά γινόμενα τύπου 2,24 × 1 = 2,24.
-     if(total>=100)score+=15;if(total>=1000)score+=12;if(total<20)score-=35;
-     if(/συνολο\s+ποσοτ|σύνολο\s+ποσότ|ποσοτητα|ποσότητα/.test(low))score+=18;
-     if(/τιμη|τιμή|price/.test(low))score+=10;
-     if(/αξια|αξία|value|πληρωτ/.test(low))score+=18;
-     if(/κιλ|kg/.test(low))score+=8;
-     candidates.push({kg:qty,price,total,line:block,verified:true,score});
-   }
+ const lines=String(text||'').replace(/\r/g,'').split('\n').map(x=>x.replace(/\s+/g,' ').trim()).filter(Boolean);
+ const nr=/\d{1,3}(?:[.\s]\d{3})*(?:,\d{1,4})|\d+(?:[.,]\d{1,4})?/g;
+ let kg=null,price=null,total=null,line='',verified=false,c=[];
+ for(let i=0;i<lines.length;i++){
+  const L=lines[i],U=L.toUpperCase(),ns=(L.match(nr)||[]).map(gfInvoiceNumberGR).filter(v=>v!=null);
+  if(/ΣΥΝΟΛΟ\s+ΠΟΣΟΤΗΤΑΣ|ΣΥΝΟΛΙΚΗ\s+ΠΟΣΟΤΗΤΑ/.test(U)&&ns.length)kg=ns[ns.length-1];
+  if(/(?:ΚΑΘΑΡΗ\s+)?ΑΞΙΑ|ΠΛΗΡΩΤΕΟ|ΣΥΝΟΛΟ\s+ΑΞΙΑΣ/.test(U)){const x=ns.filter(v=>v>=10&&v<1000000);if(x.length)total=Math.max(...x);}
  }
- // Γραμμές και μεγαλύτερα παράθυρα ώστε να συνδυάζονται στοιχεία που το OCR έσπασε σε διαφορετικές σειρές.
- for(let n=0;n<lines.length;n++){
-   const line=lines[n],low=line.toLocaleLowerCase('el-GR');
-   addCandidates(line,/(κιλ|kg|πιπερ|αγγουρ|ντοματ|ποσοτ|τιμ|αξ)/i.test(low)?15:0);
-   for(const span of [2,3,4,5]){
-     const block=lines.slice(n,n+span).join(' ');
-     if(/(κιλ|kg|πιπερ|αγγουρ|ντοματ|ποσοτ|τιμ|αξ|σύνολο|συνολο)/i.test(block))addCandidates(block,span<=3?10:4);
-   }
+ for(let i=0;i<lines.length;i++){
+  const w=lines.slice(i,Math.min(lines.length,i+4)).join(' '),U=w.toUpperCase();
+  if(/ΠΟΣΟΤΗΤΑ\s+ΠΑΡΑΛΑΒΗΣ/.test(U)&&!/ΣΥΝΟΛΟ\s+ΠΟΣΟΤΗΤΑΣ/.test(U))continue;
+  const ns=(w.match(nr)||[]).map(gfInvoiceNumberGR).filter(v=>v!=null&&v>0);
+  for(const q of ns)for(const p of ns)for(const a of ns){
+   if(q===p||p===a||q<5||q>100000||p<.05||p>100||a<10||a>1000000)continue;
+   const e=Math.abs(q*p-a)/Math.max(a,1);if(e>.015)continue;
+   let s=100-e*1000;if(/ΚΙΛ|KG|ΠΟΣΟΤΗΤΑ/.test(U))s+=15;if(/ΤΙΜΗ/.test(U))s+=15;if(/ΑΞΙΑ/.test(U))s+=15;
+   if(q>=20)s+=8;if(p<=20)s+=8;if(a>=100)s+=8;c.push({q,p,a,s,line:w});
+  }
  }
- if(candidates.length){
-   candidates.sort((a,b)=>b.score-a.score);
-   return candidates[0];
- }
- // Ισχυρό fallback από τα ρητά σύνολα του παραστατικού.
- const kgm=s.match(/(?:συνολο\s+ποσοτητας|σύνολο\s+ποσότητας|ποσότητα|ποσοτητα|quantity|κιλά|κιλα)\s*[:=\-]?\s*(\d{1,6}(?:[.,]\d{1,3})?)/i);
- const pm=s.match(/(?:τιμή\s*(?:μονάδας|kg)?|τιμη\s*(?:μοναδας|kg)?|price)\s*[:=\-]?\s*(\d+(?:[.,]\d{1,4})?)/i);
- const tm=s.match(/(?:καθαρη\s+αξια|καθαρή\s+αξία|συνολικη\s+αξια|συνολική\s+αξία|πληρωτεο|πληρωτέο|αξια|αξία)\s*[:=\-]?\s*(\d{1,7}(?:[.,]\d{1,3})?)/i);
- const kg=kgm?gfParseGreekNumber(kgm[1]):null,price=pm?gfParseGreekNumber(pm[1]):null,total=tm?gfParseGreekNumber(tm[1]):null;
- const verified=!!(kg&&price&&total&&Math.abs(kg*price-total)/Math.max(total,1)<=0.025);
- return {kg,price,total,line:'',verified};
-}
-async function gfInvoiceImageSource(file){
- let input=file;
- if(file.type==='application/pdf'||/\.pdf$/i.test(file.name||'')){
-   const buf=await file.arrayBuffer();
-   const pdfjs=await import('https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.min.mjs');
-   pdfjs.GlobalWorkerOptions.workerSrc='https://cdnjs.cloudflare.com/ajax/libs/pdf.js/4.10.38/pdf.worker.min.mjs';
-   const pdf=await pdfjs.getDocument({data:buf}).promise,page=await pdf.getPage(1),vp=page.getViewport({scale:3});
-   const clean=document.createElement('canvas');clean.width=Math.round(vp.width);clean.height=Math.round(vp.height);
-   await page.render({canvasContext:clean.getContext('2d'),viewport:vp}).promise;
-   return {clean,processed:gfInvoicePreprocessCanvas(clean)};
- }
- const url=URL.createObjectURL(input);
- try{
-   const img=await new Promise((resolve,reject)=>{const im=new Image();im.onload=()=>resolve(im);im.onerror=reject;im.src=url});
-   const targetW=Math.min(2800,Math.max(img.naturalWidth,1800)),scale=targetW/img.naturalWidth,w=Math.round(img.naturalWidth*scale),h=Math.round(img.naturalHeight*scale);
-   const clean=document.createElement('canvas');clean.width=w;clean.height=h;const ctx=clean.getContext('2d');ctx.imageSmoothingEnabled=true;ctx.imageSmoothingQuality='high';ctx.drawImage(img,0,0,w,h);
-   return {clean,processed:gfInvoicePreprocessCanvas(clean)};
- }finally{URL.revokeObjectURL(url)}
-}
-function gfInvoicePreprocessCanvas(input){
+ c.sort((a,b)=>b.s-a.s);
+ if(kg!=null){const x=c.find(z=>Math.abs(z.q-kg)/Math.max(kg,1)<.01);if(x){price=x.p;total=x.a;line=x.line;verified=true;}}
+ if(!verified&&c[0]&&c[0].s>=125){kg=c[0].q;price=c[0].p;total=c[0].a;line=c[0].line;verified=true;}
+ if(verified)verified=Math.abs(kg*price-total)/Math.max(total,1)<=.015;
+ if(!verified)price=null;
+ return {kg,price,total,line,verified};
+}function gfInvoicePreprocessCanvas(input){
  const c=document.createElement('canvas');c.width=input.width;c.height=input.height;const ctx=c.getContext('2d',{willReadFrequently:true});ctx.drawImage(input,0,0);
  const im=ctx.getImageData(0,0,c.width,c.height),d=im.data;
  for(let i=0;i<d.length;i+=4){let g=d[i]*.299+d[i+1]*.587+d[i+2]*.114;g=Math.max(0,Math.min(255,(g-128)*1.35+128));d[i]=d[i+1]=d[i+2]=g}
