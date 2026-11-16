@@ -3994,10 +3994,16 @@ function normalizeVoice(t){
  return t.toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/€/g," ευρω ").replace(/\s+/g," ").trim();
 }
 function spokenPrice(t){
- // 1,20 / 1.20
- let m=t.match(/(\d+)[,.](\d+)/); if(m)return Number(m[1]+"."+m[2]);
- // "1 ευρώ και 20 λεπτά"
- m=t.match(/(\d+)\s*ευρω(?:\s+και)?\s*(\d+)\s*λεπτ/); if(m)return Number(m[1])+Number(m[2])/100;
+ // Τιμή μόνο όταν υπάρχει σαφές συμφραζόμενο τιμής.
+ // Έτσι το "1.200 κιλά" ΔΕΝ ερμηνεύεται ως τιμή 1,20.
+ let m=t.match(/(?:τιμη|με|προς)\s*(?:τιμη\s*)?(\d+)[,.](\d+)(?:\s*(?:ευρω|€))?/);
+ if(m)return Number(m[1]+"."+m[2]);
+ // "με 2 ευρώ και 80 λεπτά" / "τιμή 2 ευρώ και 80 λεπτά"
+ m=t.match(/(?:τιμη|με|προς)\s*(?:τιμη\s*)?(\d+)\s*ευρω(?:\s+και)?\s*(\d+)\s*λεπτ/);
+ if(m)return Number(m[1])+Number(m[2])/100;
+ // "2,80 ευρώ" όταν ο αριθμός δεν ακολουθείται από κιλά/kg
+ m=t.match(/(\d+)[,.](\d+)\s*ευρω/);
+ if(m)return Number(m[1]+"."+m[2]);
  return null;
 }
 function startVoice(){
