@@ -236,6 +236,11 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <button id="assistantVoiceBtn" class="voice" onclick="startAssistantVoice()" title="Φωνητική ερώτηση" type="button" style="width:auto;margin:0;white-space:nowrap">🎙️</button>
 <button onclick="askGeoFylo()" style="width:auto;margin:0;white-space:nowrap">Αποστολή</button>
 </div>
+<div style="display:flex;gap:8px;align-items:center;margin-top:9px;flex-wrap:wrap">
+<button id="assistantSpeechToggle" class="soft" type="button" onclick="toggleAssistantSpeech()" style="width:auto;margin:0">🔊 Φωνή: Ενεργή</button>
+<button class="soft" type="button" onclick="repeatAssistantSpeech()" style="width:auto;margin:0">▶️ Επανάληψη απάντησης</button>
+<button class="soft" type="button" onclick="stopGeoFyloSpeech()" style="width:auto;margin:0">⏹️ Διακοπή</button>
+</div>
 <small id="assistantVoiceMsg" style="display:block;margin-top:7px"></small>
 <small style="display:block;margin-top:8px">GeoFylo Assistant v1.9 • Απαντά από τα δεδομένα του λογαριασμού σου.</small>
 </div>
@@ -2644,6 +2649,19 @@ function geoFyloDeltaText(oldValue,newValue,suffix=''){
 
 let assistantRecognition=null;
 let assistantSpeakNextReply=false;
+let assistantSpeechEnabled=true;
+let assistantLastSpeech='';
+function toggleAssistantSpeech(){
+ assistantSpeechEnabled=!assistantSpeechEnabled;
+ const btn=document.getElementById('assistantSpeechToggle');
+ if(btn)btn.textContent=assistantSpeechEnabled?'🔊 Φωνή: Ενεργή':'🔇 Φωνή: Κλειστή';
+ if(!assistantSpeechEnabled)stopGeoFyloSpeech();
+}
+function repeatAssistantSpeech(){
+ if(assistantLastSpeech)speakGeoFyloReply(assistantLastSpeech,true);
+}
+window.toggleAssistantSpeech=toggleAssistantSpeech;
+window.repeatAssistantSpeech=repeatAssistantSpeech;
 
 function geoFyloPlainSpeech(html){
  const box=document.createElement('div');
@@ -2653,7 +2671,8 @@ function geoFyloPlainSpeech(html){
    .replace(/\s+/g,' ')
    .trim();
 }
-function speakGeoFyloReply(html){
+function speakGeoFyloReply(html,force=false){
+ if(!force&&!assistantSpeechEnabled)return;
  if(!('speechSynthesis' in window))return;
  const text=geoFyloPlainSpeech(html);
  if(!text)return;
@@ -2732,13 +2751,16 @@ async function askGeoFylo(preset){
  const q=(preset||(input?.value||'')).trim();
  if(!q)return;
  if(input)input.value='';
+ stopGeoFyloSpeech();
  assistantAdd('user',esc(q));
  if(!geoFyloAssistantData)await loadGeoFyloAssistant();
  const d=geoFyloAssistantData;
  if(!d){
    const noData='<small>Δεν υπάρχουν διαθέσιμα δεδομένα για απάντηση.</small>';
    assistantAdd('assistant',noData);
-   if(assistantSpeakNextReply){assistantSpeakNextReply=false;speakGeoFyloReply(noData);}
+   assistantSpeakNextReply=false;
+   assistantLastSpeech=noData;
+   speakGeoFyloReply(noData);
    return;
  }
 
@@ -3033,10 +3055,9 @@ async function askGeoFylo(preset){
    ans='Δεν κατάλαβα ακόμη αυτή την ερώτηση. 🤖<br><small>Μπορείς να με ρωτήσεις για παραγωγή, πωλημένα κιλά, έσοδα, έξοδα, κέρδος, παραγωγή, έξοδα, πελάτες, προμηθευτές, στόχους, αποθήκη, χαμηλά αποθέματα, κατανάλωση εφοδίων, εργασίες σήμερα/αύριο/εβδομάδα, καθυστερημένες εργασίες, ανάλυση ανά μήνα και σύγκριση περιόδων.</small>';
  }
  assistantAdd('assistant',ans);
- if(assistantSpeakNextReply){
-   assistantSpeakNextReply=false;
-   speakGeoFyloReply(ans);
- }
+ assistantSpeakNextReply=false;
+ assistantLastSpeech=ans;
+ speakGeoFyloReply(ans);
 }
 async function dash(){if(!gh.value){const ml=document.getElementById('movementsList');if(ml)ml.innerHTML='<small>Επίλεξε αγροτεμάχιο.</small>';return}
 let [a,b,c,d,u,iv]=await Promise.all([
