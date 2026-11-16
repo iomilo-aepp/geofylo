@@ -1058,7 +1058,7 @@ function toggleWeatherCard(forceOpen){
   const shouldOpen=(typeof forceOpen==='boolean') ? forceOpen : card.classList.contains('hidden');
   if(shouldOpen && todayCard) todayCard.classList.add('hidden');
   card.classList.toggle('hidden',!shouldOpen);
-  if(shouldOpen && !weatherLoaded){
+  if(shouldOpen){
     weatherLoaded=true;
     loadWeather();
   }
@@ -1083,55 +1083,50 @@ async function loadWeather(){
   }
 
   try{
-    // Παίρνουμε την περιοχή από το προφίλ του συνδεδεμένου παραγωγού
-    let area='';
+    let lat=null,lon=null,placeLabel='',sourceLabel='';
+    const fieldGps=(typeof getFieldGPS==='function')?getFieldGPS():null;
+    const selectedGH=(typeof gh!=='undefined'&&gh&&gh.value)?gh.options[gh.selectedIndex]?.text:'';
 
-    if(user){
-      const {data,error}=await sb
-        .from('profiles')
-        .select('area')
-        .eq('id',user.id)
-        .maybeSingle();
-
-      if(!error && data?.area){
-        area=data.area.trim();
+    // 1η προτεραιότητα: αποθηκευμένο GPS του επιλεγμένου αγροτεμαχίου.
+    if(fieldGps && Number.isFinite(Number(fieldGps.lat)) && Number.isFinite(Number(fieldGps.lng))){
+      lat=Number(fieldGps.lat);
+      lon=Number(fieldGps.lng);
+      placeLabel=selectedGH || 'Επιλεγμένο αγροτεμάχιο';
+      sourceLabel='📍 Καιρός από το GPS του επιλεγμένου αγροτεμαχίου';
+    }else{
+      // Εφεδρεία: η περιοχή που έχει δηλωθεί στο Προφίλ.
+      let area='';
+      if(user){
+        const {data,error}=await sb.from('profiles').select('area').eq('id',user.id).maybeSingle();
+        if(!error && data?.area) area=data.area.trim();
       }
+      if(!area){
+        box.innerHTML='<small>📍 Δεν υπάρχει GPS για το επιλεγμένο αγροτεμάχιο. Κατάγραψε GPS ή δήλωσε περιοχή στο Προφίλ.</small>';
+        return;
+      }
+      const geoUrl=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(area)}&count=1&language=el&format=json`;
+      const geoRes=await fetch(geoUrl);
+      if(!geoRes.ok) throw new Error('Geocoding error');
+      const geo=await geoRes.json();
+      if(!geo.results?.length){
+        box.innerHTML=`<small>⚠️ Δεν βρέθηκε η περιοχή "${esc(area)}". Έλεγξε την περιοχή στο Προφίλ.</small>`;
+        return;
+      }
+      const place=geo.results[0];
+      lat=Number(place.latitude); lon=Number(place.longitude);
+      placeLabel=place.name || area;
+      sourceLabel='📌 Καιρός από την περιοχή του Προφίλ • δεν έχει αποθηκευτεί GPS στο επιλεγμένο αγροτεμάχιο';
     }
 
-    // Αν δεν έχει δηλωθεί περιοχή
-    if(!area){
-      box.innerHTML='<small>📍 Δήλωσε την περιοχή σου στο Προφίλ για να εμφανίζεται ο τοπικός καιρός.</small>';
-      return;
-    }
-
-    // Μετατροπή ονόματος περιοχής σε συντεταγμένες
-    const geoUrl=`https://geocoding-api.open-meteo.com/v1/search?name=${encodeURIComponent(area)}&count=1&language=el&format=json`;
-
-    const geoRes=await fetch(geoUrl);
-    if(!geoRes.ok) throw new Error('Geocoding error');
-
-    const geo=await geoRes.json();
-
-    if(!geo.results?.length){
-      box.innerHTML=`<small>⚠️ Δεν βρέθηκε η περιοχή "${area}". Έλεγξε την περιοχή στο Προφίλ.</small>`;
-      return;
-    }
-
-    const place=geo.results[0];
-    const lat=place.latitude;
-    const lon=place.longitude;
-
-    // Φόρτωση καιρού + πρόγνωση 3 ημερών
-    const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,wind_speed_10m_max&timezone=auto&forecast_days=3`;
-
+    const weatherUrl=`https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current=temperature_2m,relative_humidity_2m,wind_speed_10m,precipitation&daily=weather_code,temperature_2m_max,temperature_2m_min,precipitation_probability_max,precipitation_sum,wind_speed_10m_max&timezone=auto&forecast_days=3`;
     const res=await fetch(weatherUrl);
     if(!res.ok) throw new Error('Weather error');
-
     const data=await res.json();
 
     const temp=Math.round(data.current.temperature_2m);
     const humidity=Math.round(data.current.relative_humidity_2m);
     const wind=Math.round(data.current.wind_speed_10m);
+    const currentRain=Number(data.current.precipitation||0);
     const min=Math.round(data.daily.temperature_2m_min[0]);
     const max=Math.round(data.daily.temperature_2m_max[0]);
 
@@ -1151,6 +1146,7 @@ async function loadWeather(){
         min:Math.round(data.daily.temperature_2m_min[i]),
         max:Math.round(data.daily.temperature_2m_max[i]),
         rain:Math.round(data.daily.precipitation_probability_max[i]||0),
+        rainMm:Number(data.daily.precipitation_sum?.[i]||0),
         wind:Math.round(data.daily.wind_speed_10m_max[i]||0)
       };
     });
@@ -1160,42 +1156,28 @@ async function loadWeather(){
         '<b>'+f.day+'</b>'+
         '<div style="font-size:26px;margin:5px 0">'+f.icon+'</div>'+
         '<b>'+f.min+'° – '+f.max+'°</b>'+
-        '<div style="font-size:12px;margin-top:5px">🌧️ '+f.rain+'%<br>💨 '+f.wind+' km/h</div>'+
+        '<div style="font-size:12px;margin-top:5px">🌧️ '+f.rain+'% • '+f.rainMm.toFixed(1)+' mm<br>💨 '+f.wind+' km/h</div>'+
       '</div>'
     ).join('');
 
-    // Απλές καιρικές επισημάνσεις για τον παραγωγό.
-    // Είναι ενδεικτικές και δεν αντικαθιστούν γεωπονική συμβουλή ή τις οδηγίες ετικέτας.
     const advice=[];
     const maxForecastWind=Math.max(...forecast.map(f=>f.wind));
     const maxRain=Math.max(...forecast.map(f=>f.rain));
     const maxForecastTemp=Math.max(...forecast.map(f=>f.max));
-
-    if(maxForecastWind>=30){
-      advice.push('💨 Αυξημένος άνεμος στην 3ήμερη πρόγνωση. Έλεγξε τις συνθήκες πριν από ψεκασμό.');
-    }
-    if(maxRain>=50){
-      advice.push('🌧️ Αυξημένη πιθανότητα βροχής. Λάβε την υπόψη πριν προγραμματίσεις πότισμα ή υπαίθρια εργασία.');
-    }
-    if(maxForecastTemp>=35){
-      advice.push('🌡️ Αναμένονται υψηλές θερμοκρασίες. Έλεγξε έγκαιρα άρδευση, αερισμό και συνθήκες καλλιέργειας.');
-    }
-    if(!advice.length){
-      advice.push('✅ Δεν εντοπίζεται βασική καιρική προειδοποίηση για τις επόμενες 3 ημέρες.');
-    }
-
-    const adviceHtml=advice.map(a=>
-      '<div style="margin-top:6px">'+a+'</div>'
-    ).join('');
+    if(maxForecastWind>=30) advice.push('💨 Αυξημένος άνεμος στην 3ήμερη πρόγνωση. Έλεγξε τις συνθήκες πριν από ψεκασμό.');
+    if(maxRain>=50) advice.push('🌧️ Αυξημένη πιθανότητα βροχής. Λάβε την υπόψη πριν προγραμματίσεις πότισμα ή υπαίθρια εργασία.');
+    if(maxForecastTemp>=35) advice.push('🌡️ Αναμένονται υψηλές θερμοκρασίες. Έλεγξε έγκαιρα άρδευση, αερισμό και συνθήκες καλλιέργειας.');
+    if(!advice.length) advice.push('✅ Δεν εντοπίζεται βασική καιρική προειδοποίηση για τις επόμενες 3 ημέρες.');
+    const adviceHtml=advice.map(a=>'<div style="margin-top:6px">'+a+'</div>').join('');
 
     box.innerHTML=`
-      <div style="font-size:16px;margin-bottom:6px">
-        📍 <b>${place.name}</b>
-      </div>
+      <div style="font-size:16px;margin-bottom:3px">🌱 <b>${esc(placeLabel)}</b></div>
+      <small style="display:block;margin-bottom:8px">${sourceLabel}</small>
       <div style="font-size:30px;font-weight:700">${temp}°C</div>
       <div style="margin-top:8px">
         💧 Υγρασία: <b>${humidity}%</b><br>
         💨 Άνεμος: <b>${wind} km/h</b><br>
+        🌧️ Βροχή τώρα: <b>${currentRain.toFixed(1)} mm</b><br>
         🌡️ Σήμερα: <b>${min}° – ${max}°</b>
       </div>
       <hr style="margin:14px 0;border:0;border-top:1px solid #e5e7eb">
@@ -1204,10 +1186,9 @@ async function loadWeather(){
       <div style="margin-top:14px;padding:12px;border-radius:12px;background:#f5f8f5;border:1px solid #dfe7df">
         <div style="font-weight:700">🌱 Συμβουλή GeoFylo</div>
         ${adviceHtml}
-        <small style="display:block;margin-top:8px">Ενδεικτική ενημέρωση βάσει πρόγνωσης καιρού.</small>
+        <small style="display:block;margin-top:8px">Ενδεικτική ενημέρωση βάσει πρόγνωσης καιρού • δεδομένα Open-Meteo.</small>
       </div>
     `;
-
   }catch(e){
     console.error('Weather:',e);
     box.innerHTML='<small>⚠️ Δεν ήταν δυνατή η φόρτωση του καιρού.</small>';
