@@ -4009,6 +4009,35 @@ function spokenPrice(t){
  if(m)return Number(m[1]+"."+m[2]);
  return null;
 }
+function spokenSaleCustomer(t){
+ const el=document.getElementById('saleBuyer');
+ if(!el)return null;
+ const x=normalizeVoice(t);
+ const options=[...el.options].filter(o=>o.value);
+ if(!options.length)return null;
+
+ // Προτιμάμε το όνομα πελάτη μετά από "πελάτη", "στον/στην/στη", "προς".
+ let spoken='';
+ let m=x.match(/(?:πελατη|στον|στην|στη|προς)\s+(.+?)(?=\s+\d|\s+(?:με|τιμη|κατηγορια|διαλογη|κιλα|kg|αλφα|βητα|σκαρτα)\b|$)/);
+ if(m)spoken=m[1].trim();
+
+ const norm=v=>normalizeVoice(v).replace(/[.,;:!?()[\]{}]/g,' ').replace(/\s+/g,' ').trim();
+ const target=norm(spoken);
+ if(target){
+   const exact=options.find(o=>norm(o.value)===target);
+   if(exact)return exact.value;
+   const contained=options.find(o=>target.includes(norm(o.value)) || norm(o.value).includes(target));
+   if(contained)return contained.value;
+ }
+
+ // Εναλλακτικά, βρίσκουμε υπάρχον όνομα πελάτη μέσα σε ολόκληρη τη φράση.
+ const full=' '+norm(x)+' ';
+ const found=options
+   .map(o=>({value:o.value,n: norm(o.value)}))
+   .filter(o=>o.n && full.includes(' '+o.n+' '))
+   .sort((a,b)=>b.n.length-a.n.length)[0];
+ return found?found.value:null;
+}
 function spokenSaleGrade(t){
  const x=normalizeVoice(t)
    .replace(/[.,;:!?()[\]{}]/g,' ')
@@ -4063,6 +4092,13 @@ function startVoice(){
       else if(nums.length>1)pr=nums[1];
     }
     if(pr!=null)price.value=pr.toFixed(2);
+    const saleCustomerVoice=spokenSaleCustomer(heard);
+    const saleBuyerEl=document.getElementById('saleBuyer');
+    if(saleCustomerVoice&&saleBuyerEl){
+      saleBuyerEl.value=saleCustomerVoice;
+      saleBuyerEl.dispatchEvent(new Event('change',{bubbles:true}));
+      voiceMsg.textContent+=' — Πελάτης: '+saleCustomerVoice+'.';
+    }
     const saleGradeVoice=spokenSaleGrade(heard);
     const saleGradeEl=document.getElementById('saleGrade');
     if(saleGradeVoice&&saleGradeEl){
