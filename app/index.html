@@ -120,7 +120,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div id="fields"></div><input id="note" placeholder="Σημείωση"/><button id="saveEntryBtn" onclick="addEntry()">Αποθήκευση</button></div>
 <div class="card"><h3>Καλλιεργητική περίοδος</h3><select id="season" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentSeasonKey(user),this.value);if(user)localStorage.removeItem(currentGHKey(user));loadGH()"></select><input id="newSeason" placeholder="π.χ. 2026–27"/><button onclick="addSeason()">+ Περίοδος</button>
 <div class="grid"><button class="soft" onclick="renameSeason()">✏️ Μετονομασία περιόδου</button><button class="danger" onclick="deleteSeason()">🗑️ Διαγραφή περιόδου</button></div></div>
-<div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentGHKey(user),this.value);syncGlobalContext();dash();renderFieldGPS()"></select><input id="ghName" placeholder="Όνομα"/><div class="grid"><input id="area" placeholder="Στρέμματα" step=".1" type="number"/><select id="crop"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option></select></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
+<div class="card"><h3>Αγροτεμάχιο / Θερμοκήπιο</h3><select id="gh" onchange="if(user&amp;&amp;this.value)localStorage.setItem(currentGHKey(user),this.value);syncGlobalContext();dash();renderFieldGPS()"></select><input id="ghName" placeholder="Όνομα"/><div class="grid"><input id="area" placeholder="Στρέμματα" step=".1" type="number"/><select id="crop" onchange="gfToggleCustomCrop()"><option>Αγγούρι</option><option>Ντομάτα</option><option>Πιπεριά</option><option>Μελιτζάνα</option><option>Κολοκύθι</option><option>Καρπούζι</option><option>Πεπόνι</option><option>Ελιά</option><option>Αμπέλι</option><option>Πατάτα</option><option>Αβοκάντο</option><option value="__other__">Άλλο...</option></select></div><div id="customCropBox" class="hidden"><input id="customCrop" placeholder="Γράψε προϊόν / καλλιέργεια, π.χ. Φασολάκι"/></div><button onclick="addGH()">+ Αγροτεμάχιο</button>
 <div class="grid"><button class="soft" onclick="editGH()">✏️ Επεξεργασία</button><button class="danger" onclick="deleteGH()">🗑️ Διαγραφή</button></div>
 <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4ece4"><h4 style="margin:0 0 6px">📍 GPS αγροτεμαχίου</h4><small>Αποθήκευσε τη θέση ή τα όρια του επιλεγμένου αγροτεμαχίου.</small><div class="grid" style="margin-top:8px"><button class="soft" type="button" onclick="captureFieldGPS()">📍 Καταγραφή GPS</button><button class="soft" id="fieldMapBtn" type="button" onclick="openFieldMap()">🗺️ Προβολή σε χάρτη</button></div><button class="soft" id="fieldNavBtn" type="button" onclick="navigateToField()">🧭 Πλοήγηση στο χωράφι</button><div id="fieldGPSStatus" class="quickSummary" style="margin-top:8px"><small>Δεν έχει αποθηκευτεί θέση GPS.</small></div>
 <div style="margin-top:14px;padding-top:14px;border-top:1px solid #e4ece4"><h4 style="margin:0 0 6px">🔷 Όρια & έκταση</h4><small>Διάλεξε καταγραφή περπατώντας ή σχεδίαση των γωνιών στον χάρτη. Η σχεδίαση ανοίγει αρχικά σε δορυφορική προβολή.</small><div class="grid" style="margin-top:8px"><button class="soft" id="boundaryStartBtn" type="button" onclick="startFieldBoundary()">🚶 Καταγραφή περπατώντας</button><button class="soft" type="button" onclick="openBoundaryMapEditor()">✏️ Σχεδίαση στον χάρτη</button></div><div class="grid"><button class="soft" id="boundaryStopBtn" type="button" onclick="finishFieldBoundary()" disabled>⏹️ Ολοκλήρωση</button><button class="danger hidden" id="boundaryCancelBtn" type="button" onclick="cancelFieldBoundary()">Ακύρωση</button></div><div id="fieldBoundaryStatus" class="quickSummary" style="margin-top:8px"><small>Δεν έχουν αποθηκευτεί όρια.</small></div></div>
@@ -2395,12 +2395,22 @@ async function loadFarmMap(){
 }
 window.loadFarmMap=loadFarmMap;window.gfFarmNavigate=gfFarmNavigate;window.gfSelectFarm=gfSelectFarm;
 
+function gfToggleCustomCrop(){
+ const box=document.getElementById('customCropBox');
+ if(box)box.classList.toggle('hidden',document.getElementById('crop')?.value!=='__other__');
+}
+function gfSelectedCrop(){
+ const v=crop.value==='__other__'?String(document.getElementById('customCrop')?.value||'').trim():crop.value;
+ if(crop.value==='__other__'&&!v){alert('Γράψε το προϊόν / την καλλιέργεια.');return null}
+ return v;
+}
 async function addGH(){
+ const gfCropValue=gfSelectedCrop();if(gfCropValue===null)return;
  if(!season.value)return alert('Φτιάξε πρώτα περίοδο.');
  const n=ghName.value.trim(), ar=Number(area.value);
  if(!n)return alert('Συμπλήρωσε όνομα αγροτεμαχίου.');
  if(!Number.isFinite(ar)||ar<=0)return alert('Συμπλήρωσε έκταση μεγαλύτερη από 0 στρέμματα.');
- let r=await sb.from('greenhouses').insert({user_id:user.id,season_id:+season.value,name:n,crop:crop.value,area:ar});
+ let r=await sb.from('greenhouses').insert({user_id:user.id,season_id:+season.value,name:n,crop:gfCropValue,area:ar});
  if(r.error)return alert('Δεν έγινε η δημιουργία: '+r.error.message);
  ghName.value='';area.value='';await loadGH();await loadFirstSteps();
 }
