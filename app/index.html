@@ -2378,6 +2378,26 @@ async function gfSelectFarm(id){
  const st=document.getElementById('farmMapStatus');
  if(st)st.innerHTML='<b>✅ Επιλέχθηκε: '+esc(x?.text||'Αγροτεμάχιο')+'</b><br><small>Η επιλογή ισχύει πλέον σε όλο το GeoFylo.</small>';
 }
+async function gfPrintFieldMap(id){
+ const gid=String(id||'');if(!gid)return;
+ const rr=await sb.from('greenhouses').select('*').eq('id',gid).eq('user_id',user.id).maybeSingle();
+ const x=rr.data;if(!x)return alert('Δεν βρέθηκε το αγροτεμάχιο.');
+ const b=gfStoredBoundaryForGH(gid),g=gfStoredGPSForGH(gid);
+ let pts=[],lat=null,lng=null,area=Number(x.area||0);
+ if(b?.points?.length>=3){
+   pts=b.points.map(p=>({lat:Number(p.lat),lng:Number(p.lng)})).filter(p=>Number.isFinite(p.lat)&&Number.isFinite(p.lng));
+   if(pts.length){lat=pts.reduce((a,p)=>a+p.lat,0)/pts.length;lng=pts.reduce((a,p)=>a+p.lng,0)/pts.length}
+   if(!area&&Number.isFinite(Number(b.stremmata)))area=Number(b.stremmata);
+ }else if(g&&Number.isFinite(Number(g.lat))&&Number.isFinite(Number(g.lng))){lat=Number(g.lat);lng=Number(g.lng)}
+ if(lat===null||lng===null)return alert('Δεν υπάρχουν αποθηκευμένες συντεταγμένες για αυτό το χωράφι.');
+ const coords=pts.length?pts.map((p,i)=>`${i+1}. ${p.lat.toFixed(6)}, ${p.lng.toFixed(6)}`).join('<br>'):`${lat.toFixed(6)}, ${lng.toFixed(6)}`;
+ const payload={name:x.name||'Αγροτεμάχιο',crop:x.crop||'',area:area||0,lat,lng,pts,coords};
+ localStorage.setItem('gf_print_field_payload',JSON.stringify(payload));
+ const w=window.open('','_blank');if(!w)return alert('Επίτρεψε τα αναδυόμενα παράθυρα για την εκτύπωση.');
+ const safeName=esc(payload.name),safeCrop=esc(payload.crop),safeCoords=coords;
+ w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>${safeName} - GeoFylo</title><link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"><style>body{font-family:Arial,sans-serif;margin:0;padding:24px;color:#17251a}h1{margin:0 0 5px}.meta{display:grid;grid-template-columns:1fr 1fr;gap:8px;margin:16px 0;padding:14px;border:1px solid #ccd8ce;border-radius:10px}.coords{font-size:12px;line-height:1.55;margin-top:14px}#pm{height:520px;border:1px solid #aaa;border-radius:10px}.printBtn{margin:15px 0;padding:10px 18px}@media print{body{padding:8mm}.printBtn{display:none}#pm{height:145mm}.leaflet-control-container{display:none}.meta{break-inside:avoid}}</style></head><body><h1>🗺️ ${safeName}</h1><div>${safeCrop}</div><div class="meta"><div><b>Όνομα</b><br>${safeName}</div><div><b>Καλλιέργεια</b><br>${safeCrop||'—'}</div><div><b>Έκταση</b><br>${Number(payload.area||0).toLocaleString('el-GR')} στρέμματα</div><div><b>Κεντρικές συντεταγμένες</b><br>${lat.toFixed(6)}, ${lng.toFixed(6)}</div></div><div id="pm"></div><div class="coords"><b>📍 Συντεταγμένες${pts.length?' ορίων':''}</b><br>${safeCoords}</div><button class="printBtn" onclick="window.print()">🖨️ Εκτύπωση</button><script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"><\/script><script>const d=JSON.parse(localStorage.getItem('gf_print_field_payload')||'{}');const m=L.map('pm',{zoomControl:false}).setView([d.lat,d.lng],17);L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}',{maxZoom:19,attribution:'Esri'}).addTo(m);if(d.pts&&d.pts.length>=3){const p=L.polygon(d.pts.map(x=>[x.lat,x.lng]),{weight:4,fillOpacity:.18}).addTo(m);m.fitBounds(p.getBounds().pad(.15));}else L.marker([d.lat,d.lng]).addTo(m);setTimeout(()=>m.invalidateSize(),300);<\/script></body></html>`);w.document.close();
+}
+window.gfPrintFieldMap=gfPrintFieldMap;
 async function loadFarmMap(){
  const mapEl=document.getElementById('farmMap'),status=document.getElementById('farmMapStatus'),list=document.getElementById('farmMapList');
  if(!mapEl||!status)return;if(typeof L==='undefined'){status.innerHTML='<small>⚠️ Δεν φορτώθηκε ο χάρτης. Έλεγξε τη σύνδεση Internet.</small>';return}
@@ -2403,9 +2423,9 @@ async function loadFarmMap(){
    mapped++;
    const calc=b?.points?.length>=3?gfBoundaryAreaM2(b.points)/1000:null;
    const areaText=calc&&Number.isFinite(calc)?calc.toFixed(3).replace('.',',')+' στρ. (GPS)':Number(x.area||0).toLocaleString('el-GR')+' στρ.';
-   const popup='<b>'+esc(x.name)+'</b><br>'+esc(x.crop||'')+'<br>📐 '+areaText+'<br><small>'+kind+'</small><br><button style="margin-top:8px;padding:7px 10px" onclick="gfSelectFarm(\''+String(x.id).replace(/'/g,"\\'")+'\')">🌱 Επιλογή αγροτεμαχίου</button><button class="soft" style="margin-top:5px;padding:7px 10px" onclick="gfFarmNavigate('+center.lat+','+center.lng+')">🧭 Πλοήγηση</button>';
+   const popup='<b>'+esc(x.name)+'</b><br>'+esc(x.crop||'')+'<br>📐 '+areaText+'<br><small>'+kind+'</small><br><button style="margin-top:8px;padding:7px 10px" onclick="gfSelectFarm(\''+String(x.id).replace(/'/g,"\\'")+'\')">🌱 Επιλογή αγροτεμαχίου</button><button class="soft" style="margin-top:5px;padding:7px 10px" onclick="gfFarmNavigate('+center.lat+','+center.lng+')">🧭 Πλοήγηση</button><button class="soft" style="margin-top:5px;padding:7px 10px" onclick="gfPrintFieldMap(\''+String(x.id).replace(/'/g,"\\'")+'\')">🖨️ Εκτύπωση</button>';
    layer.addTo(gfFarmMap).bindPopup(popup);gfFarmLayers.push(layer);
-   rows.push('<div class="entry"><div class="entryText"><b>'+esc(x.name)+'</b><br><small>'+esc(x.crop||'')+' • '+areaText+' • '+kind+'</small></div><div class="entryActions"><button class="soft" title="Επιλογή αγροτεμαχίου" onclick="gfSelectFarm(\''+String(x.id).replace(/'/g,"\\'")+'\')">🌱</button><button class="soft" title="Πλοήγηση" onclick="gfFarmNavigate('+center.lat+','+center.lng+')">🧭</button></div></div>');
+   rows.push('<div class="entry"><div class="entryText"><b>'+esc(x.name)+'</b><br><small>'+esc(x.crop||'')+' • '+areaText+' • '+kind+'</small></div><div class="entryActions"><button class="soft" title="Επιλογή αγροτεμαχίου" onclick="gfSelectFarm(\''+String(x.id).replace(/'/g,"\\'")+'\')">🌱</button><button class="soft" title="Πλοήγηση" onclick="gfFarmNavigate('+center.lat+','+center.lng+')">🧭</button><button class="soft" title="Εκτύπωση χάρτη" onclick="gfPrintFieldMap(\''+String(x.id).replace(/'/g,"\\'")+'\')">🖨️</button></div></div>');
  }
  setTimeout(()=>{gfFarmMap.invalidateSize();if(bounds.length===1)gfFarmMap.setView(bounds[0],17);else if(bounds.length>1)gfFarmMap.fitBounds(L.latLngBounds(bounds).pad(.15))},80);
  status.innerHTML='<b>🌱 '+mapped+' από '+(r.data||[]).length+' αγροτεμάχια στον χάρτη</b><br><small>🔷 '+boundaryCount+' με όρια • 📍 '+markerCount+' μόνο με θέση GPS</small>';
