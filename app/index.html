@@ -191,7 +191,25 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 </div><div class="reportPanel" data-report-panel="sales" style="display:none;margin-top:14px"><h4>👥 Πωλήσεις ανά πελάτη / έμπορο</h4><div id="customerBreakdown"><small>Δεν υπάρχουν πωλήσεις.</small></div></div><div class="reportPanel" data-report-panel="supplies" style="display:none;margin-top:14px"><h4>📦 Κατανάλωση εφοδίων</h4><div id="inventoryUsageSummary"><small>Δεν υπάρχουν καταναλώσεις εφοδίων.</small></div>
 </div><div class="reportPanel" data-report-panel="cost" style="display:none;margin-top:14px"><h4>💸 Κόστος ανά κατηγορία</h4><div id="expenseBreakdown"><small>Δεν υπάρχουν έξοδα.</small></div>
 <h4>Ανά μήνα</h4><div id="monthlyReport"><small>Δεν υπάρχουν δεδομένα.</small></div>
-</div><div class="reportPanel" data-report-panel="producerbook" style="display:none;margin-top:14px"><div class="reportTitle"><div><h4 style="margin:0">📖 Βιβλίο Παραγωγού</h4><small>Χρονολογικό αρχείο των εφοδίων που χρησιμοποιήθηκαν στην επιλεγμένη καλλιέργεια.</small></div><button class="soft" onclick="exportProducerBookPDF()" style="width:auto" type="button">📄 Εξαγωγή PDF</button></div><div id="producerBookList" style="margin-top:12px"><small>Πάτησε «Βιβλίο Παραγωγού» για φόρτωση.</small></div></div><div class="reportPanel" data-report-panel="traceability" style="display:none;margin-top:14px"><div class="reportTitle"><div><h4 style="margin:0">🔗 Ιχνηλασιμότητα παρτίδων</h4><small>Συγκομιδή → Παρτίδα → Πώληση → Πελάτης.</small></div><button class="soft" onclick="loadTraceability()" style="width:auto" type="button">🔄</button></div><div id="traceabilityList" style="margin-top:12px"><small>Δεν υπάρχουν ακόμη παρτίδες.</small></div></div></div>
+</div><div class="reportPanel" data-report-panel="producerbook" style="display:none;margin-top:14px"><div class="reportTitle"><div><h4 style="margin:0">📖 Βιβλίο Παραγωγού</h4><small>Χρονολογικό αρχείο των εφοδίων που χρησιμοποιήθηκαν στην επιλεγμένη καλλιέργεια.</small></div><button class="soft" onclick="exportProducerBookPDF()" style="width:auto" type="button">📄 Εξαγωγή PDF</button></div><div id="producerBookList" style="margin-top:12px"><small>Πάτησε «Βιβλίο Παραγωγού» για φόρτωση.</small></div></div><div class="reportPanel" data-report-panel="traceability" style="display:none;margin-top:14px">
+<div class="reportTitle"><div><h4 style="margin:0">🔗 Ιχνηλασιμότητα παρτίδων</h4><small>Συγκομιδή → Παρτίδα → Πώληση → Πελάτης.</small></div><button class="soft" onclick="loadTraceability()" style="width:auto" type="button">🔄</button></div>
+<div style="margin-top:12px;padding:12px;border:1px solid #dfe7df;border-radius:12px">
+<div class="grid">
+<label>Από<input id="traceFrom" type="date" onchange="loadTraceability()"></label>
+<label>Έως<input id="traceTo" type="date" onchange="loadTraceability()"></label>
+</div>
+<div class="grid">
+<label>Χωράφι / Θερμοκήπιο<select id="traceGH" onchange="loadTraceability()"><option value="">Όλα</option></select></label>
+<label>Πελάτης<select id="traceBuyer" onchange="loadTraceability()"><option value="">Όλοι</option></select></label>
+</div>
+<label>LOT / Παρτίδα<input id="traceLot" placeholder="π.χ. LOT-261123-01" oninput="loadTraceability()"></label>
+<div style="display:flex;gap:8px;flex-wrap:wrap">
+<button class="soft" type="button" onclick="gfClearTraceFilters()" style="width:auto">🧹 Καθαρισμός φίλτρων</button>
+<button class="soft" type="button" onclick="gfPrintTraceability()" style="width:auto">🖨️ Εκτύπωση</button>
+</div>
+</div>
+<div id="traceabilityList" style="margin-top:12px"><small>Δεν υπάρχουν ακόμη παρτίδες.</small></div>
+</div></div>
 </div>
 <div class="page" id="page-customers"><div class="card"><h3>👥 Πελάτες / Έμποροι</h3><small>Αποθήκευσε τους αγοραστές σου για γρήγορη επιλογή στις πωλήσεις.</small><label>Όνομα / Επωνυμία<input id="customerName" placeholder="π.χ. Έμπορος Α"/></label><label>Τηλέφωνο<input id="customerPhone" placeholder="Τηλέφωνο (προαιρετικά)" type="tel"/></label><label>Σημείωση<input id="customerNote" placeholder="Σημείωση (προαιρετικά)"/></label><button id="saveCustomerBtn" onclick="saveCustomer()">➕ Αποθήκευση πελάτη</button><button class="soft hidden" id="cancelCustomerBtn" onclick="cancelCustomerEdit()">Ακύρωση επεξεργασίας</button><div id="customersList" style="margin-top:12px"><small>Δεν υπάρχουν πελάτες.</small></div><div class="card hidden" id="customerCard"></div></div></div>
 <div class="page" id="page-payments"><div class="card"><h3>💳 Πληρωμές &amp; Υπόλοιπα</h3><small>Καταχώρησε τις εισπράξεις από πελάτες και δες τι υπόλοιπο απομένει.</small>
@@ -3971,10 +3989,84 @@ function gfToggleHarvestTrace(){
  if(on)gfRefreshLotCode();else{const e=document.getElementById('harvestLotCode');if(e)e.value=''}
 }
 async function gfRefreshLotCode(){const e=document.getElementById('harvestLotCode');if(!e||!gh?.value||!document.getElementById('harvestTraceEnabled')?.checked)return;if(editing?.type==='harvest'&&e.dataset.saved)return;e.value=await gfNextLotCode(document.getElementById('entryDate')?.value)}
-async function gfTraceData(){const [h,s]=await Promise.all([sb.from('harvests').select('*').eq('greenhouse_id',gh.value).order('harvest_date',{ascending:false}),sb.from('sales').select('*').eq('greenhouse_id',gh.value).order('sale_date',{ascending:false})]);return{harvests:h.data||[],sales:s.data||[]}}
+async function gfTraceData(all=false){
+ let hq=sb.from('harvests').select('*').eq('user_id',user.id).order('harvest_date',{ascending:false});
+ let sq=sb.from('sales').select('*').eq('user_id',user.id).order('sale_date',{ascending:false});
+ if(!all&&gh?.value){hq=hq.eq('greenhouse_id',gh.value);sq=sq.eq('greenhouse_id',gh.value)}
+ const [h,s]=await Promise.all([hq,sq]);return{harvests:h.data||[],sales:s.data||[]}
+}
 async function loadSaleLots(selected=''){const e=document.getElementById('saleLot');if(!e||!gh?.value)return;const d=await gfTraceData(),sold={};d.sales.forEach(x=>{const m=gfSaleLotMeta(x.note);if(m?.code)sold[m.code]=(sold[m.code]||0)+Number(x.kg||0)});const ls=d.harvests.map(x=>{const m=gfLotMeta(x.note);if(!m?.code)return null;return{code:m.code,date:x.harvest_date,left:Math.max(0,Number(x.kg||0)-(sold[m.code]||0))}}).filter(Boolean);e.innerHTML='<option value="">— Χωρίς παρτίδα —</option>'+ls.map(x=>`<option value="${esc(x.code)}" data-left="${x.left}" data-date="${esc(x.date||'')}">${esc(x.code)} • ${x.left.toLocaleString('el-GR')} kg διαθέσιμα</option>`).join('');if(selected)e.value=selected;gfSaleLotChanged()}
 function gfSaleLotChanged(){const e=document.getElementById('saleLot'),b=document.getElementById('saleLotInfo');if(!e||!b)return;const o=e.options[e.selectedIndex];b.innerHTML=!e.value?'<small>Επίλεξε παρτίδα για σύνδεση με τη συγκομιδή.</small>':`<small>🔗 <b>${esc(e.value)}</b> • ${esc(o.dataset.date||'—')} • διαθέσιμα <b>${Number(o.dataset.left||0).toLocaleString('el-GR')} kg</b></small>`}
-async function loadTraceability(){const b=document.getElementById('traceabilityList');if(!b||!gh?.value)return;b.innerHTML='<small>Φόρτωση...</small>';const d=await gfTraceData(),sold={};d.sales.forEach(x=>{const m=gfSaleLotMeta(x.note);if(m?.code)(sold[m.code]??=[]).push(x)});const rows=d.harvests.map(h=>{const m=gfLotMeta(h.note);if(!m?.code)return'';const ss=sold[m.code]||[],sk=ss.reduce((a,x)=>a+Number(x.kg||0),0),left=Math.max(0,Number(h.kg||0)-sk),sh=ss.length?ss.map(x=>`<div style="margin-top:6px;padding-left:10px">↳ ${esc(x.sale_date||'')} • <b>${Number(x.kg||0).toLocaleString('el-GR')} kg</b> • ${esc(x.buyer||'Χωρίς πελάτη')}</div>`).join(''):'<div style="padding-left:10px"><small>Δεν έχει συνδεθεί πώληση.</small></div>';return`<div class="entry"><div class="entryText"><b>🔗 ${esc(m.code)}</b><br><small>Συγκομιδή ${esc(h.harvest_date||'')} • ${Number(h.kg||0).toLocaleString('el-GR')} kg • Πωλημένα ${sk.toLocaleString('el-GR')} kg • Υπόλοιπο <b>${left.toLocaleString('el-GR')} kg</b></small>${sh}</div></div>`}).join('');b.innerHTML=rows||'<small>Δεν υπάρχουν ακόμη παρτίδες. Οι νέες συγκομιδές θα παίρνουν αυτόματο κωδικό.</small>'}
+async function gfInitTraceFilters(){
+ const g=document.getElementById('traceGH'),b=document.getElementById('traceBuyer');if(!g||!b)return;
+
+ // Χωράφια/θερμοκήπια: χρησιμοποίησε την τρέχουσα περίοδο όπως το κεντρικό selector.
+ const current=g.value, seenGH=new Set(), ghRows=[];
+ if(gh){
+   [...gh.options].forEach(o=>{
+     const id=String(o.value||'').trim(), label=String(o.textContent||'').trim();
+     if(!id||seenGH.has(id))return;
+     seenGH.add(id);ghRows.push({id,label});
+   });
+ }
+ // Ασφάλεια fallback μόνο αν το κεντρικό selector δεν έχει ακόμη φορτωθεί.
+ if(!ghRows.length){
+   let q=sb.from('greenhouses').select('id,name,crop').eq('user_id',user.id).order('name');
+   const gr=await q;
+   const seenLabel=new Set();
+   (gr.data||[]).forEach(x=>{
+     const label=((x.name||'Χωράφι')+' • '+(x.crop||'')).trim();
+     const key=label.toLocaleLowerCase('el-GR');
+     if(seenLabel.has(key))return;
+     seenLabel.add(key);ghRows.push({id:String(x.id),label});
+   });
+ }
+ g.innerHTML='<option value="">Όλα</option>'+ghRows.map(x=>`<option value="${x.id}">${esc(x.label)}</option>`).join('');
+ if(current&&ghRows.some(x=>x.id===current))g.value=current;
+
+ // Πελάτες: μόνο από την κανονική λίστα customers, όχι από ιστορικές πωλήσεις.
+ const bc=b.value;
+ let cr=await sb.from('customers').select('*').eq('user_id',user.id);
+ const buyerRows=[], seenBuyer=new Set();
+ (cr.data||[]).forEach(x=>{
+   const name=String(x.name||x.customer_name||x.full_name||x.company||x.business_name||'').trim();
+   if(!name)return;
+   // case/space-insensitive dedupe, ώστε ΒΙΑΝΑΜΕ ΑΕ / Βιαναμε Αε να είναι μία επιλογή
+   const key=name.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLocaleUpperCase('el-GR');
+   if(seenBuyer.has(key))return;
+   seenBuyer.add(key);buyerRows.push(name);
+ });
+ buyerRows.sort((a,z)=>a.localeCompare(z,'el'));
+ b.innerHTML='<option value="">Όλοι</option>'+buyerRows.map(x=>`<option value="${esc(x)}">${esc(x)}</option>`).join('');
+ if(bc){
+   const oldKey=bc.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLocaleUpperCase('el-GR');
+   const match=buyerRows.find(x=>x.normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/\s+/g,' ').trim().toLocaleUpperCase('el-GR')===oldKey);
+   if(match)b.value=match;
+ }
+}
+function gfClearTraceFilters(){['traceFrom','traceTo','traceLot'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});['traceGH','traceBuyer'].forEach(id=>{const e=document.getElementById(id);if(e)e.value=''});loadTraceability()}
+function gfTraceGHMap(){const m={};document.querySelectorAll('#traceGH option').forEach(o=>{if(o.value)m[o.value]=o.textContent});return m}
+async function loadTraceability(){
+ const b=document.getElementById('traceabilityList');if(!b)return;
+ if(!document.getElementById('traceGH')?.options?.length||document.getElementById('traceGH')?.options?.length===1)await gfInitTraceFilters();
+ b.innerHTML='<small>Φόρτωση...</small>';const d=await gfTraceData(true),sold={},from=document.getElementById('traceFrom')?.value||'',to=document.getElementById('traceTo')?.value||'',gid=document.getElementById('traceGH')?.value||'',buyer=document.getElementById('traceBuyer')?.value||'',lot=(document.getElementById('traceLot')?.value||'').trim().toLowerCase(),gm=gfTraceGHMap();
+ d.sales.forEach(x=>{const m=gfSaleLotMeta(x.note);if(m?.code)(sold[m.code]??=[]).push(x)});
+ let count=0;
+ const rows=d.harvests.map(h=>{const m=gfLotMeta(h.note);if(!m?.code)return'';let ss=sold[m.code]||[];
+ if(from&&String(h.harvest_date||'')<from)return'';if(to&&String(h.harvest_date||'')>to)return'';if(gid&&String(h.greenhouse_id)!==String(gid))return'';if(lot&&!String(m.code).toLowerCase().includes(lot))return'';
+ if(buyer&&!ss.some(x=>String(x.buyer||'')===buyer))return'';
+ if(buyer)ss=ss.filter(x=>String(x.buyer||'')===buyer);
+ const sk=ss.reduce((a,x)=>a+Number(x.kg||0),0),allSold=(sold[m.code]||[]).reduce((a,x)=>a+Number(x.kg||0),0),left=Math.max(0,Number(h.kg||0)-allSold),ghName=gm[String(h.greenhouse_id)]||('ID '+h.greenhouse_id);
+ const sh=ss.length?ss.map(x=>`<div style="margin-top:6px;padding-left:10px">↳ ${esc(x.sale_date||'')} • <b>${Number(x.kg||0).toLocaleString('el-GR')} kg</b> • ${esc(x.buyer||'Χωρίς πελάτη')} • ${Number(x.price_per_kg||0).toLocaleString('el-GR')} €/kg</div>`).join(''):'<div style="padding-left:10px"><small>Δεν έχει συνδεθεί πώληση.</small></div>';
+ count++;return`<div class="entry tracePrintRow"><div class="entryText"><b>🔗 ${esc(m.code)}</b><br><small>🏡 ${esc(ghName)}<br>📅 Συγκομιδή ${esc(h.harvest_date||'')} • ${Number(h.kg||0).toLocaleString('el-GR')} kg • Πωλημένα ${allSold.toLocaleString('el-GR')} kg • Υπόλοιπο <b>${left.toLocaleString('el-GR')} kg</b></small>${sh}</div></div>`}).join('');
+ b.innerHTML=(count?`<div style="margin-bottom:8px"><small><b>${count}</b> παρτίδες στα αποτελέσματα</small></div>`:'')+rows||'<small>Δεν βρέθηκαν παρτίδες με αυτά τα φίλτρα.</small>';
+}
+function gfPrintTraceability(){
+ const list=document.getElementById('traceabilityList');if(!list)return;
+ const f=id=>document.getElementById(id)?.value||'',ghText=document.getElementById('traceGH')?.selectedOptions?.[0]?.textContent||'Όλα',buyerText=document.getElementById('traceBuyer')?.selectedOptions?.[0]?.textContent||'Όλοι';
+ const w=window.open('','_blank');if(!w)return alert('Επίτρεψε τα αναδυόμενα παράθυρα για την εκτύπωση.');
+ w.document.write(`<!doctype html><html><head><meta charset="utf-8"><title>GeoFylo - Ιχνηλασιμότητα</title><style>body{font-family:Arial,sans-serif;padding:28px;color:#1d2b20}h2{margin-bottom:4px}.filters{padding:10px 0;border-bottom:1px solid #bbb;margin-bottom:16px}.entry{border-bottom:1px solid #ddd;padding:12px 0}.entryText{line-height:1.55}small{font-size:12px}@media print{button{display:none}}</style></head><body><h2>GeoFylo — Αναφορά Ιχνηλασιμότητας</h2><div class="filters"><b>Χωράφι/Θερμοκήπιο:</b> ${esc(ghText)} &nbsp; <b>Πελάτης:</b> ${esc(buyerText)}<br><b>Από:</b> ${esc(f('traceFrom')||'—')} &nbsp; <b>Έως:</b> ${esc(f('traceTo')||'—')} &nbsp; <b>LOT:</b> ${esc(f('traceLot')||'Όλα')}</div>${list.innerHTML}<script>window.onload=()=>window.print()<\/script></body></html>`);w.document.close();
+}
 
 let saving=false,editing=null;
 async function addEntry(){
