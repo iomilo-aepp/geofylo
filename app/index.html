@@ -93,7 +93,7 @@ input,select,button{width:100%;padding:12px;margin:5px 0;border-radius:10px;bord
 <div class="page active" id="page-home">
 <div class="mobileHomeIntro"><h2>Καλημέρα!</h2><small>Η εκμετάλλευσή σου με μια ματιά</small></div>
 <div style="display:flex;justify-content:flex-end;margin:0 0 10px">
-<button type="button" class="soft" onclick="showPage('entry');setTimeout(()=>startVoice(),120)" style="width:auto;padding:8px 12px;font-size:13px;border-radius:18px">🎙️ Φωνητική καταχώρηση</button>
+<button type="button" class="soft" onclick="openMorePage('assistant');setTimeout(()=>{document.getElementById('assistantInput')?.focus();startAssistantVoice();},220)" style="width:auto;padding:8px 12px;font-size:13px;border-radius:18px">🤖 GeoFylo Assistant</button>
 </div>
 <div class="homeActionGrid">
 <button class="homeAction" onclick="openCultivations()"><span class="homeActionIcon">🌱</span><b>Καλλιέργειες</b></button>
@@ -2785,12 +2785,142 @@ function startAssistantVoice(){
 }
 window.startAssistantVoice=startAssistantVoice;
 
+
+let gfAssistantPendingAction=null;
+
+function gfAssistantNumberFrom(text,pattern){
+ const m=normalizeVoice(text).match(pattern);
+ return m?parseGreekNumber(m[1]):null;
+}
+function gfAssistantActionCancel(){
+ gfAssistantPendingAction=null;
+ assistantAdd('assistant','❌ Η ενέργεια ακυρώθηκε. Δεν αποθηκεύτηκε τίποτα.');
+ if(assistantSpeakNextReply){assistantSpeakNextReply=false;speakGeoFyloReply('Η ενέργεια ακυρώθηκε. Δεν αποθηκεύτηκε τίποτα.');}
+}
+async function gfAssistantActionConfirm(){
+ const a=gfAssistantPendingAction;
+ if(!a)return;
+ gfAssistantPendingAction=null;
+ assistantAdd('assistant','⏳ Γίνεται η καταχώρηση...');
+ try{
+   await addEntry();
+ }catch(e){
+   console.error('Assistant action:',e);
+   assistantAdd('assistant','⚠️ Η καταχώρηση δεν ολοκληρώθηκε. Έλεγξε τα στοιχεία στη φόρμα.');
+   return;
+ }
+}
+window.gfAssistantActionCancel=gfAssistantActionCancel;
+window.gfAssistantActionConfirm=gfAssistantActionConfirm;
+
+async function gfTryAssistantAction(q){
+ const t=normalizeVoice(q);
+ const nums=[...t.matchAll(/\d+(?:[.,]\d+)?/g)].map(m=>parseGreekNumber(m[0]));
+ const isHarvest=/μαζεψ|συγκομιδ|κοψα|παραγωγ/.test(t);
+ const isSale=/πουλη|πωλησ|εφυγαν.*κιλα/.test(t);
+ const expenseWords=/εβαλα|εδωσα|πληρω|αγορασ|ξοδεψ|εξοδο/.test(t);
+ const expenseCategory=/λιπασ|φαρμακ|φυτοπροστα|εργατ|ρευμα|νερο|καυσιμ|πετρελ|μεταφορ|επισκευ|ενοικ/.test(t);
+ const isActivity=/ποτισ|κλαδε|φυτεψ|φυτευ|ψεκασ|λιπανσ|καθαρισ|συντηρησ/.test(t) && !/ευρω|€|πληρω|ξοδεψ|αγορασ/.test(t);
+
+ if(!(isSale||isHarvest||expenseWords||expenseCategory||isActivity))return false;
+ if(!season?.value||!gh?.value){
+   const msg='⚠️ Για να κάνω καταχώρηση, επίλεξε πρώτα καλλιεργητική περίοδο και αγροτεμάχιο / θερμοκήπιο.';
+   assistantAdd('assistant',msg);
+   if(assistantSpeakNextReply){assistantSpeakNextReply=false;speakGeoFyloReply(msg);}
+   return true;
+ }
+
+ note.value='';
+ let summary=[];
+
+ if(isActivity){
+   etype.value='activity';entryFields();
+   if(/λιπανσ/.test(t))activityType.value='Λίπανση';
+   else if(/ψεκασ|φυτοπροστα/.test(t))activityType.value='Ψεκασμός / Φυτοπροστασία';
+   else if(/ποτισ/.test(t))activityType.value='Πότισμα';
+   else if(/φυτεψ|φυτευ/.test(t))activityType.value='Φύτευση';
+   else if(/κλαδε/.test(t))activityType.value='Κλάδεμα';
+   else if(/καθαρισ/.test(t))activityType.value='Καθαρισμός';
+   else if(/συντηρησ/.test(t))activityType.value='Συντήρηση';
+   gfTogglePHIField();gfToggleIrrigationFields();
+   note.value=q;
+   summary=['📅 <b>Εργασία:</b> '+esc(activityType.value),'<b>Κατάσταση:</b> Ολοκληρώθηκε','<b>Σημείωση:</b> '+esc(q)];
+ }else if(isSale){
+   etype.value='sale';entryFields();
+   if(typeof loadBuyerOptions==='function')await loadBuyerOptions();
+   let kgm=t.match(/(\d+(?:[.,]\d+)?)\s*(?:κιλα|kg)/);
+   const kg=kgm?parseGreekNumber(kgm[1]):(nums[0]??null);
+   let pr=spokenPrice(t);
+   if(pr==null){
+     let pm=t.match(/(?:με|τιμη|προς)\s*(\d+(?:[.,]\d+)?)/);
+     if(pm)pr=parseGreekNumber(pm[1]);
+     else if(nums.length>1)pr=nums[1];
+   }
+   if(kg!=null)kgs.value=kg;
+   if(pr!=null)price.value=Number(pr).toFixed(2);
+   const buyer=spokenSaleCustomer(q);
+   if(buyer)document.getElementById('saleBuyer').value=buyer;
+   const grade=spokenSaleGrade(q)||'A';
+   document.getElementById('saleGrade').value=grade;
+   updateSalePriceAdvice();
+   if(!(Number(kgs.value)>0)||!(Number(price.value)>0)){
+     assistantAdd('assistant','⚠️ Κατάλαβα ότι θέλεις να κάνεις πώληση, αλλά χρειάζομαι <b>κιλά και τιμή ανά κιλό</b>. Π.χ. «Πούλησα 500 κιλά στη ΒΙΑΝΑΜΕ με 2,80 το κιλό».');
+     return true;
+   }
+   summary=['💰 <b>Πώληση</b>','<b>Ποσότητα:</b> '+Number(kgs.value).toLocaleString('el-GR')+' kg','<b>Τιμή:</b> '+Number(price.value).toLocaleString('el-GR',{minimumFractionDigits:2,maximumFractionDigits:2})+' €/kg','<b>Σύνολο:</b> '+euro(Number(kgs.value)*Number(price.value)),'<b>Πελάτης:</b> '+esc(buyer||'Χωρίς επιλογή'),'<b>Κατηγορία:</b> '+esc(grade==='SKARTA'?'Σκάρτα':grade)];
+ }else if(isHarvest){
+   etype.value='harvest';entryFields();
+   let m=t.match(/(\d+(?:[.,]\d+)?)\s*(?:κιλα|kg)/);
+   const kg=m?parseGreekNumber(m[1]):(nums[0]??null);
+   if(kg!=null)kgs.value=kg;
+   if(!(Number(kgs.value)>0)){
+     assistantAdd('assistant','⚠️ Κατάλαβα συγκομιδή, αλλά χρειάζομαι την ποσότητα. Π.χ. «Συγκόμισα 850 κιλά».');
+     return true;
+   }
+   summary=['⚖️ <b>Συγκομιδή</b>','<b>Ποσότητα:</b> '+Number(kgs.value).toLocaleString('el-GR')+' kg'];
+ }else{
+   etype.value='expense';entryFields();
+   let am=t.match(/(\d+(?:[.,]\d+)?)\s*(?:ευρω|€)/);
+   const val=am?parseGreekNumber(am[1]):(nums[0]??null);
+   if(val!=null)amount.value=val;
+   if(/λιπασ/.test(t))cat.value='Εφόδια / Λιπάσματα';
+   else if(/εργατ/.test(t))cat.value='Εργατικά';
+   else if(/ρευμα/.test(t))cat.value='Ρεύμα';
+   else if(/νερο/.test(t))cat.value='Νερό';
+   else if(/καυσιμ|πετρελ/.test(t))cat.value='Καύσιμα';
+   else if(/φυτοπροστα|φαρμακ/.test(t))cat.value='Φυτοπροστασία';
+   else if(/μεταφορ/.test(t))cat.value='Μεταφορικά';
+   else if(/επισκευ|συντηρησ/.test(t))cat.value='Συντήρηση / Επισκευές';
+   else if(/ενοικ/.test(t))cat.value='Ενοίκιο';
+   else cat.value='Λοιπά';
+   const expenseNameEl=document.getElementById('expenseName');
+   if(expenseNameEl)expenseNameEl.value=q.replace(/\d+(?:[.,]\d+)?\s*(?:ευρω|€)/i,'').trim().slice(0,100)||'Φωνητική καταχώρηση';
+   if(!(Number(amount.value)>0)){
+     assistantAdd('assistant','⚠️ Κατάλαβα έξοδο, αλλά χρειάζομαι το ποσό. Π.χ. «Πλήρωσα 120 ευρώ για λίπασμα».');
+     return true;
+   }
+   summary=['💸 <b>Έξοδο</b>','<b>Κατηγορία:</b> '+esc(cat.value),'<b>Ποσό:</b> '+euro(Number(amount.value)),'<b>Ονομασία:</b> '+esc(expenseNameEl?.value||'')];
+ }
+
+ gfAssistantPendingAction={type:etype.value,spoken:q};
+ const html='🤖 <b>Κατάλαβα την παρακάτω ενέργεια:</b><br>'+summary.join('<br>')+
+   '<br><small>Δεν έχει αποθηκευτεί ακόμη.</small>'+
+   '<div class="grid" style="margin-top:10px"><button class="soft" type="button" onclick="gfAssistantActionCancel()">❌ Ακύρωση</button><button type="button" onclick="gfAssistantActionConfirm()">✅ Επιβεβαίωση & αποθήκευση</button></div>';
+ assistantAdd('assistant',html);
+ if(assistantSpeakNextReply){
+   assistantSpeakNextReply=false;
+   speakGeoFyloReply('Κατάλαβα την ενέργεια. Έλεγξε τα στοιχεία και πάτησε επιβεβαίωση για αποθήκευση.');
+ }
+ return true;
+}
+
 async function askGeoFylo(preset){
  const input=document.getElementById('assistantInput');
  const q=(preset||(input?.value||'')).trim();
  if(!q)return;
  if(input)input.value='';
  assistantAdd('user',esc(q));
+ if(await gfTryAssistantAction(q))return;
  if(!geoFyloAssistantData)await loadGeoFyloAssistant();
  const d=geoFyloAssistantData;
  if(!d){
